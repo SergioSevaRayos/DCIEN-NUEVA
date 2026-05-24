@@ -1,0 +1,18 @@
+User-agent: *
+
+# Bloquear páginas de proceso de usuario y checkout
+Disallow: /recuperar
+Disallow: /comprar
+Disallow: /resumen
+Disallow: /acceso
+Disallow: /api/
+
+# Bloquear parámetros de búsqueda o filtrado para evitar contenido duplicado
+Disallow: /*?*
+Disallow: /*&*
+
+# Permitir todo lo demás
+Allow: /
+
+# Ubicación del Sitemap
+Sitemap: https://d-cien.es/sitemap.xml

@@ -1,0 +1,124 @@
+---
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import CookieBanner from '../components/CookieBanner.astro';
+import SEO from '../components/SEO.astro';
+
+import '../styles/global.css';
+
+const { seo, currentPath = Astro.url.pathname } = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <meta name="generator" content={Astro.generator} />
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V3Q2Q6ETTF"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { window.dataLayer.push(arguments); }
+      gtag("js", new Date());
+      gtag("config", "G-V3Q2Q6ETTF");
+    </script>
+    
+    <SEO {...seo} />
+    <slot name="head" />
+
+    <script is:inline>
+      const theme = (() => {
+        if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
+          return localStorage.getItem('theme');
+        }
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      })();
+    
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    </script>
+  </head>
+
+  <body class="bg-white dark:bg-black text-black dark:text-white transition-colors duration-300">
+
+    <!-- Línea vertical decorativa -->
+    <div 
+      class="fixed inset-y-0 left-1/2 -translate-x-1/2 w-[100px] md:w-[150px] bg-black/[0.03] dark:bg-white/[0.03] pointer-events-none"
+      style="z-index: 1;"
+      aria-hidden="true"
+    ></div>
+
+    <!-- HEADER (fixed) -->
+    <Header currentPath={currentPath} />
+
+    <!-- MAIN: compensación GLOBAL del header -->
+    <main class="relative z-10 pt-[var(--header-height)] min-h-screen">
+      <slot />
+    </main>
+
+    <Footer />
+    <CookieBanner />
+
+    <!-- 🔑 Script CRÍTICO: mide el header real -->
+    <script is:inline>
+      const header = document.querySelector('header');
+
+      function syncHeaderHeight() {
+        if (!header) return;
+        document.documentElement.style.setProperty(
+          '--header-height',
+          `${header.offsetHeight}px`
+        );
+      }
+
+      syncHeaderHeight();
+      window.addEventListener('resize', syncHeaderHeight);
+      new ResizeObserver(syncHeaderHeight).observe(header);
+    </script>
+
+    <script>
+      import Swal from 'sweetalert2';
+
+      const setupSwal = () => {
+        (window as any).Swal = Swal;
+        const Toast = Swal.mixin({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+        });
+        (window as any).Toast = Toast;
+      };
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupSwal);
+      } else {
+        setupSwal();
+      }
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  html {
+    scroll-behavior: smooth;
+  }
+  img {
+    height: auto;
+    max-width: 100%;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+</style>

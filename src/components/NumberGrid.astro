@@ -1,0 +1,303 @@
+---
+// src/components/NumberGrid.astro
+interface Props {
+  seriesSlug: string;
+}
+
+const { seriesSlug } = Astro.props;
+---
+
+<div class="number-grid-container p-6 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10">
+  <h3 class="text-sm font-bold uppercase tracking-wider text-black dark:text-white mb-4">
+    Selecciona tu número exclusivo (01-100)
+  </h3>
+  
+  <!-- Stats -->
+  <div id="stats-bar" class="flex justify-between text-xs text-black/60 dark:text-white/60 mb-4 pb-4 border-b border-black/10 dark:border-white/10">
+    <div>
+      <span class="font-bold text-green-600 dark:text-green-400" id="stat-available">--</span>
+      <span class="ml-1">disponibles</span>
+    </div>
+    <div>
+      <span class="font-bold text-yellow-600 dark:text-yellow-400" id="stat-reserved">--</span>
+      <span class="ml-1">reservados</span>
+    </div>
+    <div>
+      <span class="font-bold text-red-600 dark:text-red-400" id="stat-sold">--</span>
+      <span class="ml-1">vendidos</span>
+    </div>
+  </div>
+  
+  <div id="number-grid" class="grid grid-cols-10 gap-2 mb-6">
+    <!-- Se llena con JavaScript -->
+  </div>
+  
+  <div id="selected-number-display" class="text-center pt-4 border-t border-black/10 dark:border-white/10">
+    <p class="text-xs text-black/60 dark:text-white/60 uppercase tracking-wider mb-2">
+      Número seleccionado:
+    </p>
+    <p id="selected-display" class="font-brand text-5xl text-black dark:text-white">
+      --
+    </p>
+    <p id="expiry-timer" class="text-xs text-black/40 dark:text-white/40 mt-2 opacity-0">
+      Reserva expira en: <span id="timer-countdown">5:00</span>
+    </p>
+  </div>
+  
+  <div id="loading-indicator" class="text-center py-12">
+    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-black dark:border-white"></div>
+    <p class="text-xs text-black/60 dark:text-white/60 mt-4">Cargando números...</p>
+  </div>
+  
+  <div id="error-message" class="hidden mt-4 p-4 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs text-center"></div>
+</div>
+
+<script define:vars={{ seriesSlug }}>
+  let selectedNumber = null;
+  let numbersData = [];
+  let countdownInterval = null;
+
+  const grid = document.getElementById('number-grid');
+  const selectedDisplay = document.getElementById('selected-display');
+  const expiryTimer = document.getElementById('expiry-timer');
+  const timerCountdown = document.getElementById('timer-countdown');
+  const loadingIndicator = document.getElementById('loading-indicator');
+  const errorMessage = document.getElementById('error-message');
+  const statAvailable = document.getElementById('stat-available');
+  const statReserved = document.getElementById('stat-reserved');
+  const statSold = document.getElementById('stat-sold');
+
+  // ─────────────────────────────────────────────
+  // NUEVO: comprobar autenticación
+  // ─────────────────────────────────────────────
+  async function isUserAuthenticated() {
+    try {
+      const res = await fetch('https://d-cien.es/api/auth/check.php', {
+        credentials: 'include'
+      });
+      if (!res.ok) return false;
+      const data = await res.json();
+      return !!data.authenticated;
+    } catch {
+      return false;
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // NUEVO: SweetAlert acceso requerido
+  // ─────────────────────────────────────────────
+  function showAccessRequiredAlert() {
+  const isDark = document.documentElement.classList.contains('dark');
+
+ Swal.fire({
+  icon: 'warning',
+  title: 'Acceso requerido',
+  html: `
+    <p style="margin-bottom:12px">
+      Esta serie es <strong>limitada</strong> y requiere autorización previa.
+    </p>
+    <p style="margin-bottom:16px">
+      ¿Ya tienes credenciales de acceso?
+    </p>
+  `,
+  showCancelButton: true,
+  confirmButtonText: 'Ir a Acceso',
+  cancelButtonText: 'Solicitar por Instagram',
+  background: isDark ? '#000' : '#fff',
+  color: isDark ? '#fff' : '#000',
+  buttonsStyling: false,
+  customClass: {
+    confirmButton: isDark
+      ? '!bg-white !text-black font-bold uppercase tracking-wider text-xs px-8 py-3 rounded-none hover:!bg-white/90 !mr-2'
+      : '!bg-black !text-white font-bold uppercase tracking-wider text-xs px-8 py-3 rounded-none hover:!bg-black/90 !mr-2',
+    cancelButton: isDark
+      ? '!bg-transparent !text-white !border !border-white font-bold uppercase tracking-wider text-xs px-8 py-3 rounded-none hover:!bg-white/10'
+      : '!bg-transparent !text-black !border !border-black font-bold uppercase tracking-wider text-xs px-8 py-3 rounded-none hover:!bg-black/10'
+  }
+}).then((result) => {
+  if (result.isConfirmed) {
+    // Redirigir a la página de acceso
+    window.location.href = '/acceso';
+  } else if (result.isDismissed && result.dismiss === Swal.DismissReason.cancel) {
+    // Abrir Instagram en nueva pestaña
+    window.open('https://www.instagram.com/dcien.esp/', '_blank', 'noopener,noreferrer');
+  }
+});
+}
+
+
+  // Cargar números
+  async function loadNumbers() {
+    try {
+      const response = await fetch(`https://d-cien.es/api/series/get-numbers.php?slug=${seriesSlug}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        numbersData = data.numbers;
+
+        if (data.stats) {
+          if (statAvailable) statAvailable.textContent = data.stats.available;
+          if (statReserved) statReserved.textContent = data.stats.reserved;
+          if (statSold) statSold.textContent = data.stats.sold;
+        }
+
+        renderGrid();
+
+        if (loadingIndicator) loadingIndicator.style.display = 'none';
+        if (errorMessage) errorMessage.classList.add('hidden');
+      } else {
+        showError('No se pudieron cargar los números');
+      }
+    } catch (error) {
+      console.error('Error loading numbers:', error);
+      showError('Error de conexión al cargar números');
+    }
+  }
+
+  // Renderizar grid
+  function renderGrid() {
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    numbersData.forEach(item => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = String(item.number).padStart(2, '0');
+      button.dataset.number = item.number;
+      button.dataset.status = item.status;
+
+      const baseClasses = 'aspect-square flex items-center justify-center font-mono text-sm font-bold border transition-all';
+      let statusClasses = '';
+      let clickable = false;
+
+      switch (item.status) {
+        case 'available':
+          statusClasses = 'bg-white dark:bg-black border-black/20 dark:border-white/20 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black cursor-pointer';
+          clickable = true;
+          break;
+        case 'reserved':
+          statusClasses = 'bg-yellow-500/20 border-yellow-500/40 line-through text-yellow-700 cursor-not-allowed';
+          break;
+        case 'sold':
+          statusClasses = 'bg-red-500/20 border-red-500/40 line-through text-red-700 cursor-not-allowed';
+          break;
+      }
+
+      button.className =
+        selectedNumber === item.number
+          ? `${baseClasses} bg-black text-white dark:bg-white dark:text-black border-black dark:border-white ring-2 ring-black/50`
+          : `${baseClasses} ${statusClasses}`;
+
+      button.disabled = !clickable;
+
+      if (clickable) {
+        button.addEventListener('click', () => selectNumber(item.number));
+      }
+
+      grid.appendChild(button);
+    });
+  }
+
+  // Seleccionar número (MEJORA APLICADA AQUÍ)
+  async function selectNumber(number) {
+    if (selectedNumber === number) return;
+
+    // ⛔ BLOQUEO ANTES DE RESERVAR
+    const authenticated = await isUserAuthenticated();
+    if (!authenticated) {
+      showAccessRequiredAlert();
+      return;
+    }
+
+    showError('');
+
+    try {
+      const response = await fetch('https://d-cien.es/api/series/reserve-number.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          series_slug: seriesSlug,
+          unit_number: number
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        selectedNumber = number;
+
+        if (selectedDisplay) {
+          selectedDisplay.textContent = String(number).padStart(2, '0');
+        }
+
+        startReservationTimer(data.expires_in || 300);
+
+        window.dispatchEvent(new CustomEvent('numberSelected', {
+          detail: { number }
+        }));
+
+        await loadNumbers();
+      } else {
+        showError(data.message || 'Este número ya no está disponible.');
+        await loadNumbers();
+      }
+    } catch (error) {
+      console.error('Error reserving number:', error);
+      showError('Error al reservar número. Inténtalo de nuevo.');
+    }
+  }
+
+  // Timer de reserva
+  function startReservationTimer(seconds) {
+    if (countdownInterval) clearInterval(countdownInterval);
+
+    let remaining = seconds;
+    if (expiryTimer) expiryTimer.classList.remove('opacity-0');
+
+    countdownInterval = setInterval(() => {
+      remaining--;
+
+      const minutes = Math.floor(remaining / 60);
+      const secs = remaining % 60;
+
+      if (timerCountdown) {
+        timerCountdown.textContent = `${minutes}:${String(secs).padStart(2, '0')}`;
+      }
+
+      if (remaining <= 0) {
+        clearInterval(countdownInterval);
+        selectedNumber = null;
+
+        window.dispatchEvent(new CustomEvent('numberSelected', {
+          detail: { number: null }
+        }));
+
+        if (selectedDisplay) selectedDisplay.textContent = '--';
+        if (expiryTimer) expiryTimer.classList.add('opacity-0');
+
+        showError('Tu reserva ha expirado. Selecciona otro número.');
+        loadNumbers();
+      }
+    }, 1000);
+  }
+
+  function showError(message) {
+    if (!errorMessage) return;
+    if (message) {
+      errorMessage.textContent = message;
+      errorMessage.classList.remove('hidden');
+    } else {
+      errorMessage.classList.add('hidden');
+    }
+  }
+
+  setInterval(loadNumbers, 10000);
+  loadNumbers();
+</script>
+
+<style>
+  .number-grid-container {
+    position: relative;
+  }
+</style>

@@ -1,0 +1,210 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getSEO } from '../../lib/seo';
+import { seriesData } from '../../data/series';
+
+const seo = getSEO('series-activas');
+
+type ActiveSeriesCard = {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  price: number;
+  images: string[] | string;
+  release_date?: string;
+};
+
+const activeSeries: ActiveSeriesCard[] = seriesData
+  .filter(s => s.isActive)
+  .map((series, index) => ({
+    id: index + 1,
+    name: series.name,
+    slug: series.slug,
+    description: series.description,
+    price: series.price,
+    images: series.images,
+    release_date: series.releaseDate,
+  }));
+---
+
+<BaseLayout seo={seo}>
+  <section class="pt-32 pb-20 transition-colors duration-500">
+    <div class="container-custom">
+      <div class="text-center mb-16">
+        <h1 class="section-title text-black dark:text-white transition-colors">
+          SERIES ACTIVAS
+        </h1>
+        <p class="text-sm text-black/40 dark:text-white/40 uppercase tracking-wider">
+          {activeSeries.length} {activeSeries.length === 1 ? 'SERIE' : 'SERIES'} EN SISTEMA
+        </p>
+      </div>
+
+      {activeSeries.length === 0 ? (
+        <div class="text-center py-20">
+          <p class="text-xl text-black/60 dark:text-white/60 mb-4 transition-colors">
+            NO HAY SERIES ACTIVAS
+          </p>
+          <p class="text-sm text-black/40 dark:text-white/40 mb-8 transition-colors">
+            Vuelve pronto para nuevas ediciones
+          </p>
+          <a href="/archivo" class="btn-secondary">
+            Ver Archivo
+          </a>
+        </div>
+      ) : (
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          {activeSeries.map((series) => {
+            const images = typeof series.images === 'string'
+              ? JSON.parse(series.images)
+              : series.images;
+
+            const mainImage = images?.[0] ?? '/images/placeholder.jpg';
+
+            return (
+              <article
+                class="card-minimal overflow-hidden group transition-colors series-card"
+                data-series-slug={series.slug}
+              >
+                <a href={`/series-activas/${series.slug}`} class="block">
+                  <div class="relative aspect-square bg-zinc-100 dark:bg-zinc-900 overflow-hidden border-b border-black/5 dark:border-white/10">
+                    <img
+                      src={mainImage}
+                      alt={series.name}
+                      class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110"
+                    />
+                  </div>
+
+                  <div class="p-6 sm:p-8">
+                    <h2 class="font-brand text-2xl sm:text-3xl mb-2 sm:mb-3 text-black dark:text-white transition-colors uppercase tracking-wider">
+                      {series.name}
+                    </h2>
+
+                    <p class="text-xs text-black/40 dark:text-white/40 uppercase tracking-wider mb-4 sm:mb-6 transition-colors">
+                      {series.description}
+                    </p>
+
+                    <div class="grid grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6 text-center">
+                      <div>
+                        <p class="text-xl sm:text-2xl font-bold text-black dark:text-white transition-colors" data-total>
+                          —
+                        </p>
+                        <p class="text-[9px] sm:text-[10px] text-black/40 dark:text-white/40 uppercase tracking-wider transition-colors">
+                          Unidades
+                        </p>
+                      </div>
+                      <div>
+                        <p class="text-xl sm:text-2xl font-bold text-black dark:text-white transition-colors" data-available>
+                          —
+                        </p>
+                        <p class="text-[9px] sm:text-[10px] text-black/40 dark:text-white/40 uppercase tracking-wider transition-colors">
+                          Disponibles
+                        </p>
+                      </div>
+                      <div>
+                        <p class="text-xl sm:text-2xl font-bold text-black dark:text-white transition-colors" data-sold>
+                          —
+                        </p>
+                        <p class="text-[9px] sm:text-[10px] text-black/40 dark:text-white/40 uppercase tracking-wider transition-colors">
+                          Vendidas
+                        </p>
+                      </div>
+                    </div>
+
+                    <div class="mb-4 sm:mb-6">
+                      <div class="flex justify-between text-[10px] sm:text-xs text-black/40 dark:text-white/40 mb-2 transition-colors">
+                        <span data-percent>—</span>
+                      </div>
+                      <div class="w-full h-px bg-black/10 dark:bg-white/10 transition-colors">
+                        <div
+                          class="h-full bg-black dark:bg-white transition-all duration-500"
+                          data-bar
+                          style="width: 0%"
+                        />
+                      </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-3">
+                      <div class="btn-secondary flex-1 text-center py-3">
+                        VER DETALLES
+                      </div>
+                      <div class="btn-primary flex-1 text-center py-3">
+                        COMPRAR
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  </section>
+
+  <!-- ──────────────────────────────────────────────────────────
+       STOCK REAL · MISMA API QUE [slug].astro · TS SAFE
+       ────────────────────────────────────────────────────────── -->
+<script>
+  const API = 'https://d-cien.es/api';
+
+  async function loadSeriesStock() {
+    const cards = document.querySelectorAll('.series-card');
+
+    cards.forEach(async (cardEl) => {
+      if (!(cardEl instanceof HTMLElement)) return;
+
+      const slug = cardEl.dataset.seriesSlug;
+      if (!slug) return;
+
+      try {
+        const res = await fetch(`${API}/series/get-numbers.php?slug=${slug}`);
+        const data = await res.json();
+
+        if (!data || !data.success || !data.stats) return;
+
+        const total = Number(data.stats.total);
+        const sold = Number(data.stats.sold);
+        const available = Number(data.stats.available);
+
+        if (!total || total <= 0) return;
+
+        const percent = Math.round((sold / total) * 100);
+
+        const elTotal = cardEl.querySelector('[data-total]');
+        const elAvailable = cardEl.querySelector('[data-available]');
+        const elSold = cardEl.querySelector('[data-sold]');
+        const elPercent = cardEl.querySelector('[data-percent]');
+        const elBar = cardEl.querySelector('[data-bar]');
+
+        if (elTotal instanceof HTMLElement) {
+          elTotal.textContent = String(total);
+        }
+
+        if (elAvailable instanceof HTMLElement) {
+          elAvailable.textContent = String(available);
+        }
+
+        if (elSold instanceof HTMLElement) {
+          elSold.textContent = String(sold);
+        }
+
+        if (elPercent instanceof HTMLElement) {
+          elPercent.textContent = `${percent}% Agotado`;
+        }
+
+        if (elBar instanceof HTMLElement) {
+          elBar.style.width = `${percent}%`;
+        }
+
+      } catch (err) {
+        console.error('Stock error:', slug, err);
+      }
+    });
+  }
+
+  loadSeriesStock();
+  setInterval(loadSeriesStock, 10000);
+</script>
+
+</BaseLayout>

@@ -1,0 +1,363 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getSEO } from '../../lib/seo';
+
+const seo = {
+  title: 'Compra Confirmada | DCIEN',
+  description: 'Tu compra ha sido confirmada exitosamente',
+  keywords: 'confirmación, compra, dcien',
+  noindex: true
+};
+---
+
+<BaseLayout seo={seo}>
+  <main class="relative z-10">
+    <section class="min-h-screen flex flex-col items-center justify-center relative px-6 py-20">
+
+      <!-- Logo -->
+      <div class="mb-16 animate-fade-in">
+        <h1 class="font-brand text-[6rem] md:text-[10rem] lg:text-[12rem] tracking-[0.05em] leading-none text-black dark:text-white">
+          DCIEN
+        </h1>
+      </div>
+
+      <!-- Título -->
+      <div class="space-y-4 text-center animate-slide-up mb-12" style="animation-delay: 0.2s;">
+        <div class="inline-block px-6 py-2 bg-black dark:bg-white">
+          <h2 class="text-xs md:text-sm uppercase tracking-[0.6em] text-white dark:text-black font-bold">
+            Protocolo Confirmado
+          </h2>
+        </div>
+        
+        <p class="text-[10px] md:text-xs uppercase tracking-[0.3em] text-black/60 dark:text-white/60">
+          Registro Validado Correctamente
+        </p>
+      </div>
+
+      <!-- Número asignado -->
+      <div id="number-container" class="text-center mb-12 animate-slide-up" style="animation-delay: 0.4s;">
+        <p class="text-xs uppercase tracking-[0.4em] text-black/60 dark:text-white/60 mb-4">
+          Tu Número Exclusivo
+        </p>
+        <div id="number-display" class="font-brand text-[8rem] md:text-[12rem] text-black dark:text-white leading-none">
+          --
+        </div>
+        <p id="series-display" class="text-sm uppercase tracking-[0.3em] text-black/60 dark:text-white/60 mt-4">
+          SERIE --
+        </p>
+      </div>
+
+      <!-- Mensaje -->
+      <div class="max-w-2xl mx-auto text-center space-y-6 mb-16 animate-slide-up" style="animation-delay: 0.6s;">
+        <p class="text-sm uppercase tracking-[0.3em] text-black dark:text-white">
+          Serie Integrada En Sistema
+        </p>
+        
+        <p class="text-xs text-black/60 dark:text-white/60 leading-relaxed">
+          Tu pedido ha sido confirmado. Recibirás un email con todos los detalles
+          <br />
+          y el número de seguimiento del envío en las próximas 24-48 horas.
+        </p>
+      </div>
+
+      <!-- Detalles del pedido -->
+      <div id="order-details" class="max-w-md w-full p-6 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 mb-12 animate-slide-up" style="animation-delay: 0.8s;">
+        <h3 class="text-xs uppercase tracking-wider text-black/60 dark:text-white/60 mb-4 text-center">
+          Detalles del Pedido
+        </h3>
+        <div id="details-content" class="space-y-2 text-sm">
+          <p class="text-center text-black/40 dark:text-white/40">Cargando...</p>
+        </div>
+      </div>
+
+      <!-- Botones -->
+      <div class="flex flex-col md:flex-row gap-4 animate-slide-up" style="animation-delay: 1s;">
+        <a href="/series-activas" class="btn-secondary">
+          Ver Otras Series
+        </a>
+      </div>
+
+      <!-- Info adicional -->
+      <div class="mt-16 text-center text-xs text-black/40 dark:text-white/40 animate-slide-up" style="animation-delay: 1.2s;">
+        <p>¿Necesitas ayuda?</p>
+        <a href="mailto:soporte@d-cien.es" class="underline hover:text-black dark:hover:text-white">
+          soporte@d-cien.es
+        </a>
+      </div>
+
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .animate-fade-in {
+    animation: fadeIn 1.5s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    opacity: 0;
+    animation: slideUp 1s ease-out forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+<script>
+  const API = 'https://d-cien.es/api';
+  
+  // Tipos para TypeScript
+  interface OrderData {
+    series_slug?: string;
+    series_name?: string;
+    unit_number?: number;
+    size?: string;
+    color?: string;
+    type?: string;
+    price?: number | string;
+    finalPrice?: number;
+    discount_code?: string;
+    discount_amount?: number;
+  }
+
+  interface CheckoutData {
+    seriesSlug?: string;
+    seriesName?: string;
+    number?: number;
+    size?: string;
+    color?: string;
+    type?: string;
+    price?: number;
+    finalPrice?: number;
+    originalPrice?: number;
+    discount?: {
+      code?: string;
+      saving?: number;
+    };
+  }
+  
+  // Obtener parámetros de la URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const sessionId = urlParams.get('session_id');
+  const numberFromURL = urlParams.get('number');
+  
+  const numberDisplay = document.getElementById('number-display');
+  const seriesDisplay = document.getElementById('series-display');
+  const detailsContent = document.getElementById('details-content');
+
+  console.log('═══════════════════════════════════════');
+  console.log('SUCCESS PAGE - INICIALIZACIÓN');
+  console.log('Session ID:', sessionId);
+  console.log('Number from URL:', numberFromURL);
+  console.log('═══════════════════════════════════════');
+
+  // Si hay número en URL, mostrarlo inmediatamente
+  if (numberFromURL && numberDisplay) {
+    numberDisplay.textContent = '#' + String(numberFromURL).padStart(2, '0');
+    console.log('✓ Número mostrado desde URL');
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // FUNCIÓN: Mostrar detalles del pedido
+  // ═══════════════════════════════════════════════════════════════
+  function displayOrderDetails(order: OrderData): void {
+    console.log('Mostrando detalles del pedido:', order);
+    
+    // Actualizar número si no estaba en URL
+    if (!numberFromURL && order.unit_number && numberDisplay) {
+      numberDisplay.textContent = '#' + String(order.unit_number).padStart(2, '0');
+      console.log('✓ Número actualizado:', order.unit_number);
+    }
+    
+    // Actualizar serie
+    if (order.series_slug && seriesDisplay) {
+      const seriesName = (order.series_slug || '').toUpperCase().replace('-', ' ');
+      seriesDisplay.textContent = seriesName || 'SERIE --';
+      console.log('✓ Serie actualizada:', seriesName);
+    }
+    
+    // Construir HTML de detalles
+    if (detailsContent) {
+      let detailsHTML = `
+        <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10">
+          <span class="text-black/60 dark:text-white/60">Serie:</span>
+          <span class="font-bold text-black dark:text-white">${order.series_slug || 'N/A'}</span>
+        </div>
+        <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10">
+          <span class="text-black/60 dark:text-white/60">Número:</span>
+          <span class="font-brand text-2xl text-black dark:text-white">#${String(order.unit_number || 0).padStart(2, '0')}</span>
+        </div>
+        <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10">
+          <span class="text-black/60 dark:text-white/60">Talla:</span>
+          <span class="text-black dark:text-white">${(order.size || '').toUpperCase()}</span>
+        </div>
+        <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10">
+          <span class="text-black/60 dark:text-white/60">Color:</span>
+          <span class="text-black dark:text-white">${order.color || 'N/A'}</span>
+        </div>
+        <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10">
+          <span class="text-black/60 dark:text-white/60">Tipo:</span>
+          <span class="text-black dark:text-white">${order.type || 'standard'}</span>
+        </div>
+      `;
+      
+      // Mostrar descuento si existe
+      if (order.discount_code && order.discount_amount) {
+        detailsHTML += `
+          <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10 text-green-600 dark:text-green-400">
+            <span>Descuento (${order.discount_code}):</span>
+            <span class="font-bold">-€${parseFloat(String(order.discount_amount)).toFixed(2)}</span>
+          </div>
+        `;
+      }
+      
+      // Envío y Total
+      const productPriceWithTax = parseFloat(String(order.price || order.finalPrice || 0));
+      const SHIPPING_FEE = 5.00; // Añadimos el coste de envío igual que en el resumen
+      const totalPaid = productPriceWithTax + SHIPPING_FEE;
+      
+      detailsHTML += `
+        <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10">
+          <span class="text-black/60 dark:text-white/60">Envío:</span>
+          <span class="text-black dark:text-white">€${SHIPPING_FEE.toFixed(2)}</span>
+        </div>
+        <div class="flex justify-between py-2 pt-3 mt-1">
+          <span class="font-bold text-black dark:text-white text-lg">Total Pagado:</span>
+          <span class="font-bold text-black dark:text-white text-lg">€${totalPaid.toFixed(2)}</span>
+        </div>
+      `;
+      
+      detailsContent.innerHTML = detailsHTML;
+      console.log('✓ Detalles mostrados en UI');
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // OPCIÓN 1: Cargar desde API
+  // ═══════════════════════════════════════════════════════════════
+  async function loadFromAPI(): Promise<boolean> {
+    if (!sessionId) {
+      console.log('No hay session_id, saltando API');
+      return false;
+    }
+
+    try {
+      console.log('Intentando cargar desde API...');
+      
+      const response = await fetch(
+        `${API}/orders/get-by-session.php?session_id=${sessionId}`,
+        { credentials: 'include' }
+      );
+
+      console.log('API Response status:', response.status);
+
+      if (!response.ok) {
+        console.error('API respondió con error:', response.status);
+        return false;
+      }
+
+      const data = await response.json();
+      console.log('API Response data:', data);
+      
+      if (data.success && data.order) {
+        displayOrderDetails(data.order);
+        console.log('✓ Datos cargados desde API');
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error al cargar desde API:', error);
+      return false;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // OPCIÓN 2: Cargar desde sessionStorage (FALLBACK)
+  // ═══════════════════════════════════════════════════════════════
+  function loadFromStorage(): boolean {
+    console.log('Intentando cargar desde sessionStorage...');
+    
+    const checkoutDataRaw = sessionStorage.getItem('checkout_data');
+    
+    if (!checkoutDataRaw) {
+      console.error('No hay datos en sessionStorage');
+      return false;
+    }
+
+    try {
+      const checkoutData: CheckoutData = JSON.parse(checkoutDataRaw);
+      console.log('Datos de sessionStorage:', checkoutData);
+      
+      // Construir objeto order desde checkout_data
+      const order: OrderData = {
+        series_slug: checkoutData.seriesSlug,
+        unit_number: checkoutData.number,
+        size: checkoutData.size,
+        color: checkoutData.color,
+        type: checkoutData.type || 'standard',
+        price: checkoutData.finalPrice || checkoutData.price,
+        discount_code: checkoutData.discount?.code || undefined,
+        discount_amount: checkoutData.discount?.saving || undefined
+      };
+      
+      displayOrderDetails(order);
+      console.log('✓ Datos cargados desde sessionStorage');
+      return true;
+    } catch (error) {
+      console.error('Error parseando sessionStorage:', error);
+      return false;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // INICIALIZACIÓN
+  // ═══════════════════════════════════════════════════════════════
+  async function init(): Promise<void> {
+    console.log('Iniciando carga de datos...');
+    
+    // Intentar desde API primero
+    const loadedFromAPI = await loadFromAPI();
+    
+    if (!loadedFromAPI) {
+      console.log('API no disponible, usando sessionStorage...');
+      
+      // Si API falla, usar sessionStorage
+      const loadedFromStorage = loadFromStorage();
+      
+      if (!loadedFromStorage) {
+        console.error('❌ No se pudo cargar desde ninguna fuente');
+        
+        if (detailsContent) {
+          detailsContent.innerHTML = `
+            <div class="text-center space-y-4">
+              <p class="text-red-500 text-sm">
+                No se pudieron cargar los detalles del pedido.
+              </p>
+              <p class="text-xs text-black/60 dark:text-white/60">
+                Por favor, verifica tu email para la confirmación completa.
+              </p>
+              <p class="text-xs text-black/60 dark:text-white/60">
+                Session ID: ${sessionId || 'N/A'}
+              </p>
+            </div>
+          `;
+        }
+      }
+    }
+    
+    console.log('═══════════════════════════════════════');
+    console.log('Carga completada');
+    console.log('═══════════════════════════════════════');
+  }
+
+  // Ejecutar
+  init();
+</script>

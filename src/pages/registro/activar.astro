@@ -1,0 +1,189 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getSEO } from '../../lib/seo';
+
+const seo = getSEO('acceso'); // Reutilizamos el SEO de acceso
+---
+
+<BaseLayout seo={seo}>
+  <section class="min-h-screen flex items-center justify-center py-20">
+    <div class="container-custom max-w-md mx-auto px-6">
+      <!-- Logo -->
+      <h1 class="font-brand text-6xl md:text-7xl text-center mb-4 tracking-wider text-black dark:text-white">
+        DCIEN
+      </h1>
+      <p class="text-xs text-center uppercase tracking-[0.3em] text-black/60 dark:text-white/60 mb-16">
+        Activación de acceso exclusivo
+      </p>
+
+      <!-- Instrucciones -->
+      <div class="mb-8 p-6 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10">
+        <h2 class="text-sm font-bold uppercase tracking-wider mb-3 text-black dark:text-white">
+          📧 Credenciales temporales
+        </h2>
+        <p class="text-xs text-black/60 dark:text-white/60 leading-relaxed">
+          Introduce las credenciales temporales que recibiste por Instagram DM. 
+          Estas credenciales son de un solo uso y expiran en 72 horas.
+        </p>
+      </div>
+
+      <!-- Form -->
+      <form id="activation-form" class="space-y-8">
+        <div>
+          <label for="temp-username" class="block text-xs uppercase tracking-[0.2em] mb-3 text-black/60 dark:text-white/60">
+            Usuario Temporal
+          </label>
+          <input
+            type="text"
+            id="temp-username"
+            name="username"
+            required
+            placeholder="temp_abc12345"
+            class="input-minimal"
+          />
+        </div>
+
+        <div>
+          <label for="temp-password" class="block text-xs uppercase tracking-[0.2em] mb-3 text-black/60 dark:text-white/60">
+            Contraseña Temporal
+          </label>
+          <input
+            type="password"
+            id="temp-password"
+            name="password"
+            required
+            placeholder="••••••••"
+            class="input-minimal"
+          />
+        </div>
+
+        <button type="submit" class="btn-primary w-full mt-12">
+          Validar Credenciales
+        </button>
+
+        <div class="text-center mt-8">
+          <a 
+            href="/acceso" 
+            class="text-xs text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors uppercase tracking-[0.2em]"
+          >
+            ¿Ya tienes cuenta? Iniciar sesión
+          </a>
+        </div>
+      </form>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  const activationForm = document.getElementById('activation-form') as HTMLFormElement;
+
+  // Configuración SweetAlert2
+  const getSwalConfig = () => {
+    const isDark = document.documentElement.classList.contains('dark');
+    return {
+      background: isDark ? '#000' : '#fff',
+      color: isDark ? '#fff' : '#000',
+      confirmButtonColor: isDark ? '#fff' : '#000',
+      customClass: {
+        confirmButton: isDark 
+          ? '!bg-white !text-black font-bold uppercase tracking-wider text-xs px-8 py-3 rounded-none hover:!bg-white/90' 
+          : '!bg-black !text-white font-bold uppercase tracking-wider text-xs px-8 py-3 rounded-none hover:!bg-black/90',
+      }
+    };
+  };
+
+  // Mostrar aviso si el usuario llegó aquí por sesión caducada en completar.astro
+  if (sessionStorage.getItem('activation_expired')) {
+    sessionStorage.removeItem('activation_expired');
+    const swalTheme = getSwalConfig();
+    (window as any).Swal.fire({
+      ...swalTheme,
+      title: 'Sesión Expirada',
+      text: 'Tu sesión de activación ha caducado. Vuelve a introducir tus credenciales temporales.',
+      icon: 'warning',
+      confirmButtonText: 'Entendido',
+    });
+  }
+
+  activationForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(activationForm);
+    const username = formData.get('username') as string;
+    const password = formData.get('password') as string;
+
+    // Validación básica
+    if (!username || !password) {
+      const swalTheme = getSwalConfig();
+      (window as any).Swal.fire({
+        ...swalTheme,
+        title: 'Error',
+        text: 'Por favor, completa todos los campos',
+        icon: 'error',
+        confirmButtonText: 'Entendido',
+      });
+      return;
+    }
+
+    // Deshabilitar botón
+    const submitBtn = activationForm.querySelector('button[type="submit"]') as HTMLButtonElement;
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'VALIDANDO...';
+
+    try {
+      const response = await fetch('https://d-cien.es/api/auth/validate-token.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Token válido - redirigir a completar registro
+        const swalTheme = getSwalConfig();
+        (window as any).Swal.fire({
+          ...swalTheme,
+          title: 'Token Válido',
+          text: `Bienvenido @${data.instagram_username}`,
+          icon: 'success',
+          confirmButtonText: 'Continuar',
+          timer: 2000,
+          timerProgressBar: true,
+        }).then(() => {
+          window.location.href = '/registro/completar';
+        });
+      } else {
+        // Error de validación
+        const swalTheme = getSwalConfig();
+        (window as any).Swal.fire({
+          ...swalTheme,
+          title: 'Token Inválido',
+          text: data.message || 'Credenciales temporales incorrectas o expiradas',
+          icon: 'error',
+          confirmButtonText: 'Reintentar',
+        });
+        
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      const swalTheme = getSwalConfig();
+      (window as any).Swal.fire({
+        ...swalTheme,
+        title: 'Error de Conexión',
+        text: 'No se pudo conectar con el servidor. Inténtalo de nuevo.',
+        icon: 'error',
+        confirmButtonText: 'Entendido',
+      });
+      
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+    }
+  });
+</script>

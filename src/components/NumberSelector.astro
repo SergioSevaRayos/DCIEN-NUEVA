@@ -1,0 +1,92 @@
+---
+interface Props {
+  seriesId: number;
+  soldUnits: number[];
+  reservedUnits: number[];
+}
+
+const { seriesId, soldUnits = [], reservedUnits = [] } = Astro.props;
+---
+
+<div class="mb-8">
+  <h3 class="font-bold text-xl mb-4 uppercase">Selecciona tu Número (01-100)</h3>
+  
+  <div class="number-grid mb-6" id="number-grid">
+    {Array.from({ length: 100 }, (_, i) => i + 1).map((num) => {
+      const isSold = soldUnits.includes(num);
+      const isReserved = reservedUnits.includes(num);
+      const statusClass = isSold ? 'sold' : isReserved ? 'reserved' : '';
+      
+      return (
+        <button
+          type="button"
+          class={`number-item ${statusClass}`}
+          data-number={num}
+          disabled={isSold || isReserved}
+        >
+          {String(num).padStart(2, '0')}
+        </button>
+      );
+    })}
+  </div>
+
+  <div class="flex flex-wrap gap-6 text-sm">
+    <div class="flex items-center gap-2">
+      <div class="w-6 h-6 border-2 border-black dark:border-white"></div>
+      <span>Disponible</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="w-6 h-6 bg-blue border-2 border-blue"></div>
+      <span>Seleccionado</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="w-6 h-6 bg-yellow/30 border-2 border-yellow"></div>
+      <span>Reservado</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="w-6 h-6 bg-gray-200 dark:bg-gray-800 border-2 border-gray-400"></div>
+      <span>Vendido</span>
+    </div>
+  </div>
+
+  <input type="hidden" id="selected-number" name="unitNumber" value="" />
+</div>
+
+<script>
+  const numberGrid = document.getElementById('number-grid');
+  const selectedNumberInput = document.getElementById('selected-number') as HTMLInputElement;
+  let selectedNumber: number | null = null;
+
+  numberGrid?.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    
+    if (target.classList.contains('number-item') && !target.classList.contains('sold') && !target.classList.contains('reserved')) {
+      // Remover selección anterior
+      const previousSelected = numberGrid.querySelector('.number-item.selected');
+      previousSelected?.classList.remove('selected');
+      
+      // Seleccionar nuevo número
+      target.classList.add('selected');
+      selectedNumber = parseInt(target.getAttribute('data-number') || '0');
+      selectedNumberInput.value = selectedNumber.toString();
+      
+      // Dispatch event para que otros componentes sepan
+      window.dispatchEvent(new CustomEvent('numberSelected', { 
+        detail: { number: selectedNumber } 
+      }));
+    }
+  });
+
+  // Seleccionar un número aleatorio disponible por defecto
+  window.addEventListener('DOMContentLoaded', () => {
+    const availableNumbers = Array.from(
+      numberGrid?.querySelectorAll('.number-item:not(.sold):not(.reserved)') || []
+    );
+    
+    if (availableNumbers.length > 0) {
+      const randomIndex = Math.floor(Math.random() * availableNumbers.length);
+      const randomNumber = availableNumbers[randomIndex] as HTMLElement;
+      randomNumber.click();
+    }
+  });
+</script>

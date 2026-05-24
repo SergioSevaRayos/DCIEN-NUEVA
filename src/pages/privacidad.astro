@@ -1,0 +1,86 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getSEO } from '../lib/seo';
+
+const seo = getSEO('privacidad');
+---
+
+<BaseLayout seo={seo}>
+  <section class="pt-40 pb-20 transition-colors duration-500">
+    <div class="container-custom max-w-4xl">
+      <h1 class="font-brand text-5xl md:text-6xl mb-16 uppercase tracking-wider text-black dark:text-white transition-colors">
+        Política de Privacidad
+      </h1>
+      
+      <div class="space-y-12 text-black/70 dark:text-white/70 text-sm leading-relaxed transition-colors">
+        
+        <div>
+          <h2 class="text-black dark:text-white font-bold text-lg mb-4 uppercase tracking-wider">
+            1. Responsable del Tratamiento
+          </h2>
+          <p>
+            De conformidad con el Reglamento (UE) 2016/679 (RGPD) y la Ley Orgánica 3/2018 (LOPDGDD), el responsable del tratamiento de tus datos personales es:
+          </p>
+          <ul class="list-disc list-inside mt-4 space-y-2 marker:text-black/30 dark:marker:text-white/30">
+            <li>Responsable: <span class="text-black dark:text-white">[NOMBRE DE TU EMPRESA]</span></li>
+            <li>CIF/NIF: <span class="text-black dark:text-white">[TU CIF]</span></li>
+            <li>Domicilio: <span class="text-black dark:text-white">[TU DIRECCIÓN]</span></li>
+            <li>Email: <a href="mailto:contacto@d-cien.es" class="underline decoration-black/20 dark:decoration-white/20 hover:text-black dark:hover:text-white transition-colors">contacto@d-cien.es</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h2 class="text-black dark:text-white font-bold text-lg mb-4 uppercase tracking-wider">
+            2. Datos que Recopilamos
+          </h2>
+          <p>Recopilamos los siguientes datos personales:</p>
+          <ul class="list-disc list-inside mt-4 space-y-2 marker:text-black/30 dark:marker:text-white/30">
+            <li><strong class="text-black dark:text-white">Datos de identificación:</strong> nombre, email, usuario de Instagram</li>
+            <li><strong class="text-black dark:text-white">Datos de facturación:</strong> dirección postal, teléfono</li>
+            <li><strong class="text-black dark:text-white">Datos de pago:</strong> gestionados por Stripe (no almacenamos tarjetas)</li>
+            <li><strong class="text-black dark:text-white">Datos de navegación:</strong> cookies y logs de acceso</li>
+          </ul>
+        </div>
+
+        <div>
+          <h2 class="text-black dark:text-white font-bold text-lg mb-4 uppercase tracking-wider">
+            3. Finalidad del Tratamiento
+          </h2>
+          <p>Utilizamos tus datos para:</p>
+          <ul class="list-disc list-inside mt-4 space-y-2 marker:text-black/30 dark:marker:text-white/30">
+            <li>Gestionar tu registro y acceso a la plataforma</li>
+            <li>Procesar y gestionar tus pedidos de series limitadas</li>
+            <li>Enviar comunicaciones sobre el estado de tus envíos</li>
+            <li>Cumplir con obligaciones legales y fiscales</li>
+          </ul>
+        </div>
+
+        <div>
+          <h2 class="text-black dark:text-white font-bold text-lg mb-4 uppercase tracking-wider">
+            4. Tus Derechos
+          </h2>
+          <p>Tienes derecho a acceder, rectificar, suprimir u oponerte al tratamiento de tus datos.</p>
+          <p class="mt-4">
+            Para ejercer estos derechos, contacta mediante: 
+            <a href="mailto:contacto@d-cien.es" class="text-black dark:text-white font-bold underline decoration-black/20 dark:decoration-white/20">contacto@d-cien.es</a>
+          </p>
+        </div>
+
+        <div>
+          <h2 class="text-black dark:text-white font-bold text-lg mb-4 uppercase tracking-wider">
+            5. Seguridad
+          </h2>
+          <p>
+            Implementamos medidas técnicas y organizativas para proteger tus datos contra acceso no autorizado, pérdida o destrucción, garantizando la confidencialidad de la comunidad DCIEN.
+          </p>
+        </div>
+
+        <div class="pt-8 border-t border-black/10 dark:border-white/10">
+          <p class="text-xs text-black/40 dark:text-white/40 italic">
+            Última actualización: Febrero 2026
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,130 @@
+---
+// Sin imports - tipos definidos internamente
+---
+
+<div
+  id="cookie-banner"
+  class="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-black border-t border-black/10 dark:border-white/10 p-6 transform translate-y-full transition-transform duration-300"
+  style="display: none;"
+>
+  <div class="container-custom">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div class="flex-1">
+        <h3 class="font-bold text-lg mb-2 text-black dark:text-white">🍪 Uso de Cookies</h3>
+        <p class="text-sm text-black/60 dark:text-white/60">
+          Utilizamos cookies necesarias para el funcionamiento del sitio y cookies opcionales para mejorar tu experiencia.
+        </p>
+      </div>
+      
+      <div class="flex flex-wrap gap-3">
+        <button
+          id="cookie-accept-all"
+          class="btn-primary text-sm py-2 px-6"
+        >
+          Aceptar Todo
+        </button>
+        <button
+          id="cookie-accept-necessary"
+          class="btn-secondary text-sm py-2 px-6"
+        >
+          Solo Necesarias
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Definir tipos aquí (sin importar de types.ts)
+  interface CookieConsent {
+    necessary: boolean;
+    analytics: boolean;
+    marketing: boolean;
+    timestamp: string;
+  }
+
+  const COOKIE_CONSENT_KEY = 'cookie_consent';
+  const cookieBanner = document.getElementById('cookie-banner');
+  const acceptAllBtn = document.getElementById('cookie-accept-all');
+  const acceptNecessaryBtn = document.getElementById('cookie-accept-necessary');
+
+  function getCookieConsent(): CookieConsent | null {
+    try {
+      const stored = localStorage.getItem(COOKIE_CONSENT_KEY);
+      return stored ? JSON.parse(stored) : null;
+    } catch (error) {
+      console.error('Error reading cookie consent:', error);
+      return null;
+    }
+  }
+
+  function setCookieConsent(consent: CookieConsent): void {
+    try {
+      localStorage.setItem(COOKIE_CONSENT_KEY, JSON.stringify(consent));
+      hideBanner();
+      
+      // Cargar scripts de analytics si se aceptaron
+      if (consent.analytics) {
+        loadAnalytics();
+      }
+    } catch (error) {
+      console.error('Error saving cookie consent:', error);
+    }
+  }
+
+  function showBanner(): void {
+    if (cookieBanner) {
+      cookieBanner.style.display = 'block';
+      setTimeout(() => {
+        cookieBanner.style.transform = 'translateY(0)';
+      }, 100);
+    }
+  }
+
+  function hideBanner(): void {
+    if (cookieBanner) {
+      cookieBanner.style.transform = 'translateY(100%)';
+      setTimeout(() => {
+        cookieBanner.style.display = 'none';
+      }, 300);
+    }
+  }
+
+  function loadAnalytics(): void {
+    // Aquí cargarías Google Analytics, etc.
+    console.log('📊 Analytics loaded');
+    
+    // Ejemplo: Google Analytics 4
+    // window.dataLayer = window.dataLayer || [];
+    // function gtag(){dataLayer.push(arguments);}
+    // gtag('js', new Date());
+    // gtag('config', 'G-XXXXXXXXXX');
+  }
+
+  // Verificar si ya se dio consentimiento
+  const consent = getCookieConsent();
+  if (!consent) {
+    showBanner();
+  } else if (consent.analytics) {
+    loadAnalytics();
+  }
+
+  // Event listeners
+  acceptAllBtn?.addEventListener('click', () => {
+    setCookieConsent({
+      necessary: true,
+      analytics: true,
+      marketing: true,
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  acceptNecessaryBtn?.addEventListener('click', () => {
+    setCookieConsent({
+      necessary: true,
+      analytics: false,
+      marketing: false,
+      timestamp: new Date().toISOString(),
+    });
+  });
+</script>

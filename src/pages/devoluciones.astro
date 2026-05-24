@@ -1,0 +1,84 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getSEO } from '../lib/seo';
+
+const seo = getSEO('devoluciones');
+---
+
+<BaseLayout seo={seo}>
+  <section class="pt-40 pb-20 transition-colors duration-500">
+    <div class="container-custom max-w-4xl">
+      <h1 class="font-brand text-5xl md:text-6xl mb-16 uppercase tracking-wider text-black dark:text-white transition-colors">
+        Devoluciones
+      </h1>
+      
+      <div class="space-y-16 text-black/70 dark:text-white/70 text-sm leading-relaxed transition-colors">
+        
+        <div class="relative pl-8 border-l border-black/10 dark:border-white/10">
+          <div class="absolute -left-[5px] top-0 w-2 h-2 bg-black dark:bg-white rounded-full"></div>
+          <h2 class="text-black dark:text-white font-bold text-lg mb-4 uppercase tracking-wider">
+            Política de Devolución
+          </h2>
+          <p>
+            De acuerdo con la legislación vigente, dispones de un periodo de <span class="text-black dark:text-white font-bold">14 días naturales</span> desde la recepción del paquete para ejercer tu derecho de desistimiento. Al tratarse de unidades numeradas, este proceso es crítico para reintegrar la pieza al stock activo.
+          </p>
+        </div>
+
+        <div class="relative pl-8 border-l border-black/10 dark:border-white/10">
+          <div class="absolute -left-[5px] top-0 w-2 h-2 bg-black dark:bg-white rounded-full"></div>
+          <h2 class="text-black dark:text-white font-bold text-lg mb-4 uppercase tracking-wider">
+            Condiciones de Aceptación
+          </h2>
+          <p class="mb-4">Para que la devolución sea validada, la unidad debe cumplir estrictamente:</p>
+          <ul class="list-disc list-inside space-y-2 marker:text-black/30 dark:marker:text-white/30">
+            <li>Estado impecable: sin señales de uso, lavado o desgaste.</li>
+            <li>Etiquetado original intacto vinculado al número de serie.</li>
+            <li>Embalaje original DCIEN completo.</li>
+          </ul>
+        </div>
+
+        <div class="relative pl-8 border-l border-black/10 dark:border-white/10">
+          <div class="absolute -left-[5px] top-0 w-2 h-2 bg-black dark:bg-white rounded-full"></div>
+          <h2 class="text-black dark:text-white font-bold text-lg mb-4 uppercase tracking-wider">
+            Protocolo de Retorno
+          </h2>
+          <ol class="list-decimal list-inside space-y-3 marker:text-black/50 dark:marker:text-white/50 marker:font-bold">
+            <li>Notifica la intención al email <a href="mailto:contacto@d-cien.es" class="text-black dark:text-white underline decoration-black/20 dark:decoration-white/20">contacto@d-cien.es</a> indicando el ID de pedido.</li>
+            <li>Recibirás las instrucciones de envío y la dirección del centro de logística.</li>
+            <li>Gestiona el envío mediante una agencia que facilite código de seguimiento.</li>
+            <li>Tras la inspección técnica de la prenda, se autorizará el reembolso.</li>
+          </ol>
+        </div>
+
+        <div class="relative pl-8 border-l border-black/10 dark:border-white/10">
+          <div class="absolute -left-[5px] top-0 w-2 h-2 bg-black dark:bg-white rounded-full"></div>
+          <h2 class="text-black dark:text-white font-bold text-lg mb-4 uppercase tracking-wider">
+            Gastos de Gestión
+          </h2>
+          <p>
+            Los costes directos del envío de devolución corren a cargo del cliente. En caso de que el producto presente un defecto de fabricación o error en la numeración enviada, DCIEN asumirá íntegramente los gastos de recogida.
+          </p>
+        </div>
+
+        <div class="relative pl-8 border-l border-black/10 dark:border-white/10">
+          <div class="absolute -left-[5px] top-0 w-2 h-2 bg-black dark:bg-white rounded-full"></div>
+          <h2 class="text-black dark:text-white font-bold text-lg mb-4 uppercase tracking-wider">
+            Liquidación
+          </h2>
+          <p>
+            El reembolso se ejecutará a través del mismo método de pago (Stripe) en un plazo máximo de <span class="text-black dark:text-white font-bold">14 días</span> tras confirmar el estado óptimo de la unidad devuelta.
+          </p>
+        </div>
+
+        <div class="pt-8 border-t border-black/10 dark:border-white/10 flex justify-between items-center">
+          <p class="text-[10px] text-black/40 dark:text-white/40 uppercase tracking-[0.3em]">
+            REF: RETURNS-PROTOCOL
+          </p>
+          <p class="text-xs text-black/40 dark:text-white/40 italic">
+            Rev. {new Date().getFullYear()}
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

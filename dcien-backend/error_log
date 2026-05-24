@@ -1,0 +1,22 @@
+[18-Feb-2026 10:33:56 UTC] PHP Fatal error:  Uncaught Error: Class "PHPMailer\PHPMailer\PHPMailer" not found in /home/u755459505/domains/d-cien.es/dcien-backend/includes/mailer.php:9
+Stack trace:
+#0 /home/u755459505/domains/d-cien.es/dcien-backend/test-email.php(43): sendEmail()
+#1 {main}
+  thrown in /home/u755459505/domains/d-cien.es/dcien-backend/includes/mailer.php on line 9
+[18-Feb-2026 10:34:42 UTC] PHP Fatal error:  Uncaught Error: Class "PHPMailer\PHPMailer\PHPMailer" not found in /home/u755459505/domains/d-cien.es/dcien-backend/includes/mailer.php:9
+Stack trace:
+#0 /home/u755459505/domains/d-cien.es/dcien-backend/test-email.php(43): sendEmail()
+#1 {main}
+  thrown in /home/u755459505/domains/d-cien.es/dcien-backend/includes/mailer.php on line 9
+[18-Feb-2026 10:35:55 UTC] [2026-02-18 10:35:55] Email error | Context: {"error":"Invalid address:  (From): "}
+[18-Feb-2026 10:36:42 UTC] [2026-02-18 10:36:42] Email error | Context: {"error":"Invalid address:  (From): "}
+[18-Feb-2026 10:37:11 UTC] [2026-02-18 10:37:11] Email error | Context: {"error":"Invalid address:  (From): "}
+[18-Feb-2026 10:38:33 UTC] [2026-02-18 10:38:33] Email error | Context: {"error":"SMTP Error: Could not connect to SMTP host. Failed to connect to server SMTP server error: Failed to connect to server Additional SMTP info: php_network_getaddresses: getaddrinfo for mail.d-cien.es failed: Name or service not known"}
+[18-Feb-2026 10:51:14 UTC] [2026-02-18 10:51:14] Email error | Context: {"error":"SMTP Error: Could not authenticate."}
+[18-Feb-2026 10:55:54 UTC] [2026-02-18 10:55:54] Email error | Context: {"error":"SMTP Error: Could not authenticate."}
+[18-Feb-2026 10:56:30 UTC] [2026-02-18 10:56:30] Email error | Context: {"error":"SMTP Error: Could not authenticate."}
+[18-Feb-2026 10:57:07 UTC] [2026-02-18 10:57:07] Email error | Context: {"error":"SMTP Error: Could not authenticate."}
+[18-Feb-2026 12:47:02 UTC] [2026-02-18 12:47:02] Email error | Context: {"error":"SMTP Error: Could not authenticate."}
+[18-Feb-2026 12:48:34 UTC] [2026-02-18 12:48:34] Email error | Context: {"error":"SMTP Error: Could not authenticate."}
+[18-Feb-2026 15:16:22 UTC] PHP Fatal error:  Cannot redeclare getEmailContent() (previously declared in /home/u755459505/domains/d-cien.es/dcien-backend/includes/helpers.php:63) in /home/u755459505/domains/d-cien.es/dcien-backend/includes/mailer.php on line 101
+[18-Feb-2026 15:18:49 UTC] PHP Fatal error:  Cannot redeclare getEmailContent() (previously declared in /home/u755459505/domains/d-cien.es/dcien-backend/includes/helpers.php:63) in /home/u755459505/domains/d-cien.es/dcien-backend/includes/mailer.php on line 101

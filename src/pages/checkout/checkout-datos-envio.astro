@@ -1,0 +1,421 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getSEO } from '../../lib/seo';
+
+const seo = {
+  title: 'Datos de Envío | DCIEN',
+  description: 'Completa tus datos de envío',
+  keywords: 'envío, checkout, dcien',
+  noindex: true
+};
+---
+
+<BaseLayout seo={seo}>
+  <section class="min-h-screen pt-32 pb-20">
+    <div class="container-custom max-w-2xl mx-auto px-6">
+      
+      <!-- Header -->
+      <div class="text-center mb-12">
+        <h1 class="font-brand text-5xl md:text-6xl uppercase tracking-wider text-black dark:text-white mb-4">
+          Datos de Envío
+        </h1>
+        <p class="text-sm text-black/60 dark:text-white/60 uppercase tracking-wider">
+          Paso 1 de 2
+        </p>
+      </div>
+
+      <!-- Resumen del producto -->
+      <div id="product-summary" class="mb-12 p-6 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10">
+        <h2 class="text-xs uppercase tracking-wider text-black/60 dark:text-white/60 mb-4">
+          Resumen de tu compra
+        </h2>
+        <div id="summary-content" class="space-y-2 text-sm">
+          <!-- Se llenará con JavaScript -->
+        </div>
+      </div>
+
+      <!-- Formulario -->
+      <form id="shipping-form" class="space-y-8">
+        
+        <!-- Datos personales -->
+        <div class="space-y-6">
+          <h3 class="text-sm font-bold uppercase tracking-wider text-black dark:text-white border-b border-black/10 dark:border-white/10 pb-3">
+            Datos Personales
+          </h3>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label for="firstName" class="block text-xs uppercase tracking-wider mb-2 text-black/60 dark:text-white/60">
+                Nombre *
+              </label>
+              <input
+                type="text"
+                id="firstName"
+                name="firstName"
+                required
+                class="input-minimal"
+                placeholder="Juan"
+              />
+            </div>
+            
+            <div>
+              <label for="lastName" class="block text-xs uppercase tracking-wider mb-2 text-black/60 dark:text-white/60">
+                Apellidos *
+              </label>
+              <input
+                type="text"
+                id="lastName"
+                name="lastName"
+                required
+                class="input-minimal"
+                placeholder="Pérez García"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label for="email" class="block text-xs uppercase tracking-wider mb-2 text-black/60 dark:text-white/60">
+                Email *
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                required
+                class="input-minimal"
+                placeholder="tu@email.com"
+              />
+            </div>
+            
+            <div>
+              <label for="phone" class="block text-xs uppercase tracking-wider mb-2 text-black/60 dark:text-white/60">
+                Teléfono *
+              </label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                required
+                class="input-minimal"
+                placeholder="+34 600 000 000"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Dirección de envío -->
+        <div class="space-y-6">
+          <h3 class="text-sm font-bold uppercase tracking-wider text-black dark:text-white border-b border-black/10 dark:border-white/10 pb-3">
+            Dirección de Envío
+          </h3>
+          
+          <div>
+            <label for="address" class="block text-xs uppercase tracking-wider mb-2 text-black/60 dark:text-white/60">
+              Dirección *
+            </label>
+            <input
+              type="text"
+              id="address"
+              name="address"
+              required
+              class="input-minimal"
+              placeholder="Calle Principal, 123"
+            />
+          </div>
+
+          <div>
+            <label for="addressExtra" class="block text-xs uppercase tracking-wider mb-2 text-black/60 dark:text-white/60">
+              Piso / Puerta (opcional)
+            </label>
+            <input
+              type="text"
+              id="addressExtra"
+              name="addressExtra"
+              class="input-minimal"
+              placeholder="2º B"
+            />
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label for="postalCode" class="block text-xs uppercase tracking-wider mb-2 text-black/60 dark:text-white/60">
+                Código Postal *
+              </label>
+              <input
+                type="text"
+                id="postalCode"
+                name="postalCode"
+                required
+                class="input-minimal"
+                placeholder="28001"
+              />
+            </div>
+            
+            <div>
+              <label for="city" class="block text-xs uppercase tracking-wider mb-2 text-black/60 dark:text-white/60">
+                Ciudad *
+              </label>
+              <input
+                type="text"
+                id="city"
+                name="city"
+                required
+                class="input-minimal"
+                placeholder="Madrid"
+              />
+            </div>
+            
+            <div>
+              <label for="province" class="block text-xs uppercase tracking-wider mb-2 text-black/60 dark:text-white/60">
+                Provincia *
+              </label>
+              <input
+                type="text"
+                id="province"
+                name="province"
+                required
+                class="input-minimal"
+                placeholder="Madrid"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label for="country" class="block text-xs uppercase tracking-wider mb-2 text-black/60 dark:text-white/60">
+              País *
+            </label>
+            <select
+              id="country"
+              name="country"
+              required
+              class="input-minimal"
+            >
+              <option value="ES">España</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Botones -->
+        <div class="flex flex-col md:flex-row gap-4 pt-8">
+          <a 
+            href="javascript:history.back()" 
+            class="btn-secondary flex-1 text-center"
+          >
+            Volver
+          </a>
+          <button 
+            type="submit" 
+            class="btn-primary flex-1"
+          >
+            Continuar al Resumen
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  const shippingForm = document.getElementById('shipping-form') as HTMLFormElement;
+  const summaryContent = document.getElementById('summary-content');
+
+  // ═══════════════════════════════════════════════════════════════
+  // CARGAR DATOS DEL PRODUCTO
+  // ═══════════════════════════════════════════════════════════════
+  function loadProductData() {
+    const data = sessionStorage.getItem('checkout_data');
+    
+    if (!data) {
+      console.error('No hay datos de checkout');
+      window.location.href = '/series-activas';
+      return;
+    }
+
+    const checkoutData = JSON.parse(data);
+    console.log('Datos de checkout en datos-envio:', checkoutData);
+    
+    if (!summaryContent) return;
+
+    // Verificar si hay descuento aplicado
+    const discount = checkoutData.discount || null;
+    const originalPrice = checkoutData.originalPrice || checkoutData.price || 0;
+    const finalPrice = checkoutData.finalPrice || checkoutData.price || 0;
+    const hasDiscount = discount && finalPrice < originalPrice;
+
+    // --- NUEVA LÓGICA DE ENVÍO ---
+    let costoEnvio = 4.90; // Tarifa estándar
+
+    // Si hay un descuento del 100%, el envío es 0
+    if (hasDiscount && discount.type === 'percent' && parseInt(discount.value) === 100) {
+      costoEnvio = 0;
+    }
+    
+    const totalConEnvio = finalPrice + costoEnvio;
+
+    // Guardamos el costo de envío en sesión para el siguiente paso (checkout-resumen)
+    checkoutData.shippingCost = costoEnvio;
+    sessionStorage.setItem('checkout_data', JSON.stringify(checkoutData));
+    // -----------------------------
+
+    // ═══════════════════════════════════════════════════════════════
+    // CONSTRUIR HTML DEL RESUMEN
+    // ═══════════════════════════════════════════════════════════════
+    let summaryHTML = `
+      <div class="flex justify-between">
+        <span class="text-black/60 dark:text-white/60">Serie:</span>
+        <span class="font-bold text-black dark:text-white">${checkoutData.seriesName || 'N/A'}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-black/60 dark:text-white/60">Número:</span>
+        <span class="font-bold text-black dark:text-white">#${String(checkoutData.number).padStart(2, '0')}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-black/60 dark:text-white/60">Talla:</span>
+        <span class="text-black dark:text-white">${checkoutData.size?.toUpperCase() || 'N/A'}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-black/60 dark:text-white/60">Color:</span>
+        <span class="text-black dark:text-white">${checkoutData.color || 'N/A'}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-black/60 dark:text-white/60">Tipo:</span>
+        <span class="text-black dark:text-white">${checkoutData.type || 'standard'}</span>
+      </div>
+    `;
+
+    // ═══════════════════════════════════════════════════════════════
+    // MOSTRAR DESCUENTO SI APLICA
+    // ═══════════════════════════════════════════════════════════════
+    if (hasDiscount) {
+      const savings = (originalPrice - finalPrice).toFixed(2);
+      
+      summaryHTML += `
+        <div class="pt-3 mt-3 border-t border-black/10 dark:border-white/10 space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="text-black/60 dark:text-white/60">Precio original:</span>
+            <span class="text-black/50 dark:text-white/50 line-through">€${originalPrice.toFixed(2)}</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-green-600 dark:text-green-400 text-xs font-medium">
+              Descuento (${discount.code}):
+            </span>
+            <span class="text-green-600 dark:text-green-400 font-bold">
+              -€${savings}
+            </span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-black/60 dark:text-white/60">Envío:</span>
+            <span class="font-bold text-black dark:text-white">${costoEnvio === 0 ? 'GRATIS' : `€${costoEnvio.toFixed(2)}`}</span>
+          </div>
+          <div class="flex justify-between items-center pt-2 border-t border-black/5 dark:border-white/5">
+            <span class="font-bold text-black dark:text-white">Total:</span>
+            <span class="font-bold text-lg text-black dark:text-white">€${totalConEnvio.toFixed(2)}</span>
+          </div>
+        </div>
+      `;
+    } else {
+      // Sin descuento, precio normal + envío
+      summaryHTML += `
+        <div class="pt-3 mt-3 border-t border-black/10 dark:border-white/10 space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="text-black/60 dark:text-white/60">Subtotal:</span>
+            <span class="font-bold text-black dark:text-white">€${finalPrice.toFixed(2)}</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-black/60 dark:text-white/60">Envío:</span>
+            <span class="font-bold text-black dark:text-white">€${costoEnvio.toFixed(2)}</span>
+          </div>
+          <div class="flex justify-between items-center pt-2 border-t border-black/5 dark:border-white/5">
+            <span class="font-bold text-black dark:text-white">Total:</span>
+            <span class="font-bold text-lg text-black dark:text-white">€${totalConEnvio.toFixed(2)}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    summaryContent.innerHTML = summaryHTML;
+
+    // ═══════════════════════════════════════════════════════════════
+    // AUTOCOMPLETAR EMAIL SI ESTÁ EN SESIÓN
+    // ═══════════════════════════════════════════════════════════════
+    const emailInput = document.getElementById('email') as HTMLInputElement;
+    if (emailInput && checkoutData.userEmail) {
+      emailInput.value = checkoutData.userEmail;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // AUTOCOMPLETAR DATOS SI YA EXISTEN (usuario vuelve atrás)
+    // ═══════════════════════════════════════════════════════════════
+    if (checkoutData.shipping) {
+      const s = checkoutData.shipping;
+      
+      const fields = {
+        firstName: s.firstName,
+        lastName: s.lastName,
+        email: s.email,
+        phone: s.phone,
+        address: s.address,
+        addressExtra: s.addressExtra,
+        postalCode: s.postalCode,
+        city: s.city,
+        province: s.province,
+        country: s.country
+      };
+
+      Object.entries(fields).forEach(([key, value]) => {
+        const input = document.getElementById(key) as HTMLInputElement;
+        if (input && value) {
+          input.value = value as string;
+        }
+      });
+
+      console.log('✓ Datos de envío autocompletados');
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // MANEJAR SUBMIT DEL FORMULARIO
+  // ═══════════════════════════════════════════════════════════════
+  shippingForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(shippingForm);
+    const shippingData = {
+      firstName: formData.get('firstName') as string,
+      lastName: formData.get('lastName') as string,
+      email: formData.get('email') as string,
+      phone: formData.get('phone') as string,
+      address: formData.get('address') as string,
+      addressExtra: (formData.get('addressExtra') as string) || '',
+      postalCode: formData.get('postalCode') as string,
+      city: formData.get('city') as string,
+      province: formData.get('province') as string,
+      country: formData.get('country') as string || 'ES'
+    };
+
+    console.log('Datos de envío capturados:', shippingData);
+
+    // ═══════════════════════════════════════════════════════════════
+    // GUARDAR EN SESSIONSTORAGE
+    // ═══════════════════════════════════════════════════════════════
+    const checkoutData = JSON.parse(sessionStorage.getItem('checkout_data') || '{}');
+    
+    // IMPORTANTE: Mantener descuento si existe
+    checkoutData.shipping = shippingData;
+    
+    sessionStorage.setItem('checkout_data', JSON.stringify(checkoutData));
+    
+    console.log('✓ Datos guardados en sessionStorage:', checkoutData);
+
+    // ═══════════════════════════════════════════════════════════════
+    // IR AL RESUMEN
+    // ═══════════════════════════════════════════════════════════════
+    window.location.href = '/checkout/checkout-resumen';
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // INICIALIZACIÓN
+  // ═══════════════════════════════════════════════════════════════
+  loadProductData();
+</script>

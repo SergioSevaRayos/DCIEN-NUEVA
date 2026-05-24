@@ -1,0 +1,63 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getSEO } from '../lib/seo';
+
+const seo = getSEO('cookies');
+---
+
+<BaseLayout seo={seo}>
+  <section class="pt-40 pb-20 transition-colors duration-500">
+    <div class="container-custom max-w-4xl">
+      <h1 class="font-brand text-5xl md:text-6xl mb-16 uppercase tracking-wider text-black dark:text-white transition-colors">
+        Política de Cookies
+      </h1>
+      
+      <div class="space-y-12 text-black/70 dark:text-white/70 text-sm leading-relaxed transition-colors">
+        <p>
+          DCIEN utiliza cookies propias y de terceros para garantizar el funcionamiento técnico del sistema y recordar tus preferencias de acceso. Al navegar por esta plataforma, aceptas el uso de las cookies descritas a continuación.
+        </p>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse border-y border-black/10 dark:border-white/10">
+            <thead>
+              <tr class="text-black dark:text-white uppercase text-[10px] tracking-widest border-b border-black/10 dark:border-white/10">
+                <th class="py-4 px-2">Categoría</th>
+                <th class="py-4 px-2">Propósito</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-black/5 dark:divide-white/5">
+              <tr>
+                <td class="py-4 px-2 font-bold text-black dark:text-white uppercase text-[11px]">Técnicas</td>
+                <td class="py-4 px-2">Indispensables para la navegación y el uso de las funciones de seguridad de la plataforma.</td>
+              </tr>
+              <tr>
+                <td class="py-4 px-2 font-bold text-black dark:text-white uppercase text-[11px]">Sesión</td>
+                <td class="py-4 px-2">Permiten mantener la sesión activa del atleta durante el proceso de validación y compra.</td>
+              </tr>
+              <tr>
+                <td class="py-4 px-2 font-bold text-black dark:text-white uppercase text-[11px]">Preferencias</td>
+                <td class="py-4 px-2">Almacenan tus ajustes de sistema, como la elección del modo claro/oscuro.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div>
+          <h2 class="text-black dark:text-white font-bold text-lg mb-4 uppercase tracking-wider">Gestión de Preferencias</h2>
+          <p>
+            Puedes restringir, bloquear o borrar las cookies de DCIEN utilizando la configuración de tu navegador. Cada navegador tiene una operativa diferente, pero puedes encontrar las instrucciones en su menú de "Ayuda". 
+          </p>
+          <p class="mt-4">
+            Ten en cuenta que si desactivas las cookies técnicas, la integridad del sistema de acceso y el carrito de compra podrían verse comprometidos.
+          </p>
+        </div>
+
+        <div class="pt-8 border-t border-black/10 dark:border-white/10">
+          <p class="text-xs text-black/40 dark:text-white/40 italic">
+            Última actualización: Febrero 2026
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

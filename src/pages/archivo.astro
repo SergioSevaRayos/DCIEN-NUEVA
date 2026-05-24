@@ -1,0 +1,197 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getSEO, getWebPageSchema, getProductSchema, type SEOConfig } from '../lib/seo';
+import { seriesData, type SeriesConfig } from '../data/series';
+
+const seo: SEOConfig = getSEO('archivo');
+const schema = getWebPageSchema(seo.title, seo.description, Astro.url.href);
+
+// Series archivadas = isActive: false
+const archivedSeries: SeriesConfig[] = seriesData.filter((s: SeriesConfig) => !s.isActive);
+
+// Schema.org OutOfStock para cada serie archivada
+const productSchemas = archivedSeries.map((s: SeriesConfig) =>
+  getProductSchema(s.name, s.description, s.slug, s.price, s.images, 'OutOfStock')
+);
+---
+
+<BaseLayout seo={seo}>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+    {productSchemas.map((ps: object) => (
+      <script type="application/ld+json" set:html={JSON.stringify(ps)} />
+    ))}
+  </Fragment>
+
+  <main class="relative z-10">
+    <section class="pt-32 pb-20 px-6">
+      <div class="max-w-4xl mx-auto">
+
+        <!-- CABECERA -->
+        <div class="text-center mb-16 animate-fade-in">
+          <h1 class="font-brand text-5xl md:text-7xl tracking-[0.1em] text-black dark:text-white mb-6">
+            ARCHIVO
+          </h1>
+          <div class="space-y-2">
+            <p class="text-[10px] md:text-xs uppercase tracking-[0.5em] text-black/60 dark:text-white/60">
+              Registro Histórico de Activos
+            </p>
+            <p class="text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-black/40 dark:text-white/40 max-w-xs mx-auto leading-relaxed">
+              Series completadas. Protocolos de producción finalizados y fuera de circulación.
+            </p>
+          </div>
+        </div>
+
+        <!-- VACÍO: ninguna serie archivada aún -->
+        {archivedSeries.length === 0 && (
+          <div class="text-center py-20 border-y border-black/5 dark:border-white/5">
+            <p class="text-[11px] uppercase tracking-[0.4em] text-black/30 dark:text-white/30 italic">
+              — No hay registros históricos disponibles en este ciclo —
+            </p>
+          </div>
+        )}
+
+        <!-- GRID DE SERIES ARCHIVADAS -->
+        {archivedSeries.length > 0 && (
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-12 animate-slide-up">
+            {archivedSeries.map((serie: SeriesConfig) => {
+              const mainImage = serie.images?.[0] ?? '/images/brand/og-image.jpg';
+              const endYear = serie.endDate
+                ? new Date(serie.endDate).getFullYear()
+                : new Date().getFullYear();
+              const sizesLabel = serie.sizes.map((s: { size: string; type: string; available: boolean }) => s.size).join(' · ');
+
+              return (
+                <article class="group relative border border-black/10 dark:border-white/10 overflow-hidden">
+
+                  <!-- IMAGEN -->
+                  <div class="relative aspect-[4/5] overflow-hidden bg-black/5 dark:bg-white/5">
+                    <img
+                      src={mainImage}
+                      alt={`${serie.name} — Serie Archivada DCIEN`}
+                      class="w-full h-full object-cover grayscale opacity-70 transition-all duration-700 group-hover:opacity-50"
+                      loading="lazy"
+                    />
+
+                    <!-- BADGE -->
+                    <div class="absolute top-4 left-4">
+                      <span class="text-[8px] uppercase tracking-[0.5em] px-3 py-1 border border-black/20 dark:border-white/20 bg-white/80 dark:bg-black/80 text-black/50 dark:text-white/50">
+                        Protocolo Cerrado
+                      </span>
+                    </div>
+
+                    <!-- AÑO DE CIERRE -->
+                    <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent">
+                      <p class="text-[9px] uppercase tracking-[0.4em] text-white/60">
+                        Producción finalizada · {endYear}
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- INFO -->
+                  <div class="p-6 space-y-4">
+
+                    <!-- Nombre -->
+                    <div class="flex items-start justify-between gap-4">
+                      <h2 class="font-brand text-2xl tracking-[0.12em] text-black dark:text-white">
+                        {serie.name}
+                      </h2>
+                      <div class="text-right shrink-0">
+                        <p class="text-[9px] uppercase tracking-[0.3em] text-black/40 dark:text-white/40">
+                          100 unidades
+                        </p>
+                        <p class="text-[9px] uppercase tracking-[0.3em] text-black/30 dark:text-white/30">
+                          100% registradas
+                        </p>
+                      </div>
+                    </div>
+
+                    <!-- Descripción -->
+                    <p class="text-[11px] leading-relaxed text-black/50 dark:text-white/50 line-clamp-3">
+                      {serie.description}
+                    </p>
+
+                    <!-- Colores / Tallas -->
+                    <div class="flex items-center gap-6 pt-2 border-t border-black/5 dark:border-white/5">
+                      <div>
+                        <p class="text-[8px] uppercase tracking-[0.4em] text-black/30 dark:text-white/30 mb-1">Colores</p>
+                        <p class="text-[10px] uppercase tracking-[0.2em] text-black/50 dark:text-white/50">
+                          {serie.colors.join(' / ')}
+                        </p>
+                      </div>
+                      <div>
+                        <p class="text-[8px] uppercase tracking-[0.4em] text-black/30 dark:text-white/30 mb-1">Tallas</p>
+                        <p class="text-[10px] uppercase tracking-[0.2em] text-black/50 dark:text-white/50">
+                          {sizesLabel}
+                        </p>
+                      </div>
+                    </div>
+
+                    <!-- Precio tachado -->
+                    <div class="flex items-center justify-between pt-2">
+                      <span class="text-[11px] uppercase tracking-[0.3em] text-black/30 dark:text-white/30 line-through">
+                        {serie.price.toFixed(2)} €
+                      </span>
+                      <span class="text-[9px] uppercase tracking-[0.4em] text-black/20 dark:text-white/20">
+                        Fuera de circulación
+                      </span>
+                    </div>
+
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+
+        <!-- CTA -->
+        <div class="mt-20 flex justify-center animate-slide-up" style="animation-delay: 0.4s;">
+          <a
+            href="/series-activas"
+            class="group relative px-10 py-4 overflow-hidden rounded-full border border-black/10 dark:border-white/20 bg-transparent transition-all duration-500 hover:border-black dark:hover:border-white inline-block"
+          >
+            <span class="absolute inset-0 w-0 bg-black dark:bg-white transition-all duration-500 ease-out group-hover:w-full"></span>
+            <span class="relative flex items-center gap-3">
+              <span class="text-[11px] uppercase tracking-[0.4em] font-bold text-black dark:text-white group-hover:text-white dark:group-hover:text-black transition-colors duration-500">
+                Ver Protocolos Activos
+              </span>
+              <svg
+                class="w-4 h-4 text-black dark:text-white group-hover:text-white dark:group-hover:text-black transition-all duration-500 transform group-hover:translate-x-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </span>
+          </a>
+        </div>
+
+      </div>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .animate-fade-in {
+    animation: fadeIn 1.2s ease-out forwards;
+  }
+  .animate-slide-up {
+    opacity: 0;
+    animation: slideUp 1s ease-out forwards;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>

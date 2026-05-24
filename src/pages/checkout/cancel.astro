@@ -1,0 +1,79 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getSEO } from '../../lib/seo';
+
+const seo = getSEO('home');
+---
+
+<BaseLayout seo={seo}>
+  <main class="relative z-10">
+    <div class="sr-only">
+      <p>Proceso de compra cancelado en DCIEN.</p>
+    </div>
+
+    <section class="min-h-screen flex flex-col items-center justify-center relative px-6 text-center">
+
+      <div class="mb-24 animate-fade-in">
+        <h1 class="font-brand text-[6rem] md:text-[10rem] lg:text-[12rem] tracking-[0.05em] leading-none text-black dark:text-white">
+          DCIEN
+        </h1>
+      </div>
+
+      <div class="space-y-6 animate-slide-up" style="animation-delay: 0.2s;">
+        <h2 class="text-xs md:text-sm uppercase tracking-[0.6em] text-black dark:text-white font-bold">
+          Protocolo Interrumpido
+        </h2>
+
+        <p class="text-[10px] md:text-xs uppercase tracking-[0.3em] text-black/60 dark:text-white/60">
+          Pago No Completado
+        </p>
+      </div>
+
+      <div class="mt-16 animate-slide-up" style="animation-delay: 0.4s;">
+        <p class="text-sm md:text-base uppercase tracking-[0.4em] text-black/60 dark:text-white/60">
+          La Serie Permanece Disponible
+        </p>
+      </div>
+
+      <div class="mt-20 animate-slide-up" style="animation-delay: 0.6s;">
+        <a href="/series-activas" class="btn-secondary">
+          Volver a Series Activas
+        </a>
+      </div>
+
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 1.5s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    opacity: 0;
+    animation: slideUp 1s ease-out forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>

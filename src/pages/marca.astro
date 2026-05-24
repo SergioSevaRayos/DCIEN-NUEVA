@@ -1,0 +1,163 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getSEO } from '../lib/seo';
+
+const seo = getSEO('marca');
+---
+
+<BaseLayout seo={seo}>
+  <section class="pt-32 pb-20 reveal text-center transition-colors duration-500">
+    <div class="container-custom max-w-4xl">
+      <h2 class="font-brand text-9xl md:text-[12rem] mb-6 tracking-[0.1em] leading-none text-black dark:text-white transition-colors">
+        DCIEN
+      </h2>
+      <p class="text-xs uppercase tracking-[0.4em] text-black/50 dark:text-white/40 mb-12">
+        100 UNIDADES. UNA VEZ. SE ACABÓ.
+      </p>
+      
+      <div class="w-full bg-zinc-100 dark:bg-zinc-900 p-4 mb-12">
+        <img
+          src="/images/brand/filosofia.png"
+          alt="DCIEN - Filosofía de producción técnica numerada"
+          class="w-full h-auto max-h-[70vh] object-contain mx-auto"
+        />
+      </div>
+
+      <p class="text-xl text-black/70 dark:text-white/60 max-w-2xl mx-auto leading-relaxed italic">
+        "DCIEN es un registro de estados para atletas de fuerza. No fabricamos ropa, auditamos exclusividad."
+      </p>
+    </div>
+  </section>
+  
+
+  <section class="py-24 border-t  reveal dark:border-white/10">
+    <div class="container-custom">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+        <div class="bg-zinc-50 dark:bg-zinc-950 p-6">
+          <img
+            src="/images/brand/identidad4.png"
+            alt="Detalle textil DCIEN diseñado para alta intensidad"
+            class="w-full h-auto object-contain shadow-2xl"
+          />
+        </div>
+        <div class="space-y-6">
+          <h1 class="text-xs uppercase tracking-[0.5em] text-black/40 dark:text-white/40">Filosofía</h1>
+          <h2 class="font-brand text-6xl text-black dark:text-white leading-none">INTERRUPCIÓN<br/>MASIVA</h2>
+          <div class="space-y-4 text-lg text-black/60 dark:text-white/60">
+            <p>
+              Diseñamos para disciplinas de alta intensidad bajo un sistema de 
+              <strong>producción cerrada</strong> que elimina la reproducción masiva.
+            </p>
+            <p>
+              Operamos bajo un protocolo estricto: cada serie nace con un límite finito de 100 unidades. 
+              Cuando el contador llega a cero, los archivos se destruyen. 
+              <span class="text-black dark:text-white font-bold italic">En DCIEN no existe la reedición.</span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-24 border-t reveal  dark:border-white/10 bg-zinc-50 dark:bg-[#151515]">
+    <div class="container-custom">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+        <div class="order-2 md:order-1 space-y-6 text-right">
+          <h2 class="text-xs uppercase tracking-[0.5em] text-black/40 dark:text-white/40">Dinámica</h2>
+          <h2 class="font-brand text-6xl text-black dark:text-white leading-none">SUCESIÓN<br/>LINEAL</h2>
+          <div class="space-y-4 text-lg text-black/60 dark:text-white/60">
+            <p>
+              El sistema solo mantiene un canal activo. Tu equipo debe ser tan único como tu marca personal o tu próximo PR en el rack.
+            </p>
+            <p>
+              El inicio de una nueva etapa implica el cierre irreversible de la anterior. 
+              Este modelo asegura la integridad técnica de cada pieza antes de pasar al archivo.
+            </p>
+          </div>
+        </div>
+        <div class="order-1 md:order-2 bg-white dark:bg-zinc-900 p-6">
+          <img
+            src="/images/brand/identidad.png"
+            alt="Sucesión lineal de series de alta intensidad DCIEN"
+            class="w-full h-auto object-contain"
+          />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-24 border-t reveal  dark:border-white/10">
+    <div class="container-custom max-w-5xl">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-16 items-start">
+        <div class="space-y-8">
+           <h2 class="text-xs uppercase tracking-[0.5em] text-black/40 dark:text-white/40">Validación</h2>
+           <h2 class="font-brand text-6xl text-black dark:text-white leading-none">ACCESO<br/>RESTRINGIDO</h2>
+           <p class="text-lg text-black/60 dark:text-white/60 leading-relaxed">
+             Auditamos cada identidad para asegurar que las unidades lleguen a quienes respetan el proceso de entrenamiento. 
+             El acceso al sistema requiere una validación de coherencia con nuestra comunidad de atletas.
+           </p>
+           
+           <div class="pt-6">
+             <a href="https://www.instagram.com/dcien.esp/" target="_blank" class="btn-primary w-full md:w-auto">
+               Verificación mediante Instagram
+             </a>
+             <p class="text-[10px] mt-4 italic text-black/40 dark:text-white/40 uppercase tracking-widest">
+               * Es imprescindible que tu perfil refleje tu actividad en el box.
+             </p>
+           </div>
+        </div>
+
+        <div class="relative group">
+          <div class="absolute -inset-4 bg-black/5 dark:bg-white/5 rounded-xl -z-10 transition-transform group-hover:scale-105"></div>
+          <img
+            src="/images/brand/identidad3.jpeg"
+            alt="Validación de perfil para acceso al sistema DCIEN"
+            class="w-full h-auto object-contain"
+          />
+        </div>
+      </div>
+    </div>
+  </section>
+  <script>
+    
+  const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('active');
+      }
+    });
+  }, observerOptions);
+
+  document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+</script>
+
+<style is:global>
+  /* Definimos los estados de los efectos de scroll */
+  .reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .reveal.active {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Efecto de retraso para grupos (stagger) */
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+
+  /* Efecto Parallax suave para las imágenes */
+  .parallax-img {
+    transition: transform 0.5s cubic-bezier(0, 0, 0, 1);
+    will-change: transform;
+  }
+</style>
+
+</BaseLayout>

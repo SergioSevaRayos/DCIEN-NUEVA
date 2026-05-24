@@ -1,0 +1,50 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getSEO } from '../../lib/seo';
+const seo = getSEO('acceso');
+---
+<BaseLayout seo={seo}>
+  <section class="min-h-[calc(100dvh-var(--header-height))] flex items-center justify-center pt-[var(--header-height)] pb-20">
+    <div class="container-custom max-w-md mx-auto px-6">
+      <h1 class="font-brand text-6xl text-center mb-4 tracking-wider text-black dark:text-white">DCIEN</h1>
+      <p class="text-xs text-center uppercase tracking-[0.3em] text-black/60 dark:text-white/60 mb-16">Recuperar acceso</p>
+
+      <form id="recover-form" class="space-y-8">
+        <div>
+          <label for="email" class="block text-xs uppercase tracking-[0.2em] mb-3 text-black/60 dark:text-white/60">Email Registrado</label>
+          <input type="email" id="email" name="email" required class="input-minimal" placeholder="tu@email.com" />
+        </div>
+        <button type="submit" class="btn-primary w-full mt-8">Enviar Instrucciones</button>
+        <div class="text-center mt-8">
+          <a href="/acceso" class="text-xs text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors uppercase tracking-[0.2em]">← Volver</a>
+        </div>
+      </form>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  const form = document.getElementById('recover-form') as HTMLFormElement;
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = form.querySelector('button')!;
+    btn.disabled = true; btn.textContent = 'PROCESANDO...';
+
+    const res = await fetch('https://d-cien.es/api/auth/request-reset.php', {
+      method: 'POST',
+      body: JSON.stringify({ email: (new FormData(form)).get('email') })
+    });
+    
+    const data = await res.json();
+    (window as any).Swal.fire({
+      title: data.success ? 'Solicitud Recibida' : 'Error',
+      text: data.message,
+      icon: data.success ? 'success' : 'error',
+      background: document.documentElement.classList.contains('dark') ? '#000' : '#fff',
+      color: document.documentElement.classList.contains('dark') ? '#fff' : '#000',
+      confirmButtonColor: '#000'
+    }).then(() => { if(data.success) window.location.href = '/acceso'; });
+    
+    btn.disabled = false; btn.textContent = 'Enviar Instrucciones';
+  });
+</script>

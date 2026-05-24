@@ -1,0 +1,74 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getSEO } from '../lib/seo';
+
+const seo = getSEO('home');
+---
+
+<BaseLayout seo={seo}>
+  <main class="relative z-10">
+    
+    <section class="min-h-screen flex flex-col items-center justify-center relative px-6">
+      <div class="text-center mb-16 animate-fade-in">
+        <h2 class="font-brand text-[6rem] md:text-[12rem] tracking-[0.05em] leading-none text-black dark:text-white">
+          DCIEN
+        </h2>
+        <p class="mt-4 text-xs md:text-sm uppercase tracking-[0.5em] text-black/50 dark:text-white/40">
+          100 Unidades. Numeración Física. Sin Reediciones.
+        </p>
+      </div>
+
+      <div class="text-center space-y-6 mb-24 animate-slide-up" style="animation-delay: 0.2s;">
+        <h1 class="text-sm md:text-base uppercase tracking-[0.6em] text-black dark:text-white font-bold">
+          Equipación Técnica de Alta Intensidad
+        </h1>
+        <p class="max-w-md mx-auto text-[10px] md:text-xs uppercase tracking-[0.2em] text-black/60 dark:text-white/60 leading-relaxed">
+          Diseñamos activos textiles para disciplinas de fuerza. <br/>
+          Un sistema de producción cerrada para quienes entienden el valor de lo irrepetible.
+        </p>
+      </div>
+
+      <div class="text-center space-y-4 animate-slide-up" style="animation-delay: 0.4s;">
+        <div class="flex items-center justify-center gap-3">
+            <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+            </span>
+            <h2 class="text-[10px] md:text-xs uppercase tracking-[0.6em] text-black/40 dark:text-white/40">
+                Protocolo de Acceso
+            </h2>
+        </div>
+        <a href="/series-activas" class="inline-block text-sm md:text-base uppercase tracking-[0.4em] text-black dark:text-white border-b border-black dark:border-white pb-1 hover:opacity-50 transition-all">
+          Ver Series Activa
+        </a>
+      </div>
+    </section>
+
+    <section class="py-32 px-6 border-t border-black/5 dark:border-white/5 bg-zinc-50/50 dark:bg-zinc-900/20">
+      <div class="max-w-4xl mx-auto text-center space-y-12">
+        <h2 class="font-brand text-4xl md:text-6xl text-black dark:text-white uppercase tracking-[0.02em] leading-[1.1]">
+          <span class="block">Protocolo de Producción Cerrada</span>
+          <span class="block text-black/60 dark:text-white/50">para Atletas de Fuerza</span>
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div class="space-y-2">
+            <span class="text-2xl font-bold text-black dark:text-white">100</span>
+            <p class="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">Unidades por serie</p>
+          </div>
+          <div class="space-y-2">
+            <span class="text-2xl font-bold text-black dark:text-white">00</span>
+            <p class="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">Reediciones producidas</p>
+          </div>
+          <div class="space-y-2">
+            <span class="text-2xl font-bold text-black dark:text-white">∞</span>
+            <p class="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">Durabilidad técnica</p>
+          </div>
+        </div>
+        <p class="text-sm md:text-base text-black/60 dark:text-white/60 max-w-xl mx-auto leading-relaxed italic">
+          "No es solo ropa de entrenamiento. Es el registro físico de tu disciplina. Cuando el contador llega a cero, la serie se destruye para siempre."
+        </p>
+      </div>
+    </section>
+
+  </main>
+</BaseLayout>

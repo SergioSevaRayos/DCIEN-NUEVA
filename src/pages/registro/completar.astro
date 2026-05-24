@@ -1,0 +1,317 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getSEO } from '../../lib/seo';
+
+const seo = getSEO('acceso');
+---
+
+<BaseLayout seo={seo}>
+  <section class="min-h-screen flex items-center justify-center py-20 pt-32">
+    <div class="container-custom max-w-md mx-auto px-6">
+      <!-- Logo -->
+      <h1 class="font-brand text-6xl md:text-7xl text-center mb-4 tracking-wider text-black dark:text-white">
+        DCIEN
+      </h1>
+      <p class="text-xs text-center uppercase tracking-[0.3em] text-black/60 dark:text-white/60 mb-2">
+        Completa tu registro
+      </p>
+      <p id="instagram-origin" class="text-xs text-center text-black/40 dark:text-white/40 mb-12">
+        <!-- Muestra el username de Instagram de origen, se rellena con JS -->
+      </p>
+
+      <!-- Instrucciones -->
+      <div class="mb-8 p-6 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10">
+        <h2 class="text-sm font-bold uppercase tracking-wider mb-3 text-black dark:text-white">
+          ✍️ Crea tu cuenta definitiva
+        </h2>
+        <p class="text-xs text-black/60 dark:text-white/60 leading-relaxed">
+          Elige un nombre de usuario, introduce tu email y crea una contraseña segura. 
+          Podrás acceder con cualquiera de los dos métodos.
+        </p>
+      </div>
+
+      <!-- Form -->
+      <form id="registration-form" class="space-y-8">
+
+        <!-- Nombre de usuario permanente -->
+        <div>
+          <label for="username" class="block text-xs uppercase tracking-[0.2em] mb-3 text-black/60 dark:text-white/60">
+            Nombre de Usuario
+          </label>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            required
+            minlength="3"
+            maxlength="30"
+            autocomplete="username"
+            placeholder="mi_usuario"
+            class="input-minimal"
+          />
+          <p class="text-xs text-black/40 dark:text-white/40 mt-2">
+            Letras, números, puntos, guiones · 3-30 caracteres · Sin espacios
+          </p>
+          <!-- Indicador de disponibilidad en tiempo real -->
+          <p id="username-feedback" class="text-xs mt-1 hidden uppercase tracking-widest"></p>
+        </div>
+
+        <!-- Email -->
+        <div>
+          <label for="email" class="block text-xs uppercase tracking-[0.2em] mb-3 text-black/60 dark:text-white/60">
+            Email
+          </label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            required
+            autocomplete="email"
+            placeholder="tu@email.com"
+            class="input-minimal"
+          />
+          <p class="text-xs text-black/40 dark:text-white/40 mt-2">
+            Para confirmaciones de pedido y acceso alternativo
+          </p>
+        </div>
+
+        <!-- Contraseña -->
+        <div>
+          <label for="password" class="block text-xs uppercase tracking-[0.2em] mb-3 text-black/60 dark:text-white/60">
+            Contraseña
+          </label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            required
+            minlength="8"
+            autocomplete="new-password"
+            placeholder="Mínimo 8 caracteres"
+            class="input-minimal"
+          />
+        </div>
+
+        <!-- Confirmar contraseña -->
+        <div>
+          <label for="password-confirm" class="block text-xs uppercase tracking-[0.2em] mb-3 text-black/60 dark:text-white/60">
+            Confirmar Contraseña
+          </label>
+          <input
+            type="password"
+            id="password-confirm"
+            name="password_confirm"
+            required
+            minlength="8"
+            autocomplete="new-password"
+            placeholder="Repite tu contraseña"
+            class="input-minimal"
+          />
+        </div>
+
+        <button type="submit" class="btn-primary w-full mt-12">
+          Crear Cuenta
+        </button>
+      </form>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  const registrationForm = document.getElementById('registration-form') as HTMLFormElement;
+  const instagramOriginEl = document.getElementById('instagram-origin');
+  const usernameInput      = document.getElementById('username') as HTMLInputElement;
+  const usernameFeedback   = document.getElementById('username-feedback');
+
+  const getSwalConfig = () => {
+    const isDark = document.documentElement.classList.contains('dark');
+    return {
+      background: isDark ? '#000' : '#fff',
+      color: isDark ? '#fff' : '#000',
+      confirmButtonColor: isDark ? '#fff' : '#000',
+      customClass: {
+        confirmButton: isDark 
+          ? '!bg-white !text-black font-bold uppercase tracking-wider text-xs px-8 py-3 rounded-none hover:!bg-white/90' 
+          : '!bg-black !text-white font-bold uppercase tracking-wider text-xs px-8 py-3 rounded-none hover:!bg-black/90',
+      }
+    };
+  };
+
+  // Verificar que el usuario pasó por el paso anterior (tiene token en sesión)
+  async function checkActivationSession() {
+    try {
+      const response = await fetch('https://d-cien.es/api/auth/check-activation.php', {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      
+      if (!data.has_activation_token) {
+        // La sesión caducó o no se completó el paso anterior
+        // Redirigir con aviso en vez de redirigir silenciosamente
+        sessionStorage.setItem('activation_expired', '1');
+        window.location.href = '/registro/activar';
+        return;
+      }
+      
+      // Mostrar el username de Instagram de origen (solo informativo)
+      if (instagramOriginEl && data.instagram_username) {
+        instagramOriginEl.textContent = `Registro iniciado con @${data.instagram_username}`;
+      }
+    } catch (error) {
+      console.error('Error checking session:', error);
+      window.location.href = '/registro/activar';
+    }
+  }
+
+  checkActivationSession();
+
+  // Validación de formato de username en tiempo real
+  function validateUsernameFormat(value: string): boolean {
+  // Ahora permite letras, números, puntos, guiones medios y GUIONES BAJOS (_)
+  return /^[a-zA-Z0-9._\-]{3,30}$/.test(value);
+  }
+
+  let usernameDebounce: ReturnType<typeof setTimeout>;
+
+  usernameInput?.addEventListener('input', () => {
+    const value = usernameInput.value.trim();
+    clearTimeout(usernameDebounce);
+
+    if (!usernameFeedback) return;
+
+    if (value.length === 0) {
+      usernameFeedback.classList.add('hidden');
+      return;
+    }
+
+    if (!validateUsernameFormat(value)) {
+      usernameFeedback.textContent = '✗ Formato inválido — letras, números, puntos, guiones (3-30 caracteres)';
+      usernameFeedback.className = 'text-xs mt-1 uppercase tracking-widest text-red-500';
+      return;
+    }
+
+    // Debounce de 600ms para no spamear el servidor
+    usernameFeedback.textContent = '...';
+    usernameFeedback.className = 'text-xs mt-1 uppercase tracking-widest text-black/40 dark:text-white/40';
+    usernameFeedback.classList.remove('hidden');
+
+    usernameDebounce = setTimeout(async () => {
+    const checkedValue = value;
+
+    try {
+      const r = await fetch('https://d-cien.es/api/auth/check-username.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ username: checkedValue })
+      });
+
+      const d = await r.json();
+
+      // ⛔ Ignorar respuestas antiguas
+      if (usernameInput.value.trim() !== checkedValue) {
+        return;
+      }
+
+      if (d.available === true) {
+        
+        usernameFeedback.textContent = '✗ Nombre de usuario no disponible';
+        usernameFeedback.className = 'text-xs mt-1 uppercase tracking-widest text-red-500';
+      } else {
+        usernameFeedback.textContent = '✓ Nombre de usuario disponible';
+        usernameFeedback.className = 'text-xs mt-1 uppercase tracking-widest text-green-600 dark:text-green-400';
+      }
+
+      usernameFeedback.classList.remove('hidden');
+
+    } catch {
+      usernameFeedback.textContent = '— No se pudo verificar disponibilidad';
+      usernameFeedback.className = 'text-xs mt-1 uppercase tracking-widest text-black/40 dark:text-white/40';
+      usernameFeedback.classList.remove('hidden');
+    }
+  }, 600);
+
+  });
+
+  // Submit del formulario
+  registrationForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData        = new FormData(registrationForm);
+    const username        = (formData.get('username') as string).trim();
+    const email           = (formData.get('email') as string).trim();
+    const password        = formData.get('password') as string;
+    const passwordConfirm = formData.get('password_confirm') as string;
+
+    // Validaciones en cliente
+    if (!username || !email || !password || !passwordConfirm) {
+      const swalTheme = getSwalConfig();
+      (window as any).Swal.fire({ ...swalTheme, title: 'Error', text: 'Por favor, completa todos los campos', icon: 'error', confirmButtonText: 'Entendido' });
+      return;
+    }
+
+    if (!validateUsernameFormat(username)) {
+      const swalTheme = getSwalConfig();
+      (window as any).Swal.fire({ ...swalTheme, title: 'Error', text: 'Nombre de usuario inválido. Solo letras, números, puntos, guiones y guiones bajos (3-30 caracteres)', icon: 'error', confirmButtonText: 'Entendido' });
+      return;
+    }
+
+    if (password !== passwordConfirm) {
+      const swalTheme = getSwalConfig();
+      (window as any).Swal.fire({ ...swalTheme, title: 'Error', text: 'Las contraseñas no coinciden', icon: 'error', confirmButtonText: 'Entendido' });
+      return;
+    }
+
+    if (password.length < 8) {
+      const swalTheme = getSwalConfig();
+      (window as any).Swal.fire({ ...swalTheme, title: 'Error', text: 'La contraseña debe tener al menos 8 caracteres', icon: 'error', confirmButtonText: 'Entendido' });
+      return;
+    }
+
+    const submitBtn = registrationForm.querySelector('button[type="submit"]') as HTMLButtonElement;
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'CREANDO CUENTA...';
+
+    try {
+      const response = await fetch('https://d-cien.es/api/auth/complete-registration.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ username, email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        const swalTheme = getSwalConfig();
+        (window as any).Swal.fire({
+          ...swalTheme,
+          title: 'Cuenta Creada',
+          html: `
+            <p class="mb-2">¡Bienvenido a DCIEN, <strong>${username}</strong>!</p>
+            <p class="text-sm opacity-60 mt-3">Puedes acceder con tu usuario <strong>${username}</strong> o con tu email.</p>
+          `,
+          icon: 'success',
+          confirmButtonText: 'Ir a Iniciar Sesión',
+          timer: 4000,
+          timerProgressBar: true,
+        }).then(() => {
+          sessionStorage.setItem('registration_success', username);
+          window.location.href = '/acceso';
+        });
+      } else {
+        const swalTheme = getSwalConfig();
+        (window as any).Swal.fire({ ...swalTheme, title: 'Error', text: data.message || 'No se pudo crear la cuenta', icon: 'error', confirmButtonText: 'Reintentar' });
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      const swalTheme = getSwalConfig();
+      (window as any).Swal.fire({ ...swalTheme, title: 'Error de Conexión', text: 'No se pudo conectar con el servidor.', icon: 'error', confirmButtonText: 'Entendido' });
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+    }
+  });
+</script>

@@ -1,0 +1,230 @@
+---
+const { currentPath } = Astro.props;
+
+const navItems = [
+  { name: 'INICIO', href: '/' },
+  { name: 'ARCHIVO', href: '/archivo' },
+  { name: 'SERIE', href: '/series-activas' },
+  { name: 'MARCA', href: '/marca' },
+  { name: 'COMPRAR', href: '/acceso' },
+];
+---
+
+<header class="fixed top-0 left-0 right-0 z-40 bg-white/90 dark:bg-black/90 backdrop-blur-md border-b border-black/5 dark:border-white/10 transition-colors duration-500">
+  <nav class="container-custom py-4 md:py-6 flex flex-wrap items-center justify-between gap-y-2">
+    
+    <!-- LOGO -->
+    <div class="w-48 md:w-64"> 
+      <a 
+        href="/" 
+        class="font-brand text-4xl md:text-5xl leading-none tracking-tighter text-black dark:text-white hover:opacity-70 transition-opacity duration-300 block w-fit"
+      >
+        DCIEN
+      </a>
+    </div>
+
+    <!-- NAV DESKTOP (ahora solo desde lg) -->
+    <ul class="hidden lg:flex items-center justify-center space-x-12">
+      {navItems.map((item) => (
+        <li>
+          <a
+            href={item.href}
+            class={`font-body text-[10px] uppercase tracking-[0.2em] transition-all duration-300 ${
+              currentPath === item.href 
+                ? 'text-black dark:text-white' 
+                : 'text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white'
+            }`}
+          >
+            {item.name}
+          </a>
+        </li>
+      ))}
+    </ul>
+
+    <!-- ACCIONES DERECHA -->
+    <div class="flex items-center gap-3 shrink-0">
+      <button id="theme-toggle" class="group relative px-5 py-2.5 overflow-hidden rounded-full border border-black/10 dark:border-white/10 bg-transparent transition-all duration-500 hover:border-black dark:hover:border-white">
+        <span class="absolute inset-0 w-0 bg-black dark:bg-white transition-all duration-300 ease-out group-hover:w-full"></span>
+        <span class="relative flex items-center gap-3">
+          <svg id="sun-icon" class="w-3.5 h-3.5 hidden dark:block text-white group-hover:text-black transition-colors" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" />
+          </svg>
+          <svg id="moon-icon" class="w-3.5 h-3.5 block dark:hidden text-black group-hover:text-white transition-colors" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+          </svg>
+          <span class="text-[9px] uppercase tracking-[0.2em] font-bold text-black dark:text-white group-hover:text-white dark:group-hover:text-black transition-colors">
+            Tema
+          </span>
+        </span>
+      </button>
+
+      <button
+        id="logout-btn"
+        class="hidden px-5 py-2.5 text-[9px] uppercase tracking-[0.2em] border border-black/20 dark:border-white/20 text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors"
+      >
+        Salir
+      </button>
+    </div>
+  </nav>
+</header>
+
+
+<button
+  id="menu-toggle"
+  class="lg:hidden fixed bottom-8 right-8 z-50 w-14 h-14 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center shadow-2xl transition-all duration-300 hover:scale-110 border border-white/10 dark:border-black/10"
+>
+
+  <svg id="menu-icon-open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+  </svg>
+  <svg id="menu-icon-close" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+  </svg>
+</button>
+
+<div id="mobile-menu" class="fixed inset-0 bg-white dark:bg-black z-40 hidden flex-col items-center justify-center transition-colors duration-500 overflow-hidden">
+  <nav class="relative z-10 w-full">
+    <ul class="space-y-6 text-center w-full px-6">
+      {navItems.map((item) => (
+        <li 
+          class="mobile-link-container opacity-0 translate-x-[-20%] skew-x-12 transition-all duration-500 ease-[cubic-bezier(0.68,-0.55,0.27,1.55)]"
+        >
+          <a
+  href={item.href}
+  class={`font-brand text-[clamp(2.5rem,6vw,4rem)] uppercase tracking-tighter block py-2 transition-all hover:italic ${
+    currentPath === item.href 
+      ? 'text-black dark:text-white' 
+      : 'text-black/40 dark:text-white/40'
+  }`}
+>
+
+            {item.name}
+          </a>
+        </li>
+      ))}
+      
+      <li class="mobile-link-container opacity-0 translate-x-[-20%] skew-x-12 transition-all duration-500 ease-[cubic-bezier(0.68,-0.55,0.27,1.55)] mt-10">
+        <button
+          id="logout-btn-mobile"
+          class="hidden font-brand text-4xl uppercase tracking-tighter text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors"
+        >
+          Salir
+        </button>
+      </li>
+    </ul>
+  </nav>
+</div>
+
+<style>
+  #mobile-menu::before {
+    content: '';
+    @apply absolute left-1/2 top-0 bottom-0 w-[100px] md:w-[150px] -translate-x-1/2 bg-black/[0.04] dark:bg-white/[0.04] -z-10;
+  }
+
+  @media (max-height: 500px) {
+  #mobile-menu a {
+    font-size: 2rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+  }
+}
+</style>
+
+<script>
+  const menuToggle = document.getElementById('menu-toggle');
+  const themeToggle = document.getElementById('theme-toggle');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const menuIconOpen = document.getElementById('menu-icon-open');
+  const menuIconClose = document.getElementById('menu-icon-close');
+  const mobileLinks = document.querySelectorAll('.mobile-link-container');
+  const logoutBtn = document.getElementById('logout-btn');
+  const logoutBtnMobile = document.getElementById('logout-btn-mobile');
+
+  // Lógica de Cierre de Sesión Centralizada
+  const logout = async () => {
+    try {
+      await fetch('https://d-cien.es/api/auth/logout.php', {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } finally {
+      window.location.href = '/acceso';
+    }
+  };
+
+  logoutBtn?.addEventListener('click', logout);
+  logoutBtnMobile?.addEventListener('click', () => {
+    closeMenu();
+    logout();
+  });
+
+  // Lógica de Tema
+  themeToggle?.addEventListener('click', () => {
+    document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+  });
+
+  // Lógica de Menú
+  menuToggle?.addEventListener('click', () => {
+    const isOpening = mobileMenu?.classList.contains('hidden');
+    
+    if (isOpening) {
+      mobileMenu?.classList.replace('hidden', 'flex');
+      menuIconOpen?.classList.add('hidden');
+      menuIconClose?.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      
+      mobileLinks.forEach((link, i) => {
+        setTimeout(() => {
+          link.classList.remove('opacity-0', 'translate-x-[-20%]', 'skew-x-12');
+        }, i * 60); 
+      });
+    } else {
+      closeMenu();
+    }
+  });
+
+  function closeMenu() {
+    mobileMenu?.classList.replace('flex', 'hidden');
+    menuIconOpen?.classList.remove('hidden');
+    menuIconClose?.classList.add('hidden');
+    document.body.style.overflow = '';
+    
+    mobileLinks.forEach(link => {
+      link.classList.add('opacity-0', 'translate-x-[-20%]', 'skew-x-12');
+    });
+  }
+
+  mobileMenu?.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', closeMenu);
+  });
+
+  // Verificación de Sesión para mostrar botones
+  async function checkAuth() {
+  try {
+    const r = await fetch('https://d-cien.es/api/auth/check.php', {
+      credentials: 'include'
+    });
+    const d = await r.json();
+
+    if (d.authenticated) {
+      logoutBtn?.classList.remove('hidden');
+      logoutBtnMobile?.classList.remove('hidden');
+    } else {
+      logoutBtn?.classList.add('hidden');
+      logoutBtnMobile?.classList.add('hidden');
+    }
+  } catch {
+    logoutBtn?.classList.add('hidden');
+    logoutBtnMobile?.classList.add('hidden');
+  }
+}
+
+// Ejecutar:
+// 1. Carga inicial
+checkAuth();
+
+// 2. Cada navegación interna de Astro
+document.addEventListener('astro:page-load', checkAuth);
+
+</script>

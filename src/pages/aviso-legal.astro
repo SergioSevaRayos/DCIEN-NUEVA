@@ -1,0 +1,99 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getSEO } from '../lib/seo';
+
+const seo = getSEO('aviso-legal');
+---
+
+<BaseLayout seo={seo}>
+  <section class="pt-40 pb-20 transition-colors duration-500">
+    <div class="container-custom max-w-4xl">
+      <h1 class="font-brand text-5xl md:text-6xl mb-16 uppercase tracking-wider text-black dark:text-white transition-colors">
+        Aviso Legal
+      </h1>
+      
+      <div class="space-y-12 text-black/70 dark:text-white/70 text-sm leading-relaxed transition-colors">
+        
+        <div>
+          <h2 class="text-black dark:text-white font-bold text-lg mb-4 uppercase tracking-wider">
+            1. Datos Identificativos
+          </h2>
+          <p>
+            En cumplimiento del artículo 10 de la Ley 34/2002, de 11 de julio, de Servicios de la Sociedad de la Información y de Comercio Electrónico, se informa:
+          </p>
+          <ul class="list-disc list-inside mt-4 space-y-2 marker:text-black/30 dark:marker:text-white/30">
+            <li>Titular: <span class="text-black dark:text-white">[NOMBRE DE TU EMPRESA/AUTONOMO]</span></li>
+            <li>CIF/NIF: <span class="text-black dark:text-white">[TU CIF/NIF]</span></li>
+            <li>Domicilio: <span class="text-black dark:text-white">[TU DIRECCIÓN]</span></li>
+            <li>Email: <a href="mailto:contacto@d-cien.es" class="underline decoration-black/20 dark:decoration-white/20 hover:text-black dark:hover:text-white transition-colors">contacto@d-cien.es</a></li>
+            <li>Sitio web: https://d-cien.es</li>
+          </ul>
+        </div>
+
+        <div>
+          <h2 class="text-black dark:text-white font-bold text-lg mb-4 uppercase tracking-wider">
+            2. Objeto
+          </h2>
+          <p>
+            DCIEN es una plataforma digital dedicada a la venta exclusiva de camisetas en series limitadas de 100 unidades. 
+            El acceso y uso del sitio web implica la aceptación de estos términos y condiciones.
+          </p>
+        </div>
+
+        <div>
+          <h2 class="text-black dark:text-white font-bold text-lg mb-4 uppercase tracking-wider">
+            3. Condiciones de Acceso
+          </h2>
+          <p>
+            El acceso a la plataforma requiere credenciales autorizadas. El usuario se compromete a:
+          </p>
+          <ul class="list-disc list-inside mt-4 space-y-2 marker:text-black/30 dark:marker:text-white/30">
+            <li>Proporcionar información veraz y actualizada</li>
+            <li>Mantener la confidencialidad de sus credenciales</li>
+            <li>Hacer un uso responsable de la plataforma</li>
+            <li>No realizar actividades fraudulentas o ilegales</li>
+          </ul>
+        </div>
+
+        <div>
+          <h2 class="text-black dark:text-white font-bold text-lg mb-4 uppercase tracking-wider">
+            4. Propiedad Intelectual
+          </h2>
+          <p>
+            Todos los contenidos, diseños, logotipos, textos, gráficos y códigos son propiedad de DCIEN o de sus licenciantes y están protegidos por las leyes de propiedad intelectual e industrial.
+          </p>
+        </div>
+
+        <div>
+          <h2 class="text-black dark:text-white font-bold text-lg mb-4 uppercase tracking-wider">
+            5. Exclusión de Responsabilidad
+          </h2>
+          <p>
+            DCIEN no se responsabiliza de:
+          </p>
+          <ul class="list-disc list-inside mt-4 space-y-2 marker:text-black/30 dark:marker:text-white/30">
+            <li>Interrupciones temporales del servicio por mantenimiento</li>
+            <li>Errores en los contenidos que puedan ser corregidos</li>
+            <li>Mal uso de la plataforma por parte de los usuarios</li>
+            <li>Enlaces externos a terceros</li>
+          </ul>
+        </div>
+
+        <div>
+          <h2 class="text-black dark:text-white font-bold text-lg mb-4 uppercase tracking-wider">
+            6. Legislación Aplicable
+          </h2>
+          <p>
+            Las presentes condiciones se rigen por la legislación española. Para cualquier controversia, las partes se someten a los Juzgados y Tribunales del domicilio del usuario consumidor.
+          </p>
+        </div>
+
+        <div class="pt-8 border-t border-black/10 dark:border-white/10">
+          <p class="text-xs text-black/40 dark:text-white/40 italic">
+            Última actualización: {new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
