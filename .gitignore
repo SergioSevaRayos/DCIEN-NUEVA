@@ -29,3 +29,17 @@ Thumbs.db
 *.temp
 
 .vercel
+
+# Backend secrets
+dcien-backend/.env
+dcien-backend/vendor/
+dcien-backend/cookies.txt
+dcien-backend/error_log
+dcien-backend/debug-email.php
+dcien-backend/test-email.php
+
+# Server extras secrets
+server-extras/admin-descargas/ordenes/*.html
+
+# Backups
+*.sql
