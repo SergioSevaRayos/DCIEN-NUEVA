@@ -3,8 +3,7 @@ node_modules/
 
 # Environment variables
 .env
-.env.local
-.env.production
+.env.*
 
 # Build outputs
 dist/
@@ -40,6 +39,8 @@ dcien-backend/test-email.php
 
 # Server extras secrets
 server-extras/admin-descargas/ordenes/*.html
+server-extras/admin-descargas/ordenes/*.pdf 
 
 # Backups
 *.sql
+*.tar.gz 

@@ -121,16 +121,13 @@ try {
     // 2. BYPASS DE STRIPE PARA PEDIDOS A COSTE 0
     // ════════════════════════════════════════════════════════════════
     if ($grandTotal < 0.10) {
-        // Generamos un ID de sesión falso para identificarlo en tu base de datos
         $freeSessionId = 'FREE_ORDER_' . $order_id;
 
-        // Actualizamos pedido a pagado (Columnas validadas con tu base de datos)
         query("UPDATE orders SET stripe_session_id = :sid, status = 'paid' WHERE id = :oid", [
             'sid' => $freeSessionId,
             'oid' => $order_id
         ]);
 
-        // Marcamos la unidad como vendida definitivamente
         query("UPDATE series_units SET status = 'sold', reserved_by = :uid WHERE series_slug = :slug AND unit_number = :num", [
             'uid' => $userId,
             'slug' => $seriesSlug,
@@ -139,14 +136,55 @@ try {
 
         $pdo->commit();
 
-        $successUrl = ($_ENV['STRIPE_SUCCESS_URL'] ?? getenv('STRIPE_SUCCESS_URL')) . '?session_id=' . $freeSessionId;
+        // Enviar email de confirmación para pedidos gratuitos (Stripe no genera webhook)
+        try {
+            require_once $backend_root . '/includes/mailer.php';
+            $dbUser   = queryOne("SELECT username, email FROM users WHERE id = :uid", ['uid' => $userId]);
+            $emailTo  = $dbUser['email'] ?? ($shippingData['email'] ?? null);
+            $username = $dbUser['username'] ?? ($shippingData['firstName'] ?? 'Cliente');
 
-        // Devolvemos la URL de éxito. El frontend saltará la pasarela.
+            if ($emailTo) {
+                $s = $shippingData;
+                $address_lines = implode('<br>', array_filter([
+                    trim(($s['firstName'] ?? '') . ' ' . ($s['lastName'] ?? '')),
+                    trim(($s['address'] ?? '') . ($s['addressExtra'] ? ', ' . $s['addressExtra'] : '')),
+                    trim(($s['postalCode'] ?? '') . ' ' . ($s['city'] ?? '') . (isset($s['province']) ? ', ' . $s['province'] : '')),
+                    ($s['email'] ?? $emailTo) . (isset($s['phone']) ? ' | ' . $s['phone'] : ''),
+                ]));
+
+                $html = getEmailTemplate('order_confirmation', [
+                    'username'         => htmlspecialchars($username),
+                    'order_id'         => $order_id,
+                    'email_items'      => [[
+                        'series_slug' => $seriesSlug,
+                        'unit_number' => $unitNumber,
+                        'size'        => $size,
+                        'color'       => $color,
+                        'type'        => $type,
+                    ]],
+                    'shipping_address' => $address_lines,
+                    'total'            => '0.00',
+                    'discount_code'    => $discountCode ?? '',
+                    'discount_amount'  => $discountAmount > 0 ? number_format($discountAmount, 2, '.', '') : '',
+                    'original_price'   => $discountAmount > 0 ? '€' . number_format($basePrice, 2, '.', '') : '',
+                ]);
+
+                sendEmail([
+                    'to'      => $emailTo,
+                    'subject' => 'Pedido Confirmado #' . $order_id . ' — DCIEN',
+                    'html'    => $html,
+                ]);
+            }
+        } catch (Exception $emailEx) {
+            logError('Free order email error', ['error' => $emailEx->getMessage()]);
+        }
+
+        $successUrl = ($_ENV['STRIPE_SUCCESS_URL'] ?? getenv('STRIPE_SUCCESS_URL')) . '?session_id=' . $freeSessionId;
         jsonSuccess('Pedido gratuito procesado correctamente', [
             'url' => $successUrl,
             'session_id' => $freeSessionId
         ]);
-        exit; // Detenemos la ejecución aquí, Stripe NUNCA se abrirá.
+        exit;
     }
 
     // ════════════════════════════════════════════════════════════════

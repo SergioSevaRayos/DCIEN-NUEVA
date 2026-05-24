@@ -1,0 +1,244 @@
+---
+// CartDrawer.astro — Panel lateral del carrito (sin props, se gestiona por JS)
+---
+
+<!-- Overlay de fondo -->
+<div
+  id="cart-overlay"
+  class="fixed inset-0 bg-black/40 z-50 opacity-0 pointer-events-none transition-opacity duration-300"
+  aria-hidden="true"
+></div>
+
+<!-- Panel lateral -->
+<div
+  id="cart-drawer"
+  class="fixed top-0 right-0 h-full w-full max-w-sm bg-white dark:bg-black border-l border-black/10 dark:border-white/10 z-50 flex flex-col translate-x-full transition-transform duration-300 ease-in-out"
+  role="dialog"
+  aria-label="Carrito de compra"
+>
+  <!-- Header del drawer -->
+  <div class="flex items-center justify-between px-6 py-5 border-b border-black/10 dark:border-white/10">
+    <div class="flex items-center gap-3">
+      <span class="font-brand text-2xl text-black dark:text-white">Carrito</span>
+      <span id="cart-drawer-count" class="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40"></span>
+    </div>
+    <button
+      id="cart-close"
+      class="p-2 text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white transition-colors"
+      aria-label="Cerrar carrito"
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Contenido: vacío o lista de items -->
+  <div class="flex-1 overflow-y-auto px-6 py-6">
+    <!-- Estado vacío -->
+    <div id="cart-empty" class="hidden flex-col items-center justify-center h-full text-center py-16">
+      <svg class="w-12 h-12 text-black/20 dark:text-white/20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+      </svg>
+      <p class="text-xs uppercase tracking-[0.2em] text-black/40 dark:text-white/40">El carrito está vacío</p>
+      <a href="/series-activas" id="cart-go-shop" class="mt-6 text-[10px] uppercase tracking-widest underline text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white">
+        Ver series activas
+      </a>
+    </div>
+
+    <!-- Lista de items -->
+    <div id="cart-items-list" class="hidden space-y-4"></div>
+
+    <!-- Bloque descuento -->
+    <div id="cart-discount-block" class="hidden mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+      <div class="flex items-center justify-between">
+        <span class="text-[10px] uppercase tracking-widest text-green-700 dark:text-green-400 font-medium">Descuento activo</span>
+        <span id="cart-discount-badge" class="text-[10px] uppercase tracking-widest font-bold text-green-700 dark:text-green-400"></span>
+      </div>
+      <p id="cart-discount-desc" class="text-[10px] text-green-600 dark:text-green-500 mt-0.5"></p>
+    </div>
+  </div>
+
+  <!-- Footer: totales + botones -->
+  <div id="cart-footer" class="hidden border-t border-black/10 dark:border-white/10 px-6 py-6 space-y-4">
+    <div class="space-y-2 text-sm">
+      <div class="flex justify-between text-black/60 dark:text-white/60">
+        <span class="text-[11px] uppercase tracking-wider">Subtotal (base)</span>
+        <span id="cart-subtotal">€0.00</span>
+      </div>
+      <div class="flex justify-between text-black/60 dark:text-white/60">
+        <span class="text-[11px] uppercase tracking-wider">IVA (21%)</span>
+        <span id="cart-iva">€0.00</span>
+      </div>
+      <div id="cart-discount-row" class="hidden flex justify-between text-green-600 dark:text-green-400">
+        <span class="text-[11px] uppercase tracking-wider">Descuento</span>
+        <span id="cart-discount-amount">-€0.00</span>
+      </div>
+      <div class="flex justify-between text-black/60 dark:text-white/60">
+        <span class="text-[11px] uppercase tracking-wider">Envío</span>
+        <span id="cart-shipping">€5.00</span>
+      </div>
+      <div class="flex justify-between pt-3 border-t border-black/10 dark:border-white/10">
+        <span class="text-xs uppercase tracking-widest font-bold text-black dark:text-white">Total</span>
+        <span id="cart-total" class="font-brand text-xl text-black dark:text-white">€0.00</span>
+      </div>
+    </div>
+
+    <a
+      href="/checkout/checkout-datos-envio"
+      id="cart-checkout-btn"
+      class="block w-full py-4 bg-black text-white dark:bg-white dark:text-black text-[11px] uppercase tracking-[0.3em] font-bold text-center transition-opacity hover:opacity-80"
+    >
+      Ir al pago →
+    </a>
+
+    <button
+      id="cart-continue"
+      class="w-full text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors py-1"
+    >
+      Seguir comprando
+    </button>
+  </div>
+</div>
+
+<script>
+  import { getCart, getDiscount, removeFromCart, getCartSubtotal, getCartCount } from '../scripts/cart.js';
+
+  const SHIPPING_FEE = 5.00;
+  const TAX_RATE = 0.21;
+
+  const overlay      = document.getElementById('cart-overlay');
+  const drawer       = document.getElementById('cart-drawer');
+  const closeBtn     = document.getElementById('cart-close');
+  const continueBtn  = document.getElementById('cart-continue');
+  const emptyEl      = document.getElementById('cart-empty');
+  const itemsList    = document.getElementById('cart-items-list');
+  const footer       = document.getElementById('cart-footer');
+  const countLabel   = document.getElementById('cart-drawer-count');
+  const discountBlock  = document.getElementById('cart-discount-block');
+  const discountBadge  = document.getElementById('cart-discount-badge');
+  const discountDesc   = document.getElementById('cart-discount-desc');
+  const discountRow    = document.getElementById('cart-discount-row');
+  const discountAmount = document.getElementById('cart-discount-amount');
+  const subtotalEl   = document.getElementById('cart-subtotal');
+  const ivaEl        = document.getElementById('cart-iva');
+  const shippingEl   = document.getElementById('cart-shipping');
+  const totalEl      = document.getElementById('cart-total');
+
+  function openDrawer() {
+    overlay?.classList.remove('opacity-0', 'pointer-events-none');
+    drawer?.classList.remove('translate-x-full');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDrawer() {
+    overlay?.classList.add('opacity-0', 'pointer-events-none');
+    drawer?.classList.add('translate-x-full');
+    document.body.style.overflow = '';
+  }
+
+  function renderCart() {
+    const cart     = getCart();
+    const discount = getDiscount();
+    const count    = cart.length;
+
+    if (countLabel) countLabel.textContent = count > 0 ? `${count} item${count > 1 ? 's' : ''}` : '';
+
+    if (count === 0) {
+      emptyEl?.classList.remove('hidden');
+      emptyEl?.classList.add('flex');
+      itemsList?.classList.add('hidden');
+      footer?.classList.add('hidden');
+      discountBlock?.classList.add('hidden');
+      return;
+    }
+
+    emptyEl?.classList.add('hidden');
+    emptyEl?.classList.remove('flex');
+    itemsList?.classList.remove('hidden');
+    footer?.classList.remove('hidden');
+
+    // Render items
+    if (itemsList) {
+      itemsList.innerHTML = (cart as any[]).map((item: any, idx: number) => `
+        <div class="flex items-start gap-4 py-4 border-b border-black/5 dark:border-white/5">
+          <div class="flex-1 min-w-0">
+            <p class="font-bold text-xs uppercase tracking-wider text-black dark:text-white">${item.seriesName}</p>
+            <p class="font-brand text-2xl text-black dark:text-white leading-none mt-0.5">#${String(item.number).padStart(2, '0')}</p>
+            <p class="text-[10px] uppercase tracking-widest text-black/50 dark:text-white/50 mt-1">
+              ${item.size.toUpperCase()} · ${item.color} · ${item.type}
+            </p>
+            <p class="text-xs font-bold text-black dark:text-white mt-1">€${item.price.toFixed(2)}</p>
+          </div>
+          <button
+            data-remove-idx="${idx}"
+            class="shrink-0 p-1.5 text-black/30 dark:text-white/30 hover:text-red-500 dark:hover:text-red-400 transition-colors mt-0.5"
+            aria-label="Eliminar item"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      `).join('');
+
+      itemsList.querySelectorAll('[data-remove-idx]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt((btn as HTMLElement).dataset.removeIdx ?? '0');
+          removeFromCart(idx);
+        });
+      });
+    }
+
+    // Calcular totales
+    const subtotal = getCartSubtotal(cart);
+
+    let discAmt = 0;
+    if (discount) {
+      if (discount.type === 'percent') {
+        discAmt = subtotal * (parseFloat(discount.value) / 100);
+      } else {
+        discAmt = Math.min(parseFloat(discount.value), subtotal);
+      }
+      discAmt = Math.round(discAmt * 100) / 100;
+    }
+
+    const priceAfterDisc = Math.max(0, subtotal - discAmt);
+    const isFree         = priceAfterDisc < 0.10;
+    const shipping       = isFree ? 0 : SHIPPING_FEE;
+    const iva            = Math.round(priceAfterDisc * TAX_RATE * 100) / 100;
+    const total          = Math.round((priceAfterDisc + iva + shipping) * 100) / 100;
+
+    if (subtotalEl) subtotalEl.textContent = `€${priceAfterDisc.toFixed(2)}`;
+    if (ivaEl)      ivaEl.textContent      = `€${iva.toFixed(2)}`;
+    if (shippingEl) shippingEl.textContent = shipping === 0 ? 'GRATIS' : `€${shipping.toFixed(2)}`;
+    if (totalEl)    totalEl.textContent    = `€${total.toFixed(2)}`;
+
+    // Descuento UI
+    if (discount && discAmt > 0) {
+      discountBlock?.classList.remove('hidden');
+      discountRow?.classList.remove('hidden');
+      discountRow?.classList.add('flex');
+      if (discountBadge) discountBadge.textContent = discount.label || `-${discount.value}%`;
+      if (discountDesc)  discountDesc.textContent  = discount.description || discount.code;
+      if (discountAmount) discountAmount.textContent = `-€${discAmt.toFixed(2)}`;
+    } else {
+      discountBlock?.classList.add('hidden');
+      discountRow?.classList.add('hidden');
+      discountRow?.classList.remove('flex');
+    }
+  }
+
+  // Eventos
+  closeBtn?.addEventListener('click', closeDrawer);
+  continueBtn?.addEventListener('click', closeDrawer);
+  overlay?.addEventListener('click', closeDrawer);
+
+  window.addEventListener('cart:updated', renderCart);
+  window.addEventListener('cart:open', openDrawer);
+
+  document.getElementById('cart-icon-btn')?.addEventListener('click', openDrawer);
+
+  // Render inicial
+  renderCart();
+</script>

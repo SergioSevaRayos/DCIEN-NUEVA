@@ -30,7 +30,7 @@ const seo = getSEO('acceso');
     const btn = form.querySelector('button')!;
     btn.disabled = true; btn.textContent = 'PROCESANDO...';
 
-    const res = await fetch('https://d-cien.es/api/auth/request-reset.php', {
+    const res = await fetch(import.meta.env.PUBLIC_API_URL + '/auth/request-reset.php', {
       method: 'POST',
       body: JSON.stringify({ email: (new FormData(form)).get('email') })
     });

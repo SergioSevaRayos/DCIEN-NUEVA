@@ -1,6 +1,5 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { seriesData } from '../../data/series';
 
 const seo = {
   title: 'Resumen del Pedido | DCIEN',
@@ -8,13 +7,13 @@ const seo = {
   noindex: true
 };
 
-const seriesConfig = seriesData.map(s => ({ slug: s.slug, price: s.price }));
+const apiUrl = import.meta.env.PUBLIC_API_URL;
 ---
 
 <BaseLayout seo={seo}>
   <section class="min-h-screen pt-32 pb-20">
     <div class="container-custom max-w-3xl mx-auto px-6">
-      
+
       <div class="text-center mb-12">
         <h1 class="font-brand text-5xl md:text-6xl uppercase tracking-wider text-black dark:text-white mb-4">
           Resumen del Pedido
@@ -27,12 +26,12 @@ const seriesConfig = seriesData.map(s => ({ slug: s.slug, price: s.price }));
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div class="md:col-span-2 space-y-6">
 
-          <!-- Producto -->
+          <!-- Productos -->
           <div class="p-6 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10">
             <h2 class="text-sm font-bold uppercase tracking-wider text-black dark:text-white mb-6 pb-3 border-b border-black/10 dark:border-white/10">
-              Tu Producto
+              Tu Pedido
             </h2>
-            <div id="product-details" class="space-y-3 text-sm"></div>
+            <div id="product-details" class="space-y-4 text-sm"></div>
           </div>
 
           <!-- Envío -->
@@ -44,7 +43,7 @@ const seriesConfig = seriesData.map(s => ({ slug: s.slug, price: s.price }));
             <div id="shipping-details" class="space-y-2 text-sm"></div>
           </div>
 
-          <!-- Descuento aplicado (visible solo si hay descuento) -->
+          <!-- Descuento aplicado -->
           <div id="discount-applied-card" class="hidden p-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
             <div class="flex justify-between items-center">
               <div>
@@ -77,7 +76,6 @@ const seriesConfig = seriesData.map(s => ({ slug: s.slug, price: s.price }));
                 <span id="shipping-cost" class="text-black dark:text-white">€0.00</span>
               </div>
 
-              <!-- Fila de descuento (oculta si no hay) -->
               <div id="discount-row" class="hidden justify-between text-green-600 dark:text-green-400">
                 <span id="discount-row-label" class="font-medium">Descuento:</span>
                 <span id="discount-row-amount" class="font-bold">-€0.00</span>
@@ -106,79 +104,60 @@ const seriesConfig = seriesData.map(s => ({ slug: s.slug, price: s.price }));
   </section>
 </BaseLayout>
 
-<script define:vars={{ seriesConfig }}>
-  const API = 'https://d-cien.es/api';
-  let SHIPPING_FEE = 5.00; // Lo cambiamos de 'const' a 'let'
-  const TAX_RATE = 0.21;
+<script define:vars={{ apiUrl }}>
+  const API          = apiUrl;
+  const SHIPPING_FEE = 5.00;
+  const TAX_RATE     = 0.21;
 
-  const productDetails = document.getElementById('product-details');
+  const productDetails  = document.getElementById('product-details');
   const shippingDetails = document.getElementById('shipping-details');
-  const subtotalElement = document.getElementById('subtotal-price');
-  const taxElement = document.getElementById('tax-price');
-  const shippingCostEl = document.getElementById('shipping-cost');
-  const totalElement = document.getElementById('total-price');
-  const confirmButton = document.getElementById('confirm-button');
-  const termsCheckbox = document.getElementById('terms-checkbox');
-  const confirmError = document.getElementById('confirm-error');
+  const subtotalEl      = document.getElementById('subtotal-price');
+  const taxEl           = document.getElementById('tax-price');
+  const shippingCostEl  = document.getElementById('shipping-cost');
+  const totalEl         = document.getElementById('total-price');
+  const confirmButton   = document.getElementById('confirm-button');
+  const termsCheckbox   = document.getElementById('terms-checkbox');
+  const confirmError    = document.getElementById('confirm-error');
 
-  // ═══════════════════════════════════════════════════════════════
-  // CARGAR Y MOSTRAR DATOS DEL CHECKOUT
-  // ═══════════════════════════════════════════════════════════════
-  function loadCheckoutData() {
-    const dataRaw = sessionStorage.getItem('checkout_data');
-    
-    if (!dataRaw) {
-      console.error('No hay datos de checkout');
-      window.location.href = '/series-activas';
-      return;
-    }
+  // Leer estado del carrito
+  let cart     = [];
+  let discount = null;
+  let shipping = null;
 
-    const checkoutData = JSON.parse(dataRaw);
-    console.log('Datos de checkout:', checkoutData);
+  try {
+    cart     = JSON.parse(localStorage.getItem('dcien_cart')          || '[]');
+    discount = JSON.parse(localStorage.getItem('dcien_cart_discount') || 'null');
+    shipping = JSON.parse(sessionStorage.getItem('checkout_shipping') || 'null');
+  } catch { /* ignore */ }
 
-    const currentSeries = seriesConfig.find(s => s.slug === checkoutData.seriesSlug);
-    const officialPrice = currentSeries ? parseFloat(currentSeries.price) : 0;
+  if (!cart.length) {
+    window.location.href = '/series-activas';
+  } else if (!shipping) {
+    window.location.href = '/checkout/checkout-datos-envio';
+  } else {
+    renderResumen();
+  }
 
-    if (!officialPrice) {
-      console.error('No se pudo obtener precio de la serie');
-      return;
-    }
-
-    const discount = checkoutData.discount || null;
-
-    // ═══════════════════════════════════════════════════════════════
-    // MOSTRAR PRODUCTO
-    // ═══════════════════════════════════════════════════════════════
+  function renderResumen() {
+    // ── Productos ─────────────────────────────────────────────
     if (productDetails) {
-      productDetails.innerHTML = `
-        <div class="flex justify-between py-1">
-          <span class="text-black/60 dark:text-white/60">Serie:</span>
-          <span class="font-bold">${checkoutData.seriesName || 'N/A'}</span>
+      productDetails.innerHTML = cart.map(item => `
+        <div class="flex justify-between items-center py-3 border-b border-black/5 dark:border-white/5 last:border-0">
+          <div>
+            <p class="font-bold text-black dark:text-white">${item.seriesName}</p>
+            <p class="font-brand text-2xl leading-none text-black dark:text-white">#${String(item.number).padStart(2, '0')}</p>
+            <p class="text-[10px] text-black/50 dark:text-white/50 uppercase tracking-wider mt-0.5">
+              ${item.size.toUpperCase()} · ${item.color} · ${item.type}
+            </p>
+          </div>
+          <span class="font-bold text-black dark:text-white">€${Number(item.price).toFixed(2)}</span>
         </div>
-        <div class="flex justify-between py-1">
-          <span class="text-black/60 dark:text-white/60">Número:</span>
-          <span class="font-brand text-xl">#${String(checkoutData.number).padStart(2, '0')}</span>
-        </div>
-        <div class="flex justify-between py-1">
-          <span class="text-black/60 dark:text-white/60">Talla:</span>
-          <span>${checkoutData.size?.toUpperCase() || 'N/A'}</span>
-        </div>
-        <div class="flex justify-between py-1">
-          <span class="text-black/60 dark:text-white/60">Color:</span>
-          <span>${checkoutData.color || 'N/A'}</span>
-        </div>
-        <div class="flex justify-between py-1">
-          <span class="text-black/60 dark:text-white/60">Tipo:</span>
-          <span>${checkoutData.type || 'standard'}</span>
-        </div>
-      `;
+      `).join('');
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // MOSTRAR ENVÍO
-    // ═══════════════════════════════════════════════════════════════
-    if (shippingDetails && checkoutData.shipping) {
-      const s = checkoutData.shipping;
+    // ── Datos de envío ────────────────────────────────────────
+    if (shippingDetails && shipping) {
+      const s = shipping;
       shippingDetails.innerHTML = `
         <div class="font-bold">${s.firstName} ${s.lastName}</div>
         <div>${s.address}${s.addressExtra ? ', ' + s.addressExtra : ''}</div>
@@ -187,117 +166,95 @@ const seriesConfig = seriesData.map(s => ({ slug: s.slug, price: s.price }));
       `;
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // CALCULAR DESCUENTO Y REGLA ENVÍO GRATIS
-    // ═══════════════════════════════════════════════════════════════
-    let discountAmount = 0;
+    // ── Cálculo de totales ────────────────────────────────────
+    const subtotal = cart.reduce((s, i) => s + Number(i.price), 0);
 
+    let discAmt = 0;
     if (discount) {
-      if (checkoutData.finalPrice !== undefined && checkoutData.originalPrice !== undefined) {
-        discountAmount = checkoutData.originalPrice - checkoutData.finalPrice;
+      if (discount.type === 'percent') {
+        discAmt = subtotal * (parseFloat(discount.value) / 100);
       } else {
-        if (discount.type === 'percent') {
-          discountAmount = officialPrice * (parseFloat(discount.value) / 100);
-        } else {
-          discountAmount = Math.min(parseFloat(discount.value), officialPrice);
-        }
+        discAmt = Math.min(parseFloat(discount.value), subtotal);
       }
-      discountAmount = Math.round(discountAmount * 100) / 100;
-
-      // REGLA: Si el descuento es del 100%, envío gratis
-      if (discount.type === 'percent' && parseFloat(discount.value) === 100) {
-        SHIPPING_FEE = 0;
-      }
+      discAmt = Math.round(discAmt * 100) / 100;
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // CALCULAR DESGLOSE (BASE + IVA + ENVÍO)
-    // ═══════════════════════════════════════════════════════════════
-    const priceAfterDiscount = officialPrice - discountAmount;
-    const subtotalBase = Math.max(0, priceAfterDiscount); 
-    const ivaAmount = subtotalBase * TAX_RATE;
-    const finalTotal = Math.max(0, subtotalBase + ivaAmount + SHIPPING_FEE);
+    const priceAfterDisc = Math.max(0, subtotal - discAmt);
+    const isFree         = priceAfterDisc < 0.10;
+    const shippingFee    = isFree ? 0 : SHIPPING_FEE;
+    const iva            = Math.round(priceAfterDisc * TAX_RATE * 100) / 100;
+    const total          = Math.round((priceAfterDisc + iva + shippingFee) * 100) / 100;
 
-    if (subtotalElement) subtotalElement.textContent = `€${subtotalBase.toFixed(2)}`;
-    if (taxElement) taxElement.textContent = `€${ivaAmount.toFixed(2)}`;
-    if (shippingCostEl) shippingCostEl.textContent = SHIPPING_FEE === 0 ? 'GRATIS' : `€${SHIPPING_FEE.toFixed(2)}`;
-    if (totalElement) totalElement.textContent = `€${finalTotal.toFixed(2)}`;
+    if (subtotalEl)    subtotalEl.textContent    = `€${priceAfterDisc.toFixed(2)}`;
+    if (taxEl)         taxEl.textContent         = `€${iva.toFixed(2)}`;
+    if (shippingCostEl) shippingCostEl.textContent = shippingFee === 0 ? 'GRATIS' : `€${shippingFee.toFixed(2)}`;
+    if (totalEl)       totalEl.textContent       = `€${total.toFixed(2)}`;
 
-    // ═══════════════════════════════════════════════════════════════
-    // UI - FILA Y TARJETA DESCUENTO
-    // ═══════════════════════════════════════════════════════════════
-    const discRow = document.getElementById('discount-row');
-    const discRowLabel = document.getElementById('discount-row-label');
+    // ── UI descuento ──────────────────────────────────────────
+    const discRow       = document.getElementById('discount-row');
+    const discRowLabel  = document.getElementById('discount-row-label');
     const discRowAmount = document.getElementById('discount-row-amount');
 
-    if (discount && discountAmount > 0 && discRow) {
-      if (discRowLabel) discRowLabel.textContent = `Descuento (${discount.code}):`;
-      if (discRowAmount) discRowAmount.textContent = `-€${discountAmount.toFixed(2)}`;
+    if (discount && discAmt > 0 && discRow) {
+      if (discRowLabel)  discRowLabel.textContent  = `Descuento (${discount.code}):`;
+      if (discRowAmount) discRowAmount.textContent = `-€${discAmt.toFixed(2)}`;
       discRow.classList.remove('hidden');
       discRow.classList.add('flex');
     }
 
-    const discCard = document.getElementById('discount-applied-card');
-    const discCardDesc = document.getElementById('discount-card-desc');
+    const discCard      = document.getElementById('discount-applied-card');
+    const discCardDesc  = document.getElementById('discount-card-desc');
     const discCardBadge = document.getElementById('discount-card-badge');
 
     if (discount && discCard) {
-      if (discCardDesc) discCardDesc.textContent = `${discount.description || discount.code}`;
-      if (discCardBadge) discCardBadge.textContent = discount.label || `-${discount.value}%`;
+      if (discCardDesc)  discCardDesc.textContent  = discount.description || discount.code;
+      if (discCardBadge) discCardBadge.textContent = discount.label       || `-${discount.value}%`;
       discCard.classList.remove('hidden');
     }
 
-    // Cambiar el texto del botón si es gratis
-    if (finalTotal === 0 && confirmButton) {
+    if (total === 0 && confirmButton) {
       confirmButton.textContent = 'GENERAR ORDEN (GRATIS)';
     }
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // EVENTOS
-  // ═══════════════════════════════════════════════════════════════
+  // ── Checkbox términos ─────────────────────────────────────
   termsCheckbox?.addEventListener('change', () => {
-    if (confirmButton) {
-      confirmButton.disabled = !termsCheckbox.checked;
-    }
+    if (confirmButton) confirmButton.disabled = !termsCheckbox.checked;
   });
 
+  // ── Confirmar pago ────────────────────────────────────────
   confirmButton?.addEventListener('click', async () => {
-    const dataRaw = sessionStorage.getItem('checkout_data');
-    if (!dataRaw) return;
+    if (!cart.length || !shipping) return;
 
-    const checkoutData = JSON.parse(dataRaw);
-    const discount = checkoutData.discount || null;
-
-    confirmButton.disabled = true;
+    confirmButton.disabled    = true;
     confirmButton.textContent = 'PROCESANDO...';
     if (confirmError) confirmError.classList.add('hidden');
 
     try {
       const payload = {
-        seriesSlug: checkoutData.seriesSlug,
-        unitNumber: parseInt(checkoutData.number),
-        size: checkoutData.size,
-        color: checkoutData.color,
-        type: checkoutData.type || 'standard',
-        shippingData: checkoutData.shipping,
-        originalPrice: checkoutData.originalPrice || null,
-        finalPrice: checkoutData.finalPrice || null,
+        items: cart.map(item => ({
+          seriesSlug: item.seriesSlug,
+          unitNumber: parseInt(item.number),
+          size:       item.size,
+          color:      item.color,
+          type:       item.type || 'standard',
+        })),
+        shippingData: shipping,
         discount: discount ? {
-          id: discount.id || null,
-          user_discount_id: discount.user_discount_id || null,
-          code: discount.code,
-          type: discount.type,
-          value: discount.value,
-          description: discount.description || null
-        } : null
+          id:               discount.id               ?? null,
+          user_discount_id: discount.user_discount_id ?? null,
+          code:             discount.code,
+          type:             discount.type,
+          value:            discount.value,
+          description:      discount.description      ?? null,
+        } : null,
       };
 
-      const response = await fetch(`${API}/stripe/create-checkout-session.php`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch(`${API}/cart/checkout.php`, {
+        method:      'POST',
+        headers:     { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(payload)
+        body:        JSON.stringify(payload),
       });
 
       const result = await response.json();
@@ -313,11 +270,9 @@ const seriesConfig = seriesData.map(s => ({ slug: s.slug, price: s.price }));
         confirmError.classList.remove('hidden');
       }
       if (confirmButton) {
-        confirmButton.disabled = false;
+        confirmButton.disabled    = false;
         confirmButton.textContent = 'Confirmar y Pagar';
       }
     }
   });
-
-  loadCheckoutData();
 </script>

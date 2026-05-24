@@ -34,7 +34,7 @@ const seo = {
         </p>
       </div>
 
-      <!-- Número asignado -->
+      <!-- Número asignado — single item -->
       <div id="number-container" class="text-center mb-12 animate-slide-up" style="animation-delay: 0.4s;">
         <p class="text-xs uppercase tracking-[0.4em] text-black/60 dark:text-white/60 mb-4">
           Tu Número Exclusivo
@@ -45,6 +45,14 @@ const seo = {
         <p id="series-display" class="text-sm uppercase tracking-[0.3em] text-black/60 dark:text-white/60 mt-4">
           SERIE --
         </p>
+      </div>
+
+      <!-- Números asignados — multi-item (oculto por defecto) -->
+      <div id="multi-number-container" class="hidden text-center mb-12 animate-slide-up" style="animation-delay: 0.4s;">
+        <p class="text-xs uppercase tracking-[0.4em] text-black/60 dark:text-white/60 mb-6">
+          Tus Números Exclusivos
+        </p>
+        <div id="multi-numbers-display" class="flex flex-wrap justify-center gap-4"></div>
       </div>
 
       <!-- Mensaje -->
@@ -111,253 +119,257 @@ const seo = {
 </style>
 
 <script>
-  const API = 'https://d-cien.es/api';
-  
-  // Tipos para TypeScript
-  interface OrderData {
-    series_slug?: string;
-    series_name?: string;
-    unit_number?: number;
-    size?: string;
-    color?: string;
-    type?: string;
-    price?: number | string;
-    finalPrice?: number;
-    discount_code?: string;
-    discount_amount?: number;
-  }
+  import { clearCart } from '../../scripts/cart.js';
 
-  interface CheckoutData {
-    seriesSlug?: string;
-    seriesName?: string;
-    number?: number;
-    size?: string;
-    color?: string;
-    type?: string;
-    price?: number;
-    finalPrice?: number;
-    originalPrice?: number;
-    discount?: {
-      code?: string;
-      saving?: number;
-    };
-  }
-  
-  // Obtener parámetros de la URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const sessionId = urlParams.get('session_id');
-  const numberFromURL = urlParams.get('number');
-  
-  const numberDisplay = document.getElementById('number-display');
-  const seriesDisplay = document.getElementById('series-display');
-  const detailsContent = document.getElementById('details-content');
+  const API = import.meta.env.PUBLIC_API_URL;
 
-  console.log('═══════════════════════════════════════');
-  console.log('SUCCESS PAGE - INICIALIZACIÓN');
-  console.log('Session ID:', sessionId);
-  console.log('Number from URL:', numberFromURL);
-  console.log('═══════════════════════════════════════');
+  const urlParams    = new URLSearchParams(window.location.search);
+  const sessionId    = urlParams.get('session_id');
 
-  // Si hay número en URL, mostrarlo inmediatamente
-  if (numberFromURL && numberDisplay) {
-    numberDisplay.textContent = '#' + String(numberFromURL).padStart(2, '0');
-    console.log('✓ Número mostrado desde URL');
-  }
+  const numberContainer      = document.getElementById('number-container');
+  const multiNumberContainer = document.getElementById('multi-number-container');
+  const multiNumbersDisplay  = document.getElementById('multi-numbers-display');
+  const numberDisplay        = document.getElementById('number-display');
+  const seriesDisplay        = document.getElementById('series-display');
+  const detailsContent       = document.getElementById('details-content');
 
-  // ═══════════════════════════════════════════════════════════════
-  // FUNCIÓN: Mostrar detalles del pedido
-  // ═══════════════════════════════════════════════════════════════
-  function displayOrderDetails(order: OrderData): void {
-    console.log('Mostrando detalles del pedido:', order);
-    
-    // Actualizar número si no estaba en URL
-    if (!numberFromURL && order.unit_number && numberDisplay) {
-      numberDisplay.textContent = '#' + String(order.unit_number).padStart(2, '0');
-      console.log('✓ Número actualizado:', order.unit_number);
+  // ── Renderizar pedido single-item ────────────────────────
+  function displaySingleOrder(order: any): void {
+    if (numberDisplay) {
+      numberDisplay.textContent = '#' + String(order.unit_number || 0).padStart(2, '0');
     }
-    
-    // Actualizar serie
-    if (order.series_slug && seriesDisplay) {
-      const seriesName = (order.series_slug || '').toUpperCase().replace('-', ' ');
-      seriesDisplay.textContent = seriesName || 'SERIE --';
-      console.log('✓ Serie actualizada:', seriesName);
-    }
-    
-    // Construir HTML de detalles
-    if (detailsContent) {
-      let detailsHTML = `
-        <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10">
-          <span class="text-black/60 dark:text-white/60">Serie:</span>
-          <span class="font-bold text-black dark:text-white">${order.series_slug || 'N/A'}</span>
-        </div>
-        <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10">
-          <span class="text-black/60 dark:text-white/60">Número:</span>
-          <span class="font-brand text-2xl text-black dark:text-white">#${String(order.unit_number || 0).padStart(2, '0')}</span>
-        </div>
-        <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10">
-          <span class="text-black/60 dark:text-white/60">Talla:</span>
-          <span class="text-black dark:text-white">${(order.size || '').toUpperCase()}</span>
-        </div>
-        <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10">
-          <span class="text-black/60 dark:text-white/60">Color:</span>
-          <span class="text-black dark:text-white">${order.color || 'N/A'}</span>
-        </div>
-        <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10">
-          <span class="text-black/60 dark:text-white/60">Tipo:</span>
-          <span class="text-black dark:text-white">${order.type || 'standard'}</span>
-        </div>
-      `;
-      
-      // Mostrar descuento si existe
-      if (order.discount_code && order.discount_amount) {
-        detailsHTML += `
-          <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10 text-green-600 dark:text-green-400">
-            <span>Descuento (${order.discount_code}):</span>
-            <span class="font-bold">-€${parseFloat(String(order.discount_amount)).toFixed(2)}</span>
-          </div>
-        `;
-      }
-      
-      // Envío y Total
-      const productPriceWithTax = parseFloat(String(order.price || order.finalPrice || 0));
-      const SHIPPING_FEE = 5.00; // Añadimos el coste de envío igual que en el resumen
-      const totalPaid = productPriceWithTax + SHIPPING_FEE;
-      
-      detailsHTML += `
-        <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10">
-          <span class="text-black/60 dark:text-white/60">Envío:</span>
-          <span class="text-black dark:text-white">€${SHIPPING_FEE.toFixed(2)}</span>
-        </div>
-        <div class="flex justify-between py-2 pt-3 mt-1">
-          <span class="font-bold text-black dark:text-white text-lg">Total Pagado:</span>
-          <span class="font-bold text-black dark:text-white text-lg">€${totalPaid.toFixed(2)}</span>
-        </div>
-      `;
-      
-      detailsContent.innerHTML = detailsHTML;
-      console.log('✓ Detalles mostrados en UI');
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  // OPCIÓN 1: Cargar desde API
-  // ═══════════════════════════════════════════════════════════════
-  async function loadFromAPI(): Promise<boolean> {
-    if (!sessionId) {
-      console.log('No hay session_id, saltando API');
-      return false;
+    if (seriesDisplay) {
+      seriesDisplay.textContent = (order.series_name || order.series_slug || '').toUpperCase().replace(/-/g, ' ');
     }
 
+    if (!detailsContent) return;
+
+    const grandTotal  = parseFloat(String(order.price || 0));
+    const shippingFee = parseFloat(String(order.shipping_fee ?? 5));
+    const discountAmt = parseFloat(String(order.discount_amount || 0));
+    const discountCode = order.discount_code || null;
+
+    detailsContent.innerHTML = `
+      <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10">
+        <span class="text-black/60 dark:text-white/60">Serie:</span>
+        <span class="font-bold">${(order.series_name || order.series_slug || 'N/A').toUpperCase().replace(/-/g,' ')}</span>
+      </div>
+      <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10">
+        <span class="text-black/60 dark:text-white/60">Número:</span>
+        <span class="font-brand text-2xl">#${String(order.unit_number || 0).padStart(2, '0')}</span>
+      </div>
+      <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10">
+        <span class="text-black/60 dark:text-white/60">Talla:</span>
+        <span>${(order.size || '').toUpperCase()}</span>
+      </div>
+      <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10">
+        <span class="text-black/60 dark:text-white/60">Color:</span>
+        <span>${order.color || 'N/A'}</span>
+      </div>
+      ${discountCode && discountAmt > 0 ? `
+      <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10 text-green-600 dark:text-green-400">
+        <span>Descuento (${discountCode}):</span>
+        <span class="font-bold">-€${discountAmt.toFixed(2)}</span>
+      </div>` : ''}
+      <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10">
+        <span class="text-black/60 dark:text-white/60">Envío:</span>
+        <span>${shippingFee === 0 ? 'GRATIS' : `€${shippingFee.toFixed(2)}`}</span>
+      </div>
+      <div class="flex justify-between py-3 mt-1">
+        <span class="font-bold text-lg">Total Pagado:</span>
+        <span class="font-bold text-lg">€${grandTotal.toFixed(2)}</span>
+      </div>
+    `;
+  }
+
+  // ── Renderizar pedido multi-item ─────────────────────────
+  function displayCartOrder(order: any, items: any[]): void {
+    // Ocultar single container, mostrar multi
+    numberContainer?.classList.add('hidden');
+    multiNumberContainer?.classList.remove('hidden');
+
+    // Mostrar grid de números
+    if (multiNumbersDisplay) {
+      multiNumbersDisplay.innerHTML = items.map((item: any) => `
+        <div class="text-center px-4">
+          <p class="font-brand text-[5rem] md:text-[7rem] text-black dark:text-white leading-none">
+            #${String(item.unit_number).padStart(2, '0')}
+          </p>
+          <p class="text-[10px] uppercase tracking-[0.3em] text-black/60 dark:text-white/60 mt-1">
+            ${(item.series_name || item.series_slug || '').toUpperCase().replace(/-/g,' ')}
+          </p>
+        </div>
+      `).join('');
+    }
+
+    if (!detailsContent) return;
+
+    const grandTotal  = parseFloat(String(order.price || 0));
+    const shippingFee = parseFloat(String(order.shipping_fee ?? 5));
+    const discountAmt = parseFloat(String(order.discount_amount || 0));
+    const discountCode = order.discount_code || null;
+
+    const itemsHTML = items.map((item: any) => `
+      <div class="flex justify-between items-center py-2 border-b border-black/5 dark:border-white/5">
+        <div>
+          <span class="font-bold">${(item.series_name || item.series_slug || '').toUpperCase().replace(/-/g,' ')}</span>
+          <span class="font-brand text-xl ml-2">#${String(item.unit_number).padStart(2, '0')}</span>
+          <span class="text-[10px] text-black/50 dark:text-white/50 ml-2 uppercase">${item.size} · ${item.color} · ${item.type}</span>
+        </div>
+        <span class="font-bold shrink-0 ml-2">€${parseFloat(String(item.unit_price)).toFixed(2)}</span>
+      </div>
+    `).join('');
+
+    detailsContent.innerHTML = `
+      ${itemsHTML}
+      ${discountCode && discountAmt > 0 ? `
+      <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10 text-green-600 dark:text-green-400">
+        <span>Descuento (${discountCode}):</span>
+        <span class="font-bold">-€${discountAmt.toFixed(2)}</span>
+      </div>` : ''}
+      <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10">
+        <span class="text-black/60 dark:text-white/60">Envío:</span>
+        <span>${shippingFee === 0 ? 'GRATIS' : `€${shippingFee.toFixed(2)}`}</span>
+      </div>
+      <div class="flex justify-between py-3 mt-1">
+        <span class="font-bold text-lg">Total Pagado:</span>
+        <span class="font-bold text-lg">€${grandTotal.toFixed(2)}</span>
+      </div>
+    `;
+  }
+
+  // ── Fallback: leer del localStorage del carrito ──────────
+  function displayFromCart(): boolean {
     try {
-      console.log('Intentando cargar desde API...');
-      
+      const cart     = JSON.parse(localStorage.getItem('dcien_cart')          || '[]');
+      const discount = JSON.parse(localStorage.getItem('dcien_cart_discount') || 'null');
+      const shipping = JSON.parse(sessionStorage.getItem('checkout_shipping') || 'null');
+
+      if (!cart.length) return false;
+
+      const subtotal   = cart.reduce((s: number, i: any) => s + Number(i.price), 0);
+      let   discAmt    = 0;
+      if (discount) {
+        discAmt = discount.type === 'percent'
+          ? subtotal * (parseFloat(discount.value) / 100)
+          : Math.min(parseFloat(discount.value), subtotal);
+        discAmt = Math.round(discAmt * 100) / 100;
+      }
+      const priceAfter = Math.max(0, subtotal - discAmt);
+      const ship       = priceAfter < 0.10 ? 0 : 5;
+      const iva        = Math.round(priceAfter * 0.21 * 100) / 100;
+      const total      = Math.round((priceAfter + iva + ship) * 100) / 100;
+
+      if (cart.length === 1) {
+        const item = cart[0];
+        if (numberDisplay) numberDisplay.textContent = '#' + String(item.number).padStart(2, '0');
+        if (seriesDisplay) seriesDisplay.textContent = (item.seriesName || '').toUpperCase();
+        if (detailsContent) {
+          detailsContent.innerHTML = `
+            <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10">
+              <span class="text-black/60 dark:text-white/60">Serie:</span>
+              <span class="font-bold">${item.seriesName || 'N/A'}</span>
+            </div>
+            <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10">
+              <span class="text-black/60 dark:text-white/60">Número:</span>
+              <span class="font-brand text-2xl">#${String(item.number).padStart(2, '0')}</span>
+            </div>
+            <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10">
+              <span class="text-black/60 dark:text-white/60">Talla / Color:</span>
+              <span>${item.size?.toUpperCase()} · ${item.color}</span>
+            </div>
+            ${discAmt > 0 ? `<div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10 text-green-600 dark:text-green-400"><span>Descuento:</span><span class="font-bold">-€${discAmt.toFixed(2)}</span></div>` : ''}
+            <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10">
+              <span class="text-black/60 dark:text-white/60">Envío:</span>
+              <span>${ship === 0 ? 'GRATIS' : `€${ship.toFixed(2)}`}</span>
+            </div>
+            <div class="flex justify-between py-3">
+              <span class="font-bold text-lg">Total Pagado:</span>
+              <span class="font-bold text-lg">€${total.toFixed(2)}</span>
+            </div>
+          `;
+        }
+      } else {
+        // Multi-item desde localStorage
+        numberContainer?.classList.add('hidden');
+        multiNumberContainer?.classList.remove('hidden');
+        if (multiNumbersDisplay) {
+          multiNumbersDisplay.innerHTML = cart.map((item: any) => `
+            <div class="text-center px-4">
+              <p class="font-brand text-[5rem] md:text-[7rem] text-black dark:text-white leading-none">
+                #${String(item.number).padStart(2, '0')}
+              </p>
+              <p class="text-[10px] uppercase tracking-[0.3em] text-black/60 dark:text-white/60 mt-1">${item.seriesName || ''}</p>
+            </div>
+          `).join('');
+        }
+        if (detailsContent) {
+          const itemsHTML = cart.map((item: any) => `
+            <div class="flex justify-between items-center py-2 border-b border-black/5 dark:border-white/5">
+              <div>
+                <span class="font-bold">${item.seriesName}</span>
+                <span class="font-brand text-xl ml-2">#${String(item.number).padStart(2, '0')}</span>
+                <span class="text-[10px] text-black/50 dark:text-white/50 ml-2 uppercase">${item.size} · ${item.color}</span>
+              </div>
+              <span class="font-bold shrink-0 ml-2">€${Number(item.price).toFixed(2)}</span>
+            </div>
+          `).join('');
+          detailsContent.innerHTML = `
+            ${itemsHTML}
+            ${discAmt > 0 ? `<div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10 text-green-600 dark:text-green-400"><span>Descuento:</span><span class="font-bold">-€${discAmt.toFixed(2)}</span></div>` : ''}
+            <div class="flex justify-between py-2 border-b border-black/10 dark:border-white/10"><span class="text-black/60 dark:text-white/60">Envío:</span><span>${ship === 0 ? 'GRATIS' : `€${ship.toFixed(2)}`}</span></div>
+            <div class="flex justify-between py-3"><span class="font-bold text-lg">Total Pagado:</span><span class="font-bold text-lg">€${total.toFixed(2)}</span></div>
+          `;
+        }
+      }
+      return true;
+    } catch { return false; }
+  }
+
+  // ── Cargar desde API ─────────────────────────────────────
+  async function loadFromAPI(): Promise<boolean> {
+    if (!sessionId) return false;
+    try {
       const response = await fetch(
         `${API}/orders/get-by-session.php?session_id=${sessionId}`,
         { credentials: 'include' }
       );
-
-      console.log('API Response status:', response.status);
-
-      if (!response.ok) {
-        console.error('API respondió con error:', response.status);
-        return false;
-      }
-
+      if (!response.ok) return false;
       const data = await response.json();
-      console.log('API Response data:', data);
-      
-      if (data.success && data.order) {
-        displayOrderDetails(data.order);
-        console.log('✓ Datos cargados desde API');
-        return true;
+      if (!data.success || !data.order) return false;
+
+      if (data.is_cart && data.items?.length) {
+        displayCartOrder(data.order, data.items);
+      } else {
+        displaySingleOrder(data.order);
       }
-      
-      return false;
-    } catch (error) {
-      console.error('Error al cargar desde API:', error);
-      return false;
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  // OPCIÓN 2: Cargar desde sessionStorage (FALLBACK)
-  // ═══════════════════════════════════════════════════════════════
-  function loadFromStorage(): boolean {
-    console.log('Intentando cargar desde sessionStorage...');
-    
-    const checkoutDataRaw = sessionStorage.getItem('checkout_data');
-    
-    if (!checkoutDataRaw) {
-      console.error('No hay datos en sessionStorage');
-      return false;
-    }
-
-    try {
-      const checkoutData: CheckoutData = JSON.parse(checkoutDataRaw);
-      console.log('Datos de sessionStorage:', checkoutData);
-      
-      // Construir objeto order desde checkout_data
-      const order: OrderData = {
-        series_slug: checkoutData.seriesSlug,
-        unit_number: checkoutData.number,
-        size: checkoutData.size,
-        color: checkoutData.color,
-        type: checkoutData.type || 'standard',
-        price: checkoutData.finalPrice || checkoutData.price,
-        discount_code: checkoutData.discount?.code || undefined,
-        discount_amount: checkoutData.discount?.saving || undefined
-      };
-      
-      displayOrderDetails(order);
-      console.log('✓ Datos cargados desde sessionStorage');
       return true;
-    } catch (error) {
-      console.error('Error parseando sessionStorage:', error);
-      return false;
-    }
+    } catch { return false; }
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // INICIALIZACIÓN
-  // ═══════════════════════════════════════════════════════════════
+  // ── Inicialización ────────────────────────────────────────
   async function init(): Promise<void> {
-    console.log('Iniciando carga de datos...');
-    
-    // Intentar desde API primero
-    const loadedFromAPI = await loadFromAPI();
-    
-    if (!loadedFromAPI) {
-      console.log('API no disponible, usando sessionStorage...');
-      
-      // Si API falla, usar sessionStorage
-      const loadedFromStorage = loadFromStorage();
-      
-      if (!loadedFromStorage) {
-        console.error('❌ No se pudo cargar desde ninguna fuente');
-        
-        if (detailsContent) {
-          detailsContent.innerHTML = `
-            <div class="text-center space-y-4">
-              <p class="text-red-500 text-sm">
-                No se pudieron cargar los detalles del pedido.
-              </p>
-              <p class="text-xs text-black/60 dark:text-white/60">
-                Por favor, verifica tu email para la confirmación completa.
-              </p>
-              <p class="text-xs text-black/60 dark:text-white/60">
-                Session ID: ${sessionId || 'N/A'}
-              </p>
-            </div>
-          `;
-        }
+    const ok = await loadFromAPI();
+    if (!ok) {
+      const fromCart = displayFromCart();
+      if (!fromCart && detailsContent) {
+        detailsContent.innerHTML = `
+          <div class="text-center space-y-3">
+            <p class="text-xs text-black/60 dark:text-white/60">
+              Recibirás un email con todos los detalles del pedido.
+            </p>
+            <p class="text-[10px] text-black/40 dark:text-white/40">
+              Session ID: ${sessionId || 'N/A'}
+            </p>
+          </div>
+        `;
       }
     }
-    
-    console.log('═══════════════════════════════════════');
-    console.log('Carga completada');
-    console.log('═══════════════════════════════════════');
   }
 
-  // Ejecutar
-  init();
+  init().then(() => {
+    // Limpiar carrito y notificar al badge
+    clearCart();
+    sessionStorage.removeItem('checkout_shipping');
+  });
 </script>

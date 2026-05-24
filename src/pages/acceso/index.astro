@@ -127,7 +127,7 @@ const seo = getSEO('acceso');
   // Verificar si usuario ya está logueado
   async function checkIfLoggedIn() {
     try {
-      const response = await fetch('https://d-cien.es/api/auth/check.php', {
+      const response = await fetch(import.meta.env.PUBLIC_API_URL + '/auth/check.php', {
         method: 'GET',
         credentials: 'include',
       });
@@ -172,7 +172,7 @@ const seo = getSEO('acceso');
     submitBtn.textContent = 'PROCESANDO...';
 
     try {
-      const response = await fetch('https://d-cien.es/api/auth/login.php', {
+      const response = await fetch(import.meta.env.PUBLIC_API_URL + '/auth/login.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

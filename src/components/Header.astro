@@ -43,6 +43,22 @@ const navItems = [
 
     <!-- ACCIONES DERECHA -->
     <div class="flex items-center gap-3 shrink-0">
+
+      <!-- Icono carrito -->
+      <button
+        id="cart-icon-btn"
+        class="relative p-2.5 text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors"
+        aria-label="Abrir carrito"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+        </svg>
+        <span
+          id="cart-badge"
+          class="absolute -top-0.5 -right-0.5 hidden min-w-[18px] h-[18px] bg-black dark:bg-white text-white dark:text-black text-[9px] font-bold rounded-full items-center justify-center px-1 leading-none"
+        ></span>
+      </button>
+
       <button id="theme-toggle" class="group relative px-5 py-2.5 overflow-hidden rounded-full border border-black/10 dark:border-white/10 bg-transparent transition-all duration-500 hover:border-black dark:hover:border-white">
         <span class="absolute inset-0 w-0 bg-black dark:bg-white transition-all duration-300 ease-out group-hover:w-full"></span>
         <span class="relative flex items-center gap-3">
@@ -143,7 +159,7 @@ const navItems = [
   // Lógica de Cierre de Sesión Centralizada
   const logout = async () => {
     try {
-      await fetch('https://d-cien.es/api/auth/logout.php', {
+      await fetch(import.meta.env.PUBLIC_API_URL + '/auth/logout.php', {
         method: 'POST',
         credentials: 'include'
       });
@@ -202,7 +218,7 @@ const navItems = [
   // Verificación de Sesión para mostrar botones
   async function checkAuth() {
   try {
-    const r = await fetch('https://d-cien.es/api/auth/check.php', {
+    const r = await fetch(import.meta.env.PUBLIC_API_URL + '/auth/check.php', {
       credentials: 'include'
     });
     const d = await r.json();
@@ -226,5 +242,34 @@ checkAuth();
 
 // 2. Cada navegación interna de Astro
 document.addEventListener('astro:page-load', checkAuth);
+
+// ── Badge del carrito ──────────────────────────────────────
+function updateCartBadge() {
+  const badge = document.getElementById('cart-badge');
+  if (!badge) return;
+  try {
+    const cart = JSON.parse(localStorage.getItem('dcien_cart') || '[]');
+    const count = Array.isArray(cart) ? cart.length : 0;
+    if (count > 0) {
+      badge.textContent = String(count);
+      badge.classList.remove('hidden');
+      badge.classList.add('flex');
+    } else {
+      badge.classList.add('hidden');
+      badge.classList.remove('flex');
+    }
+  } catch {
+    badge.classList.add('hidden');
+    badge.classList.remove('flex');
+  }
+}
+
+updateCartBadge();
+window.addEventListener('cart:updated', updateCartBadge);
+window.addEventListener('storage', updateCartBadge);
+
+document.getElementById('cart-icon-btn')?.addEventListener('click', () => {
+  window.dispatchEvent(new CustomEvent('cart:open'));
+});
 
 </script>

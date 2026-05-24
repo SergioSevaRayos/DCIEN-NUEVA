@@ -93,8 +93,32 @@ function sendEmail(array $params): bool {
 /**
  * Obtiene el contenido HTML de un template de email
  * Carga templates desde /includes/emails/
- * 
+ *
  * @param string $template Nombre del template (welcome, password_reset, order_confirmation)
  * @param array $data Datos para reemplazar en el template
  * @return string HTML del email
  */
+function getEmailTemplate(string $template, array $data = []): string {
+    $templatePath = __DIR__ . '/emails/' . $template . '.php';
+
+    if (!file_exists($templatePath)) {
+        if (function_exists('logError')) {
+            logError('Email template not found', ['template' => $template]);
+        }
+        return '';
+    }
+
+    // Ejecutar el template con $data en scope; el archivo hace `return '...'`
+    $html = (function () use ($templatePath, $data) {
+        return require $templatePath;
+    })();
+
+    // Reemplazar {placeholder} con valores simples
+    foreach ($data as $key => $value) {
+        if (is_string($value) || is_numeric($value)) {
+            $html = str_replace('{' . $key . '}', (string) $value, $html);
+        }
+    }
+
+    return (string) $html;
+}

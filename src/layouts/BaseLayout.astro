@@ -3,6 +3,7 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import CookieBanner from '../components/CookieBanner.astro';
 import SEO from '../components/SEO.astro';
+import CartDrawer from '../components/CartDrawer.astro';
 
 import '../styles/global.css';
 
@@ -56,6 +57,9 @@ const { seo, currentPath = Astro.url.pathname } = Astro.props;
 
     <!-- HEADER (fixed) -->
     <Header currentPath={currentPath} />
+
+    <!-- CARRITO (drawer global) -->
+    <CartDrawer />
 
     <!-- MAIN: compensación GLOBAL del header -->
     <main class="relative z-10 pt-[var(--header-height)] min-h-screen">

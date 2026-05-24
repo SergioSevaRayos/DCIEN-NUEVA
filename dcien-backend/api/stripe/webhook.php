@@ -116,10 +116,10 @@ try {
     logError('WEBHOOK: Ejecutando UPDATE en BD para order_id: ' . $order_id);
 
     query(
-        "UPDATE orders SET shipping_data=:shipping, stripe_session_id=:sid WHERE id=:oid",
+        "UPDATE orders SET shipping_data=:shipping, stripe_session_id=:sid, status='paid' WHERE id=:oid",
         ['shipping' => $shipping_json, 'sid' => $session->id, 'oid' => $order_id]
     );
-    logError('WEBHOOK: UPDATE completado con éxito.');
+    logError('WEBHOOK: UPDATE completado con éxito (status=paid).');
 
     // Detectar si es pedido de carrito o individual
     $is_cart_order = ($session->metadata->is_cart_order ?? '0') === '1';
@@ -154,23 +154,69 @@ try {
         query("UPDATE series SET available_units=GREATEST(0, available_units-1), sold_units=sold_units+1, updated_at=NOW() WHERE slug=:slug", ['slug' => $series_slug]);
     }
     
-    // 6. ENVÍO DE EMAIL
-    logError('WEBHOOK: Iniciando proceso de envío de email...');
+    // 6. ENVÍO DE EMAIL DE CONFIRMACIÓN
+    logError('WEBHOOK: Iniciando envío de email de confirmación...');
     try {
-        $mailerPath = $backend_root . '/includes/mailer.php';
-        if (file_exists($mailerPath)) {
-            require_once $mailerPath;
-            // Configurar mail
-            $email_destino = $session->customer_details->email ?? ($shipping_from_form['email'] ?? 'SIN_EMAIL');
-            logError('WEBHOOK: Intentando enviar email a: ' . $email_destino);
-            
-            // ... (simplificado para el log, tu lógica real de mailer debe funcionar si llega aquí)
-            logError('WEBHOOK: Email procesado por la función (revisar logs del mailer si falla).');
+        require_once $backend_root . '/includes/mailer.php';
+
+        // Datos del usuario (username + email de registro)
+        $dbUser        = queryOne("SELECT username, email FROM users WHERE id = :uid", ['uid' => $user_id]);
+        $email_destino = $dbUser['email']
+            ?? ($session->customer_details->email ?? ($shipping_from_form['email'] ?? null));
+        $username      = $dbUser['username'] ?? ($shipping_from_form['firstName'] ?? 'Cliente');
+
+        if (!$email_destino) {
+            logError('WEBHOOK ERROR: No se pudo determinar email de destino para order_id: ' . $order_id);
         } else {
-            logError('WEBHOOK ERROR: Archivo mailer.php no encontrado en ' . $mailerPath);
+            // Lista de items para el email
+            if ($is_cart_order) {
+                $email_items = $items; // Ya se cargaron de order_items arriba
+            } else {
+                $email_items = [[
+                    'series_slug' => $series_slug,
+                    'unit_number' => $unit_number,
+                    'size'        => $size,
+                    'color'       => $color,
+                    'type'        => $type,
+                ]];
+            }
+
+            // Dirección de envío formateada
+            $s = $shipping_from_form;
+            $address_lines = implode('<br>', array_filter([
+                trim(($s['firstName'] ?? '') . ' ' . ($s['lastName'] ?? '')),
+                trim(($s['address'] ?? '') . ($s['addressExtra'] ? ', ' . $s['addressExtra'] : '')),
+                trim(($s['postalCode'] ?? '') . ' ' . ($s['city'] ?? '') . (isset($s['province']) ? ', ' . $s['province'] : '')),
+                ($s['email'] ?? $email_destino) . (isset($s['phone']) ? ' | ' . $s['phone'] : ''),
+            ]));
+
+            $total_pagado = number_format($session->amount_total / 100, 2, '.', '');
+
+            $email_data = [
+                'username'         => htmlspecialchars($username),
+                'order_id'         => $order_id,
+                'email_items'      => $email_items,
+                'shipping_address' => $address_lines,
+                'total'            => $total_pagado,
+                'discount_code'    => $discount_code ?? '',
+                'discount_amount'  => $discount_amount > 0 ? number_format($discount_amount, 2, '.', '') : '',
+                'original_price'   => $discount_amount > 0
+                    ? '€' . number_format(($session->amount_total / 100) + $discount_amount, 2, '.', '')
+                    : '',
+            ];
+
+            $html = getEmailTemplate('order_confirmation', $email_data);
+
+            $sent = sendEmail([
+                'to'      => $email_destino,
+                'subject' => 'Pedido Confirmado #' . $order_id . ' — DCIEN',
+                'html'    => $html,
+            ]);
+
+            logError('WEBHOOK: Email ' . ($sent ? 'enviado correctamente' : 'FALLÓ') . ' a: ' . $email_destino);
         }
     } catch (Exception $emailError) {
-        logError('WEBHOOK ERROR: Fallo al enviar el email - ' . $emailError->getMessage());
+        logError('WEBHOOK ERROR: Excepción enviando email - ' . $emailError->getMessage());
     }
 
     $pdo->commit();

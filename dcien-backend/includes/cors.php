@@ -1,8 +1,14 @@
 <?php
-$allowedOrigin = 'https://d-cien.es';
+$allowedOrigins = [
+    'https://d-cien.es',
+    'http://localhost:4321',
+    'http://localhost:4322', // puerto alternativo de Astro
+];
 
-if (isset($_SERVER['HTTP_ORIGIN']) && $_SERVER['HTTP_ORIGIN'] === $allowedOrigin) {
-    header("Access-Control-Allow-Origin: $allowedOrigin");
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+
+if (in_array($origin, $allowedOrigins, true)) {
+    header("Access-Control-Allow-Origin: $origin");
     header('Access-Control-Allow-Credentials: true');
 }
 

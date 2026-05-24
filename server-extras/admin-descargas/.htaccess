@@ -1,0 +1,17 @@
+# Protección con contraseña
+AuthType Basic
+AuthName "Área Administrativa DCIEN"
+AuthUserFile /home/u755459505/domains/d-cien.es/public_html/admin-descargas/.htpasswd
+Require valid-user
+
+# Bloquear acceso a archivos ocultos
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Solo tipos de archivo permitidos
+<FilesMatch "\.(php|html|pdf|csv)$">
+    Order allow,deny
+    Allow from all
+</FilesMatch>

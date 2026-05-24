@@ -1,0 +1,226 @@
+<?php
+/**
+ * DCIEN - Crear Token de Activación
+ * Compatible con estructura CLI (sin metadata)
+ */
+
+require_once 'config.php';
+
+$pdo = get_db_connection();
+$message = '';
+$token_generado = null;
+
+/**
+ * Generar password aleatoria segura
+ */
+function generateRandomPassword(int $length = 12): string {
+    $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%';
+    $password = '';
+    for ($i = 0; $i < $length; $i++) {
+        $password .= $chars[random_int(0, strlen($chars) - 1)];
+    }
+    return $password;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $instagram = trim($_POST['instagram'] ?? '');
+    
+    if (empty($instagram)) {
+        $message = show_message('error', '❌ El nombre de Instagram es obligatorio');
+    } else {
+        try {
+            // 1. Verificar token existente
+            $stmt = $pdo->prepare("
+                SELECT id FROM activation_tokens
+                WHERE instagram_username = :ig
+                  AND used_at IS NULL
+                  AND expires_at > NOW()
+                LIMIT 1
+            ");
+            $stmt->execute(['ig' => $instagram]);
+            $existing = $stmt->fetch();
+            
+            if ($existing) {
+                $message = show_message('warning', "⚠️ Ya existe un token activo para @{$instagram}");
+            } else {
+                // 2. Verificar descuento de bienvenida
+                $stmt = $pdo->prepare("
+                    SELECT id, code, description, type, value 
+                    FROM discounts 
+                    WHERE code = 'DCIEN10' 
+                      AND is_active = 1
+                    LIMIT 1
+                ");
+                $stmt->execute();
+                $welcomeDiscount = $stmt->fetch();
+                
+                // 3. Generar credenciales temporales
+                $token = bin2hex(random_bytes(32));
+                $temp_username = 'temp_' . substr(bin2hex(random_bytes(6)), 0, 8);
+                $temp_password = generateRandomPassword();
+                $temp_password_hash = password_hash($temp_password, PASSWORD_BCRYPT);
+                
+                // Expiración: 72 horas
+                $expires_at = date('Y-m-d H:i:s', strtotime('+72 hours'));
+                
+                // 4. Insertar token
+                $stmt = $pdo->prepare("
+                    INSERT INTO activation_tokens
+                    (token, instagram_username, temp_username, temp_password_hash, expires_at, created_at)
+                    VALUES
+                    (:token, :instagram, :temp_username, :hash, :expires, NOW())
+                ");
+                $stmt->execute([
+                    'token' => $token,
+                    'instagram' => $instagram,
+                    'temp_username' => $temp_username,
+                    'hash' => $temp_password_hash,
+                    'expires' => $expires_at
+                ]);
+                
+                $token_generado = [
+                    'token' => $token,
+                    'instagram' => $instagram,
+                    'temp_username' => $temp_username,
+                    'temp_password' => $temp_password,
+                    'expires' => $expires_at,
+                    'discount' => $welcomeDiscount
+                ];
+                
+                $message = show_message('success', '✅ Token de activación creado correctamente');
+            }
+        } catch (Exception $e) {
+            $message = show_message('error', '❌ Error al crear token: ' . $e->getMessage());
+        }
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Token - DCIEN</title>
+    <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>CREAR TOKEN</h1>
+            <p>Generar credencial de activación</p>
+            <div class="user-info">
+                <a href="../index.php" style="color: inherit; text-decoration: none;">← Volver</a>
+            </div>
+        </header>
+
+        <?php if ($message): ?>
+            <?php echo $message; ?>
+        <?php endif; ?>
+
+        <?php if ($token_generado): ?>
+            <!-- Token generado -->
+            <div style="background: #111; border: 2px solid #00ff00; padding: 24px; margin-bottom: 24px;">
+                <h3 style="margin-bottom: 16px; color: #00ff00;">✅ TOKEN DE ACTIVACIÓN CREADO</h3>
+                
+                <div style="background: #0a0a0a; padding: 20px; margin-bottom: 20px; border: 1px solid #333;">
+                    <p style="margin-bottom: 8px;"><strong>Instagram:</strong> @<?php echo e($token_generado['instagram']); ?></p>
+                    <?php if ($token_generado['discount']): ?>
+                        <p style="color: #22c55e;">
+                            🎁 Recibirá: <?php echo e($token_generado['discount']['description']); ?> 
+                            (-<?php echo $token_generado['discount']['value']; ?>%)
+                        </p>
+                    <?php else: ?>
+                        <p style="color: #f59e0b;">
+                            ⚠️ ADVERTENCIA: El descuento 'DCIEN10' no está activo. El token se creó pero sin descuento.
+                        </p>
+                    <?php endif; ?>
+                </div>
+
+                <div style="background: #000; padding: 20px; border: 2px solid #333; margin-bottom: 20px; font-family: 'Courier New', monospace;">
+                    <h4 style="color: #00ff00; margin-bottom: 12px;">📩 ENVIAR POR DM:</h4>
+                    <div style="background: #111; padding: 16px; border-left: 3px solid #00ff00; margin-bottom: 12px;">
+                        <pre style="margin: 0; white-space: pre-wrap; font-size: 13px; line-height: 1.6;">🎯 ACCESO EXCLUSIVO DCIEN
+
+Usuario temporal: <?php echo e($token_generado['temp_username']); ?>
+
+Contraseña temporal: <?php echo e($token_generado['temp_password']); ?>
+
+
+Activar cuenta:
+https://d-cien.es/registro/activar
+<?php if ($token_generado['discount']): ?>
+
+
+🎁 REGALO DE BIENVENIDA
+Al activar tu cuenta recibirás automáticamente:
+• <?php echo e($token_generado['discount']['description']); ?>
+
+• Código: <?php echo e($token_generado['discount']['code']); ?>
+
+<?php endif; ?>
+
+⏱️ Válido durante 72 horas</pre>
+                    </div>
+                    <button onclick="copiarMensaje()" class="btn btn-small" style="margin-right: 8px;">📋 Copiar Mensaje</button>
+                    <button onclick="this.previousElementSibling.querySelector('pre').select()" class="btn btn-small btn-secondary">📝 Seleccionar</button>
+                </div>
+                
+                <div class="form-group">
+                    <label>Detalles Técnicos (para debugging)</label>
+                    <details style="background: #0a0a0a; padding: 12px; border: 1px solid #333;">
+                        <summary style="cursor: pointer; padding: 4px;">Ver datos completos</summary>
+                        <div style="margin-top: 12px; font-size: 12px; font-family: monospace;">
+                            <p><strong>Token:</strong><br><input type="text" value="<?php echo e($token_generado['token']); ?>" readonly onclick="this.select()" style="width: 100%; margin: 4px 0;"></p>
+                            <p><strong>Usuario temporal:</strong> <?php echo e($token_generado['temp_username']); ?></p>
+                            <p><strong>Password temporal:</strong> <?php echo e($token_generado['temp_password']); ?></p>
+                            <p><strong>Expira:</strong> <?php echo format_date($token_generado['expires']); ?></p>
+                        </div>
+                    </details>
+                </div>
+                
+                <a href="activacion.php" class="btn">+ Generar Otro Token</a>
+            </div>
+
+            <script>
+            function copiarMensaje() {
+                const texto = document.querySelector('pre').textContent;
+                navigator.clipboard.writeText(texto).then(() => {
+                    alert('✅ Mensaje copiado al portapapeles');
+                }).catch(err => {
+                    console.error('Error al copiar:', err);
+                    alert('❌ Error al copiar. Usa el botón Seleccionar.');
+                });
+            }
+            </script>
+        <?php else: ?>
+            <!-- Formulario -->
+            <div class="table-container">
+                <form method="POST" style="padding: 24px;">
+                    <div class="form-group">
+                        <label>Nombre de Instagram *</label>
+                        <input type="text" name="instagram" required placeholder="usuario_instagram" autofocus>
+                        <small style="font-size: 11px; color: #666;">Sin @ inicial, solo el nombre de usuario</small>
+                    </div>
+                    
+                    <button type="submit" class="btn">🎟️ Generar Token de Activación</button>
+                </form>
+            </div>
+
+            <div style="background: #111; border: 2px solid #333; padding: 20px; margin-top: 24px;">
+                <h4 style="margin-bottom: 12px;">ℹ️ INFORMACIÓN</h4>
+                <ul style="font-size: 12px; line-height: 1.8; color: #666; list-style-position: inside;">
+                    <li>El sistema generará credenciales temporales automáticamente</li>
+                    <li>El token expira en 72 horas</li>
+                    <li>Al activar, el usuario recibirá automáticamente el descuento DCIEN10</li>
+                    <li>Las credenciales temporales permiten hacer login en /acceso</li>
+                    <li>Una vez activada, las credenciales temporales ya no funcionan</li>
+                </ul>
+            </div>
+        <?php endif; ?>
+
+        <footer class="footer">
+            <p>DCIEN Crear Token de Activación</p>
+        </footer>
+    </div>
+</body>
+</html>

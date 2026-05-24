@@ -1,0 +1,12 @@
+# Permitir acceso al directorio con index.php
+DirectoryIndex index.php
+
+# Permitir PHP y HTML
+<FilesMatch "\.(php|html|pdf)$">
+    Require all granted
+</FilesMatch>
+
+# Denegar acceso directo a otros archivos
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>

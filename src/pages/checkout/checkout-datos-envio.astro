@@ -217,205 +217,123 @@ const seo = {
 </BaseLayout>
 
 <script>
-  const shippingForm = document.getElementById('shipping-form') as HTMLFormElement;
+  const shippingForm  = document.getElementById('shipping-form') as HTMLFormElement;
   const summaryContent = document.getElementById('summary-content');
 
-  // ═══════════════════════════════════════════════════════════════
-  // CARGAR DATOS DEL PRODUCTO
-  // ═══════════════════════════════════════════════════════════════
-  function loadProductData() {
-    const data = sessionStorage.getItem('checkout_data');
-    
-    if (!data) {
-      console.error('No hay datos de checkout');
+  const SHIPPING_FEE = 5.00;
+  const TAX_RATE     = 0.21;
+
+  function loadCartSummary() {
+    let cart: any[]  = [];
+    let discount: any = null;
+
+    try {
+      cart     = JSON.parse(localStorage.getItem('dcien_cart')          || '[]');
+      discount = JSON.parse(localStorage.getItem('dcien_cart_discount') || 'null');
+    } catch { /* ignore */ }
+
+    if (!cart.length) {
       window.location.href = '/series-activas';
       return;
     }
 
-    const checkoutData = JSON.parse(data);
-    console.log('Datos de checkout en datos-envio:', checkoutData);
-    
     if (!summaryContent) return;
 
-    // Verificar si hay descuento aplicado
-    const discount = checkoutData.discount || null;
-    const originalPrice = checkoutData.originalPrice || checkoutData.price || 0;
-    const finalPrice = checkoutData.finalPrice || checkoutData.price || 0;
-    const hasDiscount = discount && finalPrice < originalPrice;
+    // Items
+    const itemsHTML = cart.map((item: any) => `
+      <div class="flex justify-between items-center py-1.5 border-b border-black/5 dark:border-white/5 last:border-0">
+        <div>
+          <span class="font-bold text-black dark:text-white">${item.seriesName}</span>
+          <span class="font-brand text-lg ml-2">#${String(item.number).padStart(2, '0')}</span>
+          <span class="text-[10px] text-black/50 dark:text-white/50 ml-2 uppercase">${item.size} · ${item.color} · ${item.type}</span>
+        </div>
+        <span class="font-bold text-black dark:text-white shrink-0 ml-2">€${Number(item.price).toFixed(2)}</span>
+      </div>
+    `).join('');
 
-    // --- NUEVA LÓGICA DE ENVÍO ---
-    let costoEnvio = 4.90; // Tarifa estándar
+    // Totales
+    const subtotal = cart.reduce((s: number, i: any) => s + Number(i.price), 0);
 
-    // Si hay un descuento del 100%, el envío es 0
-    if (hasDiscount && discount.type === 'percent' && parseInt(discount.value) === 100) {
-      costoEnvio = 0;
+    let discAmt = 0;
+    if (discount) {
+      if (discount.type === 'percent') {
+        discAmt = subtotal * (parseFloat(discount.value) / 100);
+      } else {
+        discAmt = Math.min(parseFloat(discount.value), subtotal);
+      }
+      discAmt = Math.round(discAmt * 100) / 100;
     }
-    
-    const totalConEnvio = finalPrice + costoEnvio;
 
-    // Guardamos el costo de envío en sesión para el siguiente paso (checkout-resumen)
-    checkoutData.shippingCost = costoEnvio;
-    sessionStorage.setItem('checkout_data', JSON.stringify(checkoutData));
-    // -----------------------------
+    const priceAfterDisc = Math.max(0, subtotal - discAmt);
+    const isFree         = priceAfterDisc < 0.10;
+    const shipping       = isFree ? 0 : SHIPPING_FEE;
+    const iva            = Math.round(priceAfterDisc * TAX_RATE * 100) / 100;
+    const total          = Math.round((priceAfterDisc + iva + shipping) * 100) / 100;
 
-    // ═══════════════════════════════════════════════════════════════
-    // CONSTRUIR HTML DEL RESUMEN
-    // ═══════════════════════════════════════════════════════════════
-    let summaryHTML = `
-      <div class="flex justify-between">
-        <span class="text-black/60 dark:text-white/60">Serie:</span>
-        <span class="font-bold text-black dark:text-white">${checkoutData.seriesName || 'N/A'}</span>
-      </div>
-      <div class="flex justify-between">
-        <span class="text-black/60 dark:text-white/60">Número:</span>
-        <span class="font-bold text-black dark:text-white">#${String(checkoutData.number).padStart(2, '0')}</span>
-      </div>
-      <div class="flex justify-between">
-        <span class="text-black/60 dark:text-white/60">Talla:</span>
-        <span class="text-black dark:text-white">${checkoutData.size?.toUpperCase() || 'N/A'}</span>
-      </div>
-      <div class="flex justify-between">
-        <span class="text-black/60 dark:text-white/60">Color:</span>
-        <span class="text-black dark:text-white">${checkoutData.color || 'N/A'}</span>
-      </div>
-      <div class="flex justify-between">
-        <span class="text-black/60 dark:text-white/60">Tipo:</span>
-        <span class="text-black dark:text-white">${checkoutData.type || 'standard'}</span>
+    let discountHTML = '';
+    if (discount && discAmt > 0) {
+      discountHTML = `
+        <div class="flex justify-between items-center">
+          <span class="text-green-600 dark:text-green-400 text-xs">Descuento (${discount.code}):</span>
+          <span class="text-green-600 dark:text-green-400 font-bold">-€${discAmt.toFixed(2)}</span>
+        </div>
+      `;
+    }
+
+    summaryContent.innerHTML = `
+      <div class="space-y-1 mb-4">${itemsHTML}</div>
+      <div class="pt-3 mt-2 border-t border-black/10 dark:border-white/10 space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-black/60 dark:text-white/60">Subtotal (base):</span>
+          <span class="text-black dark:text-white">€${priceAfterDisc.toFixed(2)}</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-black/60 dark:text-white/60">IVA (21%):</span>
+          <span class="text-black dark:text-white">€${iva.toFixed(2)}</span>
+        </div>
+        ${discountHTML}
+        <div class="flex justify-between items-center">
+          <span class="text-black/60 dark:text-white/60">Envío:</span>
+          <span class="font-bold text-black dark:text-white">${shipping === 0 ? 'GRATIS' : `€${shipping.toFixed(2)}`}</span>
+        </div>
+        <div class="flex justify-between items-center pt-2 border-t border-black/5 dark:border-white/5">
+          <span class="font-bold text-black dark:text-white">Total:</span>
+          <span class="font-bold text-lg text-black dark:text-white">€${total.toFixed(2)}</span>
+        </div>
       </div>
     `;
 
-    // ═══════════════════════════════════════════════════════════════
-    // MOSTRAR DESCUENTO SI APLICA
-    // ═══════════════════════════════════════════════════════════════
-    if (hasDiscount) {
-      const savings = (originalPrice - finalPrice).toFixed(2);
-      
-      summaryHTML += `
-        <div class="pt-3 mt-3 border-t border-black/10 dark:border-white/10 space-y-2">
-          <div class="flex justify-between items-center">
-            <span class="text-black/60 dark:text-white/60">Precio original:</span>
-            <span class="text-black/50 dark:text-white/50 line-through">€${originalPrice.toFixed(2)}</span>
-          </div>
-          <div class="flex justify-between items-center">
-            <span class="text-green-600 dark:text-green-400 text-xs font-medium">
-              Descuento (${discount.code}):
-            </span>
-            <span class="text-green-600 dark:text-green-400 font-bold">
-              -€${savings}
-            </span>
-          </div>
-          <div class="flex justify-between items-center">
-            <span class="text-black/60 dark:text-white/60">Envío:</span>
-            <span class="font-bold text-black dark:text-white">${costoEnvio === 0 ? 'GRATIS' : `€${costoEnvio.toFixed(2)}`}</span>
-          </div>
-          <div class="flex justify-between items-center pt-2 border-t border-black/5 dark:border-white/5">
-            <span class="font-bold text-black dark:text-white">Total:</span>
-            <span class="font-bold text-lg text-black dark:text-white">€${totalConEnvio.toFixed(2)}</span>
-          </div>
-        </div>
-      `;
-    } else {
-      // Sin descuento, precio normal + envío
-      summaryHTML += `
-        <div class="pt-3 mt-3 border-t border-black/10 dark:border-white/10 space-y-2">
-          <div class="flex justify-between items-center">
-            <span class="text-black/60 dark:text-white/60">Subtotal:</span>
-            <span class="font-bold text-black dark:text-white">€${finalPrice.toFixed(2)}</span>
-          </div>
-          <div class="flex justify-between items-center">
-            <span class="text-black/60 dark:text-white/60">Envío:</span>
-            <span class="font-bold text-black dark:text-white">€${costoEnvio.toFixed(2)}</span>
-          </div>
-          <div class="flex justify-between items-center pt-2 border-t border-black/5 dark:border-white/5">
-            <span class="font-bold text-black dark:text-white">Total:</span>
-            <span class="font-bold text-lg text-black dark:text-white">€${totalConEnvio.toFixed(2)}</span>
-          </div>
-        </div>
-      `;
-    }
-
-    summaryContent.innerHTML = summaryHTML;
-
-    // ═══════════════════════════════════════════════════════════════
-    // AUTOCOMPLETAR EMAIL SI ESTÁ EN SESIÓN
-    // ═══════════════════════════════════════════════════════════════
-    const emailInput = document.getElementById('email') as HTMLInputElement;
-    if (emailInput && checkoutData.userEmail) {
-      emailInput.value = checkoutData.userEmail;
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // AUTOCOMPLETAR DATOS SI YA EXISTEN (usuario vuelve atrás)
-    // ═══════════════════════════════════════════════════════════════
-    if (checkoutData.shipping) {
-      const s = checkoutData.shipping;
-      
-      const fields = {
-        firstName: s.firstName,
-        lastName: s.lastName,
-        email: s.email,
-        phone: s.phone,
-        address: s.address,
-        addressExtra: s.addressExtra,
-        postalCode: s.postalCode,
-        city: s.city,
-        province: s.province,
-        country: s.country
-      };
-
-      Object.entries(fields).forEach(([key, value]) => {
-        const input = document.getElementById(key) as HTMLInputElement;
-        if (input && value) {
-          input.value = value as string;
-        }
+    // Autocompletar datos de envío si el usuario vuelve atrás
+    const saved = sessionStorage.getItem('checkout_shipping');
+    if (saved) {
+      const s = JSON.parse(saved);
+      ['firstName','lastName','email','phone','address','addressExtra','postalCode','city','province','country'].forEach(key => {
+        const input = document.getElementById(key) as HTMLInputElement | null;
+        if (input && s[key]) input.value = s[key];
       });
-
-      console.log('✓ Datos de envío autocompletados');
     }
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // MANEJAR SUBMIT DEL FORMULARIO
-  // ═══════════════════════════════════════════════════════════════
   shippingForm?.addEventListener('submit', (e) => {
     e.preventDefault();
-    
-    const formData = new FormData(shippingForm);
+    const fd = new FormData(shippingForm);
+
     const shippingData = {
-      firstName: formData.get('firstName') as string,
-      lastName: formData.get('lastName') as string,
-      email: formData.get('email') as string,
-      phone: formData.get('phone') as string,
-      address: formData.get('address') as string,
-      addressExtra: (formData.get('addressExtra') as string) || '',
-      postalCode: formData.get('postalCode') as string,
-      city: formData.get('city') as string,
-      province: formData.get('province') as string,
-      country: formData.get('country') as string || 'ES'
+      firstName:    fd.get('firstName')    as string,
+      lastName:     fd.get('lastName')     as string,
+      email:        fd.get('email')        as string,
+      phone:        fd.get('phone')        as string,
+      address:      fd.get('address')      as string,
+      addressExtra: (fd.get('addressExtra') as string) || '',
+      postalCode:   fd.get('postalCode')   as string,
+      city:         fd.get('city')         as string,
+      province:     fd.get('province')     as string,
+      country:      (fd.get('country')     as string) || 'ES',
     };
 
-    console.log('Datos de envío capturados:', shippingData);
-
-    // ═══════════════════════════════════════════════════════════════
-    // GUARDAR EN SESSIONSTORAGE
-    // ═══════════════════════════════════════════════════════════════
-    const checkoutData = JSON.parse(sessionStorage.getItem('checkout_data') || '{}');
-    
-    // IMPORTANTE: Mantener descuento si existe
-    checkoutData.shipping = shippingData;
-    
-    sessionStorage.setItem('checkout_data', JSON.stringify(checkoutData));
-    
-    console.log('✓ Datos guardados en sessionStorage:', checkoutData);
-
-    // ═══════════════════════════════════════════════════════════════
-    // IR AL RESUMEN
-    // ═══════════════════════════════════════════════════════════════
+    sessionStorage.setItem('checkout_shipping', JSON.stringify(shippingData));
     window.location.href = '/checkout/checkout-resumen';
   });
 
-  // ═══════════════════════════════════════════════════════════════
-  // INICIALIZACIÓN
-  // ═══════════════════════════════════════════════════════════════
-  loadProductData();
+  loadCartSummary();
 </script>

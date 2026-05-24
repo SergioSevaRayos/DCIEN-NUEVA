@@ -1,0 +1,707 @@
+<?php
+/**
+ * DCIEN - GESTOR Y AUDITOR UNIFICADO DE ÓRDENES (CON PIPELINE DE ESTADOS)
+ * Ubicación: /admin-descargas/ordenes/index.php
+ * [Versión Responsive + Docs Completos]
+ */
+
+require_once '../modules/config.php';
+
+$pdo = get_db_connection();
+$message = '';
+$filtros_aplicados = [];
+
+// Estado actual del pipeline (Por defecto: pendiente)
+$estado_actual = $_GET['estado'] ?? 'pendiente';
+
+// ═══════════════════════════════════════════════════════════════
+// FUNCIONES DE EMAIL
+// ═══════════════════════════════════════════════════════════════
+
+function enviar_email_orden($pedido, $orden_info) {
+    $to = ADMIN_EMAIL;
+    $subject = "🔔 Nueva Orden de Producción #{$pedido['id']} - DCIEN";
+    $message = "
+    <html><head><style>
+        body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 20px auto; background: #fff; }
+        .header { background: #000; color: #fff; padding: 30px; text-align: center; }
+        .content { padding: 30px; }
+        .order-id { background: #000; color: #fff; padding: 20px; text-align: center; font-size: 40px; font-weight: 900; }
+    </style></head><body>
+        <div class='container'>
+            <div class='header'><h1>DCIEN</h1><p>Nueva Orden Generada</p></div>
+            <div class='content'>
+                <div class='order-id'>#{$pedido['id']}</div>
+                <p>La orden ha pasado a estado <strong>PRODUCCIÓN</strong>.</p>
+                <a href='{$orden_info['url']}' style='display:block; background:#000; color:#fff; padding:15px; text-align:center; text-decoration:none;'>Ver Orden HTML</a>
+            </div>
+        </div>
+    </body></html>";
+    
+    $headers = "MIME-Version: 1.0\r\nContent-type:text/html;charset=UTF-8\r\nFrom: DCIEN Producción <produccion@d-cien.es>\r\n";
+    return mail($to, $subject, $message, $headers);
+}
+
+function enviar_email_cliente_enviado($pedido) {
+    $to = $pedido['email'];
+    if (empty($to)) {
+        $shipping = json_decode($pedido['shipping_data'], true);
+        $to = $shipping['customer']['email'] ?? $shipping['shipping_address']['email'] ?? '';
+    }
+
+    if (empty($to)) return false;
+
+    $nombre_cliente = strtoupper($pedido['username'] ?: ($pedido['first_name'] ?? 'Cliente'));
+    
+    $subject = "🚚 ¡Tu pedido DCIEN va en camino! (#{$pedido['id']})";
+    $message = "
+    <html><head><style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .header { background: #000000; color: #ffffff; padding: 30px 20px; text-align: center; }
+        .header h1 { font-size: 28px; letter-spacing: 4px; margin: 0; font-weight: 900; }
+        .content { padding: 30px 20px; text-align: center; color: #333; line-height: 1.6; }
+        .icon-box { font-size: 40px; margin-bottom: 20px; }
+        .btn { display: inline-block; padding: 14px 30px; background: #000; color: #fff; text-decoration: none; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; margin-top: 30px; border-radius: 4px; }
+        .footer { background: #fafafa; padding: 20px; text-align: center; font-size: 12px; color: #888; border-top: 1px solid #eee; }
+    </style></head><body>
+        <div class='container'>
+            <div class='header'>
+                <h1>DCIEN</h1>
+            </div>
+            <div class='content'>
+                <div class='icon-box'>📦✈️</div>
+                <h2 style='margin-top:0;'>¡Hola {$nombre_cliente}!</h2>
+                <p>Tenemos grandes noticias: <strong>tu pedido #{$pedido['id']} ya ha salido de nuestras instalaciones</strong> y está en manos del transportista.</p>
+                <div style='background: #f9f9f9; border-left: 4px solid #000; padding: 15px; margin: 25px 0; text-align: left; font-size:14px;'>
+                    <strong>Producto:</strong> {$pedido['series_name']}<br>
+                    <strong>Talla/Color:</strong> " . strtoupper($pedido['size']) . " - " . ucfirst($pedido['color']) . "<br>
+                    <strong>Corte:</strong> " . ucfirst($pedido['type']) . "
+                </div>
+                <p>Pronto lo recibirás en la dirección indicada. Si tienes alguna duda, responde a este mismo correo.</p>
+                <a href='https://d-cien.es' class='btn'>Visitar Tienda</a>
+            </div>
+            <div class='footer'>
+                <p>Gracias por confiar en DCIEN. Nos vemos en las calles.</p>
+            </div>
+        </div>
+    </body></html>";
+    
+    $headers = "MIME-Version: 1.0\r\nContent-type:text/html;charset=UTF-8\r\nFrom: DCIEN <pedidos@d-cien.es>\r\n";
+    return mail($to, $subject, $message, $headers);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FUNCIONES DE GENERACIÓN HTML (ORDEN DE TRABAJO COMPLETA)
+// ═══════════════════════════════════════════════════════════════
+
+function generar_orden_trabajo($pedido) {
+    $shipping = json_decode($pedido['shipping_data'], true);
+    
+    // Dirección de envío
+    $direccion = '';
+    $nombre_envio = 'Cliente';
+    if (isset($shipping['shipping_address'])) {
+        $addr = $shipping['shipping_address'];
+        $nombre_envio = ($addr['first_name'] ?? '') . ' ' . ($addr['last_name'] ?? '');
+        $direccion = $nombre_envio . "\n";
+        $direccion .= ($addr['line1'] ?? '') . "\n";
+        if (!empty($addr['line2'])) $direccion .= $addr['line2'] . "\n";
+        $direccion .= ($addr['postal_code'] ?? '') . ' ' . ($addr['city'] ?? '') . "\n";
+        if (!empty($addr['province'])) $direccion .= $addr['province'] . "\n";
+        $direccion .= ($addr['country'] ?? 'ES');
+        if (!empty($addr['phone'])) $direccion .= "\nTel: " . $addr['phone'];
+    }
+    $direccion = nl2br(htmlspecialchars($direccion));
+    
+    // Imagen de la serie
+    $series_image = '';
+    if (!empty($pedido['series_images'])) {
+        $images = json_decode($pedido['series_images'], true);
+        if (is_array($images) && !empty($images[0])) {
+            $series_image = 'https://d-cien.es' . $images[0];
+        }
+    }
+    if (empty($series_image)) {
+        $series_image = 'https://via.placeholder.com/270x270/000000/FFFFFF/?text=' . urlencode($pedido['series_name'] ?? 'DCIEN');
+    }
+
+    // Datos del Cliente (Atleta)
+    $cliente_username = htmlspecialchars($pedido['username'] ?: 'N/A');
+    $cliente_email = htmlspecialchars($pedido['email'] ?: 'N/A');
+    $cliente_ig = htmlspecialchars($pedido['instagram_username'] ?: 'N/A');
+    
+    $html = "<!DOCTYPE html><html lang='es'>
+    <head>
+        <meta charset='UTF-8'>
+        <title>Orden #{$pedido['id']} - DCIEN</title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: Arial, sans-serif; font-size: 10px; line-height: 1.3; padding: 10mm; }
+            .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 6px; margin-bottom: 10px; }
+            .header h1 { font-size: 24px; font-weight: 900; letter-spacing: 4px; }
+            .header p { font-size: 9px; text-transform: uppercase; letter-spacing: 2px; margin-top: 3px; }
+            .block-product { display: grid; grid-template-columns: 270px 1fr; gap: 10px; margin-bottom: 10px; page-break-inside: avoid; }
+            .series-image { width: 100%; height: 270px; object-fit: cover; border: 2px solid #000; }
+            .product-details { border: 2px solid #000; padding: 10px; display: flex; flex-direction: column; justify-content: center; }
+            .product-details .serie { font-size: 16px; font-weight: 900; letter-spacing: 1px; margin-bottom: 8px; text-align: center; }
+            .product-details .unit { font-size: 36px; font-weight: 900; font-family: monospace; text-align: center; margin: 8px 0; letter-spacing: 2px; }
+            .product-specs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; }
+            .spec-box { text-align: center; padding: 5px; background: #f0f0f0; border: 1px solid #ccc; }
+            .spec-label { font-size: 7px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; color: #666; }
+            .spec-value { font-size: 12px; font-weight: 900; text-transform: uppercase; }
+            .block-shipping { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; page-break-inside: avoid; }
+            .info-box { border: 2px solid #000; padding: 8px; }
+            .info-box h3 { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #000; padding-bottom: 3px; margin-bottom: 6px; }
+            .info-row { display: flex; margin-bottom: 3px; }
+            .info-label { font-weight: bold; width: 70px; flex-shrink: 0; font-size: 9px; }
+            .info-value { flex: 1; font-size: 9px; }
+            .shipping-address { line-height: 1.4; font-size: 9px; }
+            .checklist { border: 3px solid #000; padding: 8px; page-break-inside: avoid; }
+            .checklist h3 { font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; border-bottom: 1px solid #000; padding-bottom: 3px; }
+            .checklist ul { list-style: none; padding: 0; }
+            .checklist li { padding: 4px 0; font-size: 9px; border-bottom: 1px dashed #ddd; }
+            .checklist li:last-child { border-bottom: none; }
+            .footer { margin-top: 10px; padding-top: 6px; border-top: 2px solid #000; text-align: center; font-size: 7px; color: #666; }
+        </style>
+    </head>
+    <body>
+        <div class='header'>
+            <h1>DCIEN</h1>
+            <p>Orden de Producción #{$pedido['id']}</p>
+        </div>
+        <div class='block-product'>
+            <img src='$series_image' class='series-image' onerror=\"this.style.display='none'\">
+            <div class='product-details'>
+                <div class='serie'>" . strtoupper($pedido['series_name'] ?? '') . "</div>
+                <div class='unit'>#" . str_pad($pedido['unit_number'], 3, '0', STR_PAD_LEFT) . "</div>
+                <div class='product-specs'>
+                    <div class='spec-box'><div class='spec-label'>Talla</div><div class='spec-value'>{$pedido['size']}</div></div>
+                    <div class='spec-box'><div class='spec-label'>Color</div><div class='spec-value'>{$pedido['color']}</div></div>
+                    <div class='spec-box'><div class='spec-label'>Corte</div><div class='spec-value'>{$pedido['type']}</div></div>
+                </div>
+            </div>
+        </div>
+        <div class='block-shipping'>
+            <div class='info-box'>
+                <h3>👤 PERFIL ATLETA</h3>
+                <div class='info-row'><div class='info-label'>Usuario:</div><div class='info-value'>$cliente_username</div></div>
+                <div class='info-row'><div class='info-label'>Email:</div><div class='info-value'>$cliente_email</div></div>
+                <div class='info-row'><div class='info-label'>Instagram:</div><div class='info-value'>@$cliente_ig</div></div>
+            </div>
+            <div class='info-box'>
+                <h3>📦 DIRECCIÓN DE ENVÍO</h3>
+                <div class='shipping-address'>$direccion</div>
+            </div>
+        </div>
+        <div class='checklist'>
+            <h3>⚙️ CHECKLIST DE PRODUCCIÓN</h3>
+            <ul>
+                <li>☐ 1. Verificar stock en almacén <strong>(Talla " . strtoupper($pedido['size']) . " / Color " . ucfirst($pedido['color']) . " / Corte " . ucfirst($pedido['type']) . ")</strong></li>
+                <li>☐ 2. Preparar unidad <strong>#" . str_pad($pedido['unit_number'], 3, '0', STR_PAD_LEFT) . "</strong></li>
+                <li>☐ 3. Imprimir diseño " . strtoupper($pedido['series_name'] ?? '') . "</li>
+                <li>☐ 4. Control de calidad final</li>
+                <li>☐ 5. Empaquetar con tarjeta de autenticidad DCIEN</li>
+                <li>☐ 6. Imprimir etiqueta y preparar envío a nombre de <strong>$nombre_envio</strong></li>
+            </ul>
+        </div>
+        <div class='footer'>
+            Documento generado el " . date('d/m/Y H:i:s') . "
+        </div>
+    </body></html>";
+
+    $filename = "orden_" . $pedido['id'] . "_" . date('Ymd_His') . ".html";
+    $filepath = __DIR__ . "/$filename";
+    file_put_contents($filepath, $html);
+    
+    return [
+        'success' => true,
+        'filepath' => $filepath,
+        'filename' => $filename,
+        'url' => "https://d-cien.es/admin-descargas/ordenes/$filename"
+    ];
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GESTIÓN DE PETICIONES POST (ACCIONES)
+// ═══════════════════════════════════════════════════════════════
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
+    
+    if ($action === 'generar_orden' && isset($_POST['order_id'])) {
+        $order_id = (int)$_POST['order_id'];
+        $stmt = $pdo->prepare("SELECT o.*, u.username, u.email, u.instagram_username, s.name as series_name, s.images as series_images FROM orders o LEFT JOIN users u ON u.id = o.user_id LEFT JOIN series s ON s.slug = o.series_slug WHERE o.id = ?");
+        $stmt->execute([$order_id]);
+        $pedido = $stmt->fetch();
+        
+        if ($pedido) {
+            $result = generar_orden_trabajo($pedido);
+            if ($result['success']) {
+                $pdo->prepare("UPDATE orders SET status = 'produccion' WHERE id = ?")->execute([$order_id]);
+                $message = show_message('success', "✅ Orden #{$order_id} generada y movida a 'En Producción'. <a href='{$result['url']}' target='_blank' style='color:#00ff00'>Ver HTML</a>");
+            }
+        }
+    }
+    
+    if ($action === 'generar_multiples' && isset($_POST['order_ids'])) {
+        $order_ids = explode(',', $_POST['order_ids']);
+        $exitosos = 0; $errores = 0;
+        
+        foreach ($order_ids as $order_id) {
+            $order_id = (int)trim($order_id);
+            if ($order_id <= 0) continue;
+            
+            $stmt = $pdo->prepare("SELECT o.*, u.username, u.email, u.instagram_username, s.name as series_name, s.images as series_images FROM orders o LEFT JOIN users u ON u.id = o.user_id LEFT JOIN series s ON s.slug = o.series_slug WHERE o.id = ?");
+            $stmt->execute([$order_id]);
+            $pedido = $stmt->fetch();
+            
+            if ($pedido) {
+                $result = generar_orden_trabajo($pedido);
+                if ($result['success']) { 
+                    $pdo->prepare("UPDATE orders SET status = 'produccion' WHERE id = ?")->execute([$order_id]);
+                    $exitosos++; 
+                } else { $errores++; }
+            }
+        }
+        $message = show_message('success', "✅ {$exitosos} órdenes generadas y pasadas a Producción.");
+    }
+    
+    if ($action === 'marcar_enviado' && isset($_POST['order_id'])) {
+        $order_id = (int)$_POST['order_id'];
+        $pdo->prepare("UPDATE orders SET status = 'enviado' WHERE id = ?")->execute([$order_id]);
+        
+        $stmt = $pdo->prepare("SELECT o.*, u.username, u.email, s.name as series_name FROM orders o LEFT JOIN users u ON u.id = o.user_id LEFT JOIN series s ON s.slug = o.series_slug WHERE o.id = ?");
+        $stmt->execute([$order_id]);
+        $pedido = $stmt->fetch();
+        
+        if ($pedido) {
+            $email_sent = enviar_email_cliente_enviado($pedido);
+            if ($email_sent) {
+                $message = show_message('success', "✅ Pedido #{$order_id} completado. Cliente avisado por email.");
+            } else {
+                $message = show_message('warning', "✅ Pedido #{$order_id} marcado como enviado (Email fallido).");
+            }
+        }
+    }
+    
+    if ($action === 'exportar_csv') {
+        $where = ['o.status = :estado']; 
+        $params = ['estado' => $_POST['estado'] ?? 'pendiente'];
+        
+        if (!empty($_POST['serie'])) { $where[] = "o.series_slug = :serie"; $params['serie'] = $_POST['serie']; }
+        if (!empty($_POST['desde'])) { $where[] = "o.created_at >= :desde"; $params['desde'] = $_POST['desde'] . ' 00:00:00'; }
+        if (!empty($_POST['hasta'])) { $where[] = "o.created_at <= :hasta"; $params['hasta'] = $_POST['hasta'] . ' 23:59:59'; }
+        
+        $whereClause = implode(' AND ', $where);
+        
+        $stmt = $pdo->prepare("
+            SELECT o.*, u.username, u.email, s.name as series_name 
+            FROM orders o
+            LEFT JOIN users u ON u.id = o.user_id
+            LEFT JOIN series s ON s.slug = o.series_slug
+            WHERE $whereClause ORDER BY o.created_at DESC
+        ");
+        $stmt->execute($params);
+        $pedidos_export = $stmt->fetchAll();
+        
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="pedidos_'.($params['estado']).'_' . date('Ymd') . '.csv"');
+        $output = fopen('php://output', 'w');
+        fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF)); 
+        fputcsv($output, ['ID', 'Fecha', 'Serie', 'Unidad', 'Talla', 'Color', 'Tipo', 'Cliente', 'Email', 'Instagram', 'Precio', 'Pipeline']);
+        
+        foreach ($pedidos_export as $p) {
+            fputcsv($output, [
+                $p['id'], $p['created_at'], $p['series_name'], $p['unit_number'], $p['size'], $p['color'], $p['type'],
+                $p['username'] ?: 'N/A', $p['email'], $p['instagram_username'] ?: 'N/A', $p['price'], strtoupper($p['status'])
+            ]);
+        }
+        fclose($output);
+        exit;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RECUPERACIÓN Y FILTRADO DE DATOS (GET)
+// ═══════════════════════════════════════════════════════════════
+
+$where = ["o.status = :estado"];
+$params = ['estado' => $estado_actual];
+
+if (!empty($_GET['serie'])) {
+    $where[] = "o.series_slug = :serie";
+    $params['serie'] = $_GET['serie'];
+    $filtros_aplicados[] = "Serie: " . htmlspecialchars($_GET['serie']);
+}
+if (!empty($_GET['desde'])) {
+    $where[] = "o.created_at >= :desde";
+    $params['desde'] = $_GET['desde'] . ' 00:00:00';
+    $filtros_aplicados[] = "Desde: " . htmlspecialchars($_GET['desde']);
+}
+if (!empty($_GET['hasta'])) {
+    $where[] = "o.created_at <= :hasta";
+    $params['hasta'] = $_GET['hasta'] . ' 23:59:59';
+    $filtros_aplicados[] = "Hasta: " . htmlspecialchars($_GET['hasta']);
+}
+if (!empty($_GET['search'])) {
+    $where[] = "(u.username LIKE :search1 OR u.email LIKE :search2 OR o.id = :search_id)";
+    $params['search1'] = '%' . $_GET['search'] . '%';
+    $params['search2'] = '%' . $_GET['search'] . '%';
+    $params['search_id'] = is_numeric($_GET['search']) ? (int)$_GET['search'] : 0;
+    $filtros_aplicados[] = "Búsqueda: " . htmlspecialchars($_GET['search']);
+}
+
+$whereClause = implode(' AND ', $where);
+
+$stmt = $pdo->prepare("
+    SELECT o.*, u.username, u.email, u.instagram_username, s.name as series_name 
+    FROM orders o
+    LEFT JOIN users u ON u.id = o.user_id
+    LEFT JOIN series s ON s.slug = o.series_slug
+    WHERE $whereClause
+    ORDER BY o.created_at DESC LIMIT 200
+");
+$stmt->execute($params);
+$pedidos = $stmt->fetchAll();
+$series = $pdo->query("SELECT slug, name FROM series ORDER BY name")->fetchAll();
+
+$total_mostrados = count($pedidos);
+$suma_total = array_sum(array_column($pedidos, 'price'));
+
+// Obtener contadores
+$conteo_tabs = $pdo->query("SELECT status, COUNT(*) as qty FROM orders GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR);
+$cant_pendientes = $conteo_tabs['pendiente'] ?? 0;
+$cant_produccion = $conteo_tabs['produccion'] ?? 0;
+$cant_enviados = $conteo_tabs['enviado'] ?? 0;
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pipeline de Órdenes - DCIEN</title>
+    <link rel="stylesheet" href="../assets/style.css">
+    <style>
+        /* Estilos Base y Responsive */
+        body { margin: 0; padding: 0; background-color: #000; color: #fff; font-family: sans-serif; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 15px; }
+        
+        .card { background: #111; border: 1px solid #333; padding: 20px; border-radius: 4px; box-sizing: border-box; width: 100%; margin-bottom: 20px;}
+        
+        .checkbox-column { width: 40px; text-align: center; }
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .status-badge { font-size: 10px; padding: 3px 6px; border-radius: 4px; display: inline-block; margin-top: 4px; color: #fff; font-weight: bold; white-space: nowrap; }
+        .bg-red { background-color: #e74c3c; }
+        .bg-orange { background-color: #f39c12; }
+        .bg-green { background-color: #27ae60; }
+        .file-link { font-size: 11px; text-decoration: underline; color: #3498db; }
+        
+        /* Tabs Styling */
+        .tabs { display: flex; gap: 10px; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .tab-btn { padding: 10px 15px; text-decoration: none; font-weight: bold; color: #fff; background: #222; border-radius: 4px; display: flex; align-items: center; gap: 8px; white-space: nowrap; font-size: 13px;}
+        .tab-btn.active { background: #00ff00; color: #000; }
+        .tab-badge { background: rgba(0,0,0,0.2); padding: 2px 8px; border-radius: 20px; font-size: 11px; }
+        .tab-btn.active .tab-badge { background: #000; color: #00ff00; }
+
+        /* Formularios y Filtros */
+        .form-group { margin-bottom: 10px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #ccc; font-size: 11px; text-transform: uppercase;}
+        .form-group input, .form-group select { width: 100%; padding: 10px; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px; font-family: inherit; box-sizing: border-box;}
+        
+        .filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 15px; }
+        
+        /* Tablas Responsive */
+        .table-container { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid #222; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th, td { padding: 12px 10px; font-size: 12px; text-align: left; border-bottom: 1px solid #222; }
+        th { background: #0a0a0a; color: #888; text-transform: uppercase; letter-spacing: 1px; font-size: 10px; position: sticky; top: 0; z-index: 10; }
+        
+        th.sortable { cursor: pointer; user-select: none; position: relative; padding-right: 20px; }
+        th.sortable:hover { background-color: rgba(255,255,255,0.1); }
+        th.sortable::after { content: '↕'; position: absolute; right: 5px; opacity: 0.3; }
+        th.sort-asc::after { content: '🔼'; opacity: 1; }
+        th.sort-desc::after { content: '🔽'; opacity: 1; }
+
+        .btn { display: inline-block; padding: 10px 15px; font-size: 12px; cursor: pointer; text-align: center; border-radius: 4px; text-decoration: none; box-sizing: border-box;}
+        .btn-small { padding: 6px 10px; font-size: 11px; }
+
+        /* HEADER RESPONSIVE */
+        .header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;}
+        .header-top h1 { font-size: 20px; margin: 0; }
+        .header-top p { font-size: 12px; margin: 5px 0 0 0; color: #aaa; }
+
+        /* MÓVILES */
+        @media (max-width: 768px) {
+            .header-top { flex-direction: column; align-items: flex-start; }
+            .filters-grid { grid-template-columns: 1fr; }
+            .filter-actions { flex-direction: column; gap: 10px; align-items: stretch !important; }
+            .filter-actions .btn { width: 100%; }
+            .filter-actions > div { display: flex; flex-direction: column; width: 100%; }
+            .btn-group { flex-direction: column; }
+            .btn-group .btn, .btn-group form { width: 100%; }
+            .btn-group form button { width: 100%; margin-bottom: 5px;}
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header-top">
+            <div>
+                <h1>📦 PIPELINE DE ÓRDENES</h1>
+                <p>Control de fases: Pendientes, Producción y Enviados</p>
+            </div>
+            <div>
+                <a href="../index.php" class="btn btn-secondary" style="font-size: 11px;">← Dashboard</a>
+            </div>
+        </header>
+
+        <?php if ($message) { echo $message; } ?>
+
+        <div class="tabs">
+            <a href="?estado=pendiente" class="tab-btn <?php echo $estado_actual === 'pendiente' ? 'active' : ''; ?>">
+                🔴 PENDIENTES <span class="tab-badge"><?php echo $cant_pendientes; ?></span>
+            </a>
+            <a href="?estado=produccion" class="tab-btn <?php echo $estado_actual === 'produccion' ? 'active' : ''; ?>">
+                🟡 PRODUCCIÓN <span class="tab-badge"><?php echo $cant_produccion; ?></span>
+            </a>
+            <a href="?estado=enviado" class="tab-btn <?php echo $estado_actual === 'enviado' ? 'active' : ''; ?>">
+                🟢 ENVIADOS <span class="tab-badge"><?php echo $cant_enviados; ?></span>
+            </a>
+        </div>
+
+        <div class="card">
+            <form method="GET">
+                <input type="hidden" name="estado" value="<?php echo e($estado_actual); ?>">
+                <div class="filters-grid">
+                    <div class="form-group" style="margin:0;">
+                        <label>Serie</label>
+                        <select name="serie">
+                            <option value="">Todas</option>
+                            <?php foreach ($series as $s) { ?>
+                                <option value="<?php echo e($s['slug']); ?>" <?php echo ($_GET['serie'] ?? '') === $s['slug'] ? 'selected' : ''; ?>>
+                                    <?php echo e($s['name']); ?>
+                                </option>
+                            <?php } ?>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label>Desde</label>
+                        <input type="date" name="desde" value="<?php echo e($_GET['desde'] ?? ''); ?>">
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label>Hasta</label>
+                        <input type="date" name="hasta" value="<?php echo e($_GET['hasta'] ?? ''); ?>">
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label>Buscar</label>
+                        <input type="text" name="search" placeholder="ID, email..." value="<?php echo e($_GET['search'] ?? ''); ?>">
+                    </div>
+                </div>
+                
+                <div class="filter-actions" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid #333; padding-top: 15px; flex-wrap: wrap; gap: 15px;">
+                    <div style="display:flex; gap:10px; flex-wrap: wrap;">
+                        <button type="submit" class="btn">🔍 Filtrar</button>
+                        <a href="index.php?estado=<?php echo e($estado_actual); ?>" class="btn btn-secondary" style="text-align:center;">✕ Limpiar</a>
+                        <button type="button" onclick="exportarCSV()" class="btn btn-secondary">📥 CSV</button>
+                    </div>
+                    
+                    <?php if ($estado_actual === 'pendiente'): ?>
+                        <div style="display:flex; gap:10px; flex-wrap: wrap;">
+                            <button type="button" onclick="seleccionarTodos()" class="btn btn-secondary">☑️ Seleccionar Todos</button>
+                            <button type="button" onclick="generarMultiples()" class="btn" style="background:#f39c12; color:#000; font-weight:bold;">📄 A Producción</button>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </form>
+        </div>
+
+        <div style="margin-bottom: 20px; padding: 15px; background: #111; border: 1px solid #333; border-radius:4px; font-size:12px;">
+            <?php if (!empty($filtros_aplicados)) { ?>
+                <strong>Filtros:</strong> <?php echo implode(' · ', $filtros_aplicados); ?><br>
+            <?php } ?>
+            <strong>Resultados:</strong> <?php echo $total_mostrados; ?> | <strong>Total Fase:</strong> <?php echo format_price($suma_total); ?>
+        </div>
+
+        <div class="table-container">
+            <table id="ordersTable">
+                <thead>
+                    <tr>
+                        <th class="checkbox-column"><input type="checkbox" id="selectAll" onclick="toggleAll(this)" style="transform:scale(1.2);"></th>
+                        <th class="sortable" onclick="sortTable(1, true)">ID / Fecha</th>
+                        <th class="sortable" onclick="sortTable(2, false)">Producto / Serie</th>
+                        <th class="sortable" onclick="sortTable(3, false)">Cliente</th>
+                        <th class="sortable" onclick="sortTable(4, false)">Auditoría</th>
+                        <th class="sortable" onclick="sortTable(5, false)">Docs</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (empty($pedidos)) { ?>
+                        <tr><td colspan="7" style="text-align: center; padding: 40px; color: #666;">No hay pedidos en esta fase. ¡Buen trabajo!</td></tr>
+                    <?php } else { ?>
+                        <?php foreach ($pedidos as $p) { 
+                            $shipping_data = json_decode($p['shipping_data'], true);
+                            $auditor_warnings = [];
+                            $payment_status = 'Desconocido';
+
+                            if (is_array($shipping_data)) {
+                                if (isset($shipping_data['payment']['status'])) {
+                                    $payment_status = $shipping_data['payment']['status'];
+                                }
+                                if ($payment_status !== 'paid' && !isset($shipping_data['issue'])) {
+                                    $auditor_warnings[] = "Pago NO confirmado";
+                                }
+                                if (!isset($shipping_data['shipping_address']['line1']) && !isset($shipping_data['issue'])) {
+                                    $auditor_warnings[] = "Falta dirección";
+                                }
+                            } else {
+                                $auditor_warnings[] = "Datos incompletos";
+                            }
+
+                            $archivos_existentes = glob(__DIR__ . "/orden_{$p['id']}_*.html");
+                        ?>
+                            <tr>
+                                <td class="checkbox-column"><input type="checkbox" class="order-checkbox" value="<?php echo $p['id']; ?>" style="transform:scale(1.2);"></td>
+                                <td>
+                                    <strong>#<?php echo $p['id']; ?></strong><br>
+                                    <span style="font-size:10px; color:#888;"><?php echo format_date($p['created_at'], 'd/m/Y'); ?></span>
+                                </td>
+                                <td>
+                                    <strong><?php echo e($p['series_name']); ?></strong><br>
+                                    <span style="font-size:11px;">Unidad: #<?php echo str_pad($p['unit_number'], 3, '0', STR_PAD_LEFT); ?></span><br>
+                                    <span style="font-size:10px; color:#aaa;"><?php echo strtoupper($p['size']); ?> - <?php echo ucfirst($p['color']); ?></span>
+                                </td>
+                                <td>
+                                    <?php echo e($p['username'] ?: substr($p['email'], 0, 15).'..'); ?><br>
+                                    <span style="font-size:10px; color:#888;"><?php echo e($p['email']); ?></span>
+                                </td>
+                                <td>
+                                    <?php if (empty($auditor_warnings)) { ?>
+                                        <span class="status-badge bg-green">✓ OK</span>
+                                    <?php } else { ?>
+                                        <?php foreach ($auditor_warnings as $w) { ?>
+                                            <span class="status-badge bg-red">⚠️ <?php echo htmlspecialchars($w); ?></span><br>
+                                        <?php } ?>
+                                    <?php } ?>
+                                </td>
+                                <td>
+                                    <?php if (!empty($archivos_existentes)) { ?>
+                                        <?php foreach($archivos_existentes as $archivo) { $nombre_archivo = basename($archivo); ?>
+                                            <a href="<?php echo $nombre_archivo; ?>" target="_blank" class="file-link">📄 Ver Doc</a><br>
+                                        <?php } ?>
+                                    <?php } else { ?>
+                                        <span style="color: #666; font-size: 10px;">No generado</span>
+                                    <?php } ?>
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        
+                                        <?php if ($estado_actual === 'pendiente'): ?>
+                                            <form method="POST" style="display: inline;">
+                                                <input type="hidden" name="action" value="generar_orden">
+                                                <input type="hidden" name="order_id" value="<?php echo $p['id']; ?>">
+                                                <button type="submit" class="btn btn-small" title="Crear HTML y mover a Producción">📄 Imprimir</button>
+                                            </form>
+                                        
+                                        <?php elseif ($estado_actual === 'produccion'): ?>
+                                            <form method="POST" style="display: inline;">
+                                                <input type="hidden" name="action" value="marcar_enviado">
+                                                <input type="hidden" name="order_id" value="<?php echo $p['id']; ?>">
+                                                <button type="submit" class="btn btn-small" style="background-color: #27ae60; color: #fff; border:none;" title="Completar pedido y avisar al cliente">📦 Enviar</button>
+                                            </form>
+                                            <form method="POST" style="display: inline;">
+                                                <input type="hidden" name="action" value="generar_orden">
+                                                <input type="hidden" name="order_id" value="<?php echo $p['id']; ?>">
+                                                <button type="submit" class="btn btn-small btn-secondary" title="Re-generar doc HTML">🔄 Doc</button>
+                                            </form>
+                                        <?php endif; ?>
+                                        
+                                        <a href="../modules/ver-pedido.php?id=<?php echo $p['id']; ?>" class="btn btn-small btn-secondary" title="Ver detalles">👁️</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php } ?>
+                    <?php } ?>
+                </tbody>
+            </table>
+        </div>
+
+        <footer style="margin-top: 40px; padding-bottom:20px; text-align:center; font-size:11px; color:#666;">
+            <p>DCIEN Central de Órdenes · Fase Actual: <?php echo strtoupper($estado_actual); ?></p>
+        </footer>
+    </div>
+
+    <script>
+    let currentSortCol = -1;
+    let currentSortDir = 'asc';
+
+    function sortTable(n, isNumeric) {
+        let table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+        table = document.getElementById("ordersTable");
+        switching = true;
+        
+        dir = (currentSortCol === n && currentSortDir === 'asc') ? 'desc' : 'asc';
+        currentSortCol = n; currentSortDir = dir;
+
+        document.querySelectorAll('th.sortable').forEach(th => th.classList.remove('sort-asc', 'sort-desc'));
+        table.getElementsByTagName("TH")[n].classList.add(dir === 'asc' ? 'sort-asc' : 'sort-desc');
+
+        while (switching) {
+            switching = false;
+            rows = table.rows;
+            for (i = 1; i < (rows.length - 1); i++) {
+                shouldSwitch = false;
+                x = rows[i].getElementsByTagName("TD")[n];
+                y = rows[i + 1].getElementsByTagName("TD")[n];
+                
+                let valX = x.innerText.trim().toLowerCase();
+                let valY = y.innerText.trim().toLowerCase();
+
+                if (isNumeric) {
+                    valX = parseFloat(valX.replace(/[^0-9.-]+/g,"")) || 0;
+                    valY = parseFloat(valY.replace(/[^0-9.-]+/g,"")) || 0;
+                }
+
+                if (dir === "asc") { if (valX > valY) { shouldSwitch = true; break; } } 
+                else if (dir === "desc") { if (valX < valY) { shouldSwitch = true; break; } }
+            }
+            if (shouldSwitch) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                switching = true; switchcount++;      
+            }
+        }
+    }
+
+    function toggleAll(cb) { document.querySelectorAll('.order-checkbox').forEach(c => c.checked = cb.checked); }
+    function seleccionarTodos() { document.querySelectorAll('.order-checkbox').forEach(c => c.checked = true); document.getElementById('selectAll').checked = true; }
+    
+    function generarMultiples() {
+        const cbs = document.querySelectorAll('.order-checkbox:checked');
+        if (cbs.length === 0) { alert('⚠️ Selecciona al menos un pedido marcando la casilla de la izquierda.'); return; }
+        const ids = Array.from(cbs).map(c => c.value);
+        if (!confirm(`¿Generar documentos de trabajo y Mover a Producción ${ids.length} pedidos?`)) return;
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.innerHTML = `<input type="hidden" name="action" value="generar_multiples"><input type="hidden" name="order_ids" value="${ids.join(',')}">`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+    
+    function exportarCSV() {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.innerHTML = `
+            <input type="hidden" name="action" value="exportar_csv">
+            <input type="hidden" name="estado" value="<?php echo e($estado_actual); ?>">
+            <input type="hidden" name="serie" value="<?php echo htmlspecialchars($_GET['serie'] ?? ''); ?>">
+            <input type="hidden" name="desde" value="<?php echo htmlspecialchars($_GET['desde'] ?? ''); ?>">
+            <input type="hidden" name="hasta" value="<?php echo htmlspecialchars($_GET['hasta'] ?? ''); ?>">
+            <input type="hidden" name="search" value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>">`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+    </script>
+</body>
+</html>

@@ -146,7 +146,7 @@ const activeSeries: ActiveSeriesCard[] = seriesData
        STOCK REAL · MISMA API QUE [slug].astro · TS SAFE
        ────────────────────────────────────────────────────────── -->
 <script>
-  const API = 'https://d-cien.es/api';
+  const API = import.meta.env.PUBLIC_API_URL;
 
   async function loadSeriesStock() {
     const cards = document.querySelectorAll('.series-card');

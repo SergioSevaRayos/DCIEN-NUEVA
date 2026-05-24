@@ -52,6 +52,7 @@ const types = [
 const seriesPrice = seriesInfo.price;
 const seriesSlug  = seriesInfo.slug;
 const seriesName  = seriesInfo.name;
+const apiUrl      = import.meta.env.PUBLIC_API_URL;
 ---
 
 <BaseLayout seo={seoConfig}>
@@ -188,7 +189,7 @@ const seriesName  = seriesInfo.name;
 
               <div id="buy-section">
                 <button id="main-buy-button" disabled class="w-full py-5 bg-black text-white dark:bg-white dark:text-black uppercase text-xs tracking-[0.3em] font-bold disabled:opacity-20 transition-all">
-                  Continuar al Pago
+                  Añadir al Carrito
                 </button>
                 <p id="error-msg" class="text-[10px] text-red-500 mt-3 text-center uppercase tracking-widest hidden">Completa la selección obligatoria</p>
               </div>
@@ -338,8 +339,8 @@ const seriesName  = seriesInfo.name;
   </div>
 </BaseLayout>
 
-<script define:vars={{ seriesPrice, seriesSlug, seriesName }}>
-  const API = 'https://d-cien.es/api';
+<script define:vars={{ seriesPrice, seriesSlug, seriesName, apiUrl }}>
+  const API = apiUrl;
   let selectedNumber = null;
   let activeDiscount = null;
 
@@ -746,19 +747,61 @@ document.addEventListener('keydown', (e) => {
     errorMsg?.classList.add('hidden');
     
     // IMPORTANTE: Incluir originalPrice, finalPrice y discount
-    const checkoutData = { 
-      seriesSlug, 
-      seriesName, 
-      number: selectedNumber, 
-      size, 
-      color, 
-      type, 
-      originalPrice: seriesPrice,
-      finalPrice: activeDiscount ? activeDiscount.finalPrice : seriesPrice,
-      discount: activeDiscount || null
+    const cartItem = {
+      seriesSlug,
+      seriesName,
+      number: selectedNumber,
+      size,
+      color,
+      type,
+      price: seriesPrice,
     };
 
-    sessionStorage.setItem('checkout_data', JSON.stringify(checkoutData));
-    window.location.href = '/checkout/checkout-datos-envio';
+    const discountPayload = activeDiscount ? {
+      id:               activeDiscount.id              ?? null,
+      user_discount_id: activeDiscount.user_discount_id ?? null,
+      code:             activeDiscount.code,
+      type:             activeDiscount.type,
+      value:            activeDiscount.value,
+      description:      activeDiscount.description     ?? null,
+      label:            activeDiscount.label            ?? null,
+    } : null;
+
+    window.dispatchEvent(new CustomEvent('cart:addItem', {
+      detail: { item: cartItem, discount: discountPayload }
+    }));
+  });
+</script>
+
+<script>
+  import { addToCart } from '../../scripts/cart.js';
+
+  window.addEventListener('cart:addItem', (e) => {
+    const { item, discount } = (e as CustomEvent).detail;
+    const result = addToCart(item, discount);
+
+    const btn = document.getElementById('main-buy-button') as HTMLButtonElement | null;
+    if (btn) {
+      if (result === null) {
+        const original = btn.textContent;
+        btn.textContent = 'Ya en el carrito';
+        btn.disabled = true;
+        setTimeout(() => {
+          btn.textContent = original;
+          btn.disabled = false;
+        }, 1800);
+        window.dispatchEvent(new CustomEvent('cart:open'));
+        return;
+      }
+      const original = btn.textContent;
+      btn.textContent = '✓ Añadido';
+      btn.disabled = true;
+      setTimeout(() => {
+        btn.textContent = original;
+        btn.disabled = false;
+      }, 1800);
+    }
+
+    window.dispatchEvent(new CustomEvent('cart:open'));
   });
 </script>

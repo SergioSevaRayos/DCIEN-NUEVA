@@ -118,6 +118,7 @@ try {
         try {
             // Si viene de bono QR, buscar descuento BONO_XXX
             $bonoDiscount = null;
+            if (!empty($_SESSION['qr_bono'])) {
                 $bonoCode = 'BONO_' . $_SESSION['qr_bono']['code'];
                 $bonoDiscount = queryOne(
                     "SELECT id FROM discounts WHERE code = :code AND is_active = 1 LIMIT 1",
@@ -181,11 +182,11 @@ try {
     if (file_exists($mailerPath)) {
         try {
             require_once $mailerPath;
-            $template = $isRecovery ? 'password_reset_success' : 'welcome'; // Podrías crear un template de "Contraseña Cambiada"
-            
-            $htmlContent = getEmailContent($template, [
+            $template = $isRecovery ? 'password_reset' : 'welcome';
+
+            $htmlContent = getEmailTemplate($template, [
                 'username' => $username,
-                'email'    => $email
+                'email'    => $email,
             ]);
 
             sendEmail([

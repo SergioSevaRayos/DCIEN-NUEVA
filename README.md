@@ -1,5 +1,7 @@
 # Limited Tees - Plataforma de Venta de Ediciones Limitadas
 
+ php -S localhost:8080 -t "C:\Users\Trending Pc\Documents\DCIEN\DCIEN-nueva\server-extras"
+
 Plataforma completa de comercio electrónico para venta de camisetas de edición limitada (100 unidades por serie) con Astro, Laravel backend concepts, TypeScript, Tailwind CSS y PHP.
 
 ## 🚀 Características

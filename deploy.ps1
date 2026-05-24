@@ -69,12 +69,23 @@ if ($frontend -or $all) {
     }
 }
 
-# STEP 3: Subir backend
+# STEP 3: Subir backend (NUNCA sube .env ni vendor al servidor)
 if ($backend -or $all) {
     Write-Step "Subiendo backend PHP al servidor..."
-    scp -P $PORT -r "$LOCAL\dcien-backend\*" "${SERVER}:${REMOTE}/dcien-backend/"
-    if ($LASTEXITCODE -eq 0) {
-        Write-OK "Backend subido"
+
+    # Staging temporal: copia backend sin .env ni vendor (que viven solo en el servidor)
+    $staging = "$env:TEMP\dcien-backend-deploy"
+    if (Test-Path $staging) { Remove-Item -Recurse -Force $staging }
+
+    robocopy "$LOCAL\dcien-backend" $staging /E /XF ".env" ".env.*" "*.log" /XD "vendor" /NFL /NDL /NJH /NJS | Out-Null
+
+    scp -P $PORT -r "$staging\*" "${SERVER}:${REMOTE}/dcien-backend/"
+    $scpOk = $LASTEXITCODE -eq 0
+
+    Remove-Item -Recurse -Force $staging
+
+    if ($scpOk) {
+        Write-OK "Backend subido (.env y vendor del servidor intactos)"
     } else {
         Write-Err "Fallo al subir backend"
     }
