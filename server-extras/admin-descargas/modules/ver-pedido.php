@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * DCIEN - Ver Detalle de Pedido (soporte multi-item carrito)
  */
@@ -84,7 +84,7 @@ if (isset($shipping['shipping_address'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pedido #<?= $order_id ?> - DCIEN</title>
+    <title>Pedido #<?= $pedido['order_number'] ?? $order_id ?> - DCIEN</title>
     <link rel="stylesheet" href="/admin-descargas/assets/style.css">
     <style>
         .detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-bottom:20px}
@@ -105,7 +105,7 @@ if (isset($shipping['shipping_address'])) {
 <div class="container">
     <header class="header">
         <div>
-            <h1>PEDIDO #<?= $order_id ?></h1>
+            <h1>PEDIDO #<?= $pedido['order_number'] ?? $order_id ?></h1>
             <p><?= $pedido['is_cart_order'] ? 'Carrito — '.count($order_items).' prenda(s)' : 'Pedido Individual' ?></p>
         </div>
         <div class="header-actions">
@@ -143,7 +143,7 @@ if (isset($shipping['shipping_address'])) {
         <!-- INFO GENERAL -->
         <div class="detail-card">
             <h3>📋 Información General</h3>
-            <div class="detail-row"><div class="detail-label">ID Pedido:</div><div class="detail-value"><strong>#<?= $pedido['id'] ?></strong></div></div>
+            <div class="detail-row"><div class="detail-label">Nº Pedido:</div><div class="detail-value"><strong>#<?= $pedido['order_number'] ?? $pedido['id'] ?></strong></div></div>
             <div class="detail-row"><div class="detail-label">Fecha:</div><div class="detail-value"><?= format_date($pedido['created_at']) ?></div></div>
             <div class="detail-row"><div class="detail-label">Tipo:</div><div class="detail-value"><?= $pedido['is_cart_order'] ? 'Carrito multi-prenda' : 'Individual' ?></div></div>
             <div class="detail-row"><div class="detail-label">Stripe ID:</div><div class="detail-value" style="font-size:10px;word-break:break-all"><?= e($pedido['stripe_session_id']??'N/A') ?></div></div>

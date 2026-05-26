@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 ob_start();
 /**
  * DCIEN - GESTOR DE BONOS QR
@@ -113,26 +113,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $filas = '';
                 foreach ($bonos_creados as $b) {
                     $filas .= '<tr>'
-                        . '<td style="padding:7px 10px;color:#00ff00;font-family:monospace;white-space:nowrap">' . htmlspecialchars($b['code']) . '</td>'
-                        . '<td style="padding:7px 10px;color:#ccc">' . htmlspecialchars($b['nombre']) . '</td>'
-                        . '<td style="padding:7px 10px;color:#fff;font-family:monospace">' . htmlspecialchars($b['username']) . '</td>'
-                        . '<td style="padding:7px 10px;color:#fff;font-family:monospace">' . htmlspecialchars($b['password']) . '</td>'
-                        . '<td style="padding:7px 10px"><a href="' . htmlspecialchars($b['url']) . '" style="color:#3b82f6;font-size:10px" target="_blank">Ver QR</a></td>'
+                        . '<td style="padding:8px 12px;color:var(--sent);font-family:monospace;font-weight:bold;white-space:nowrap">' . htmlspecialchars($b['code']) . '</td>'
+                        . '<td style="padding:8px 12px;color:var(--text)">' . htmlspecialchars($b['nombre']) . '</td>'
+                        . '<td style="padding:8px 12px;color:var(--text);font-family:monospace">' . htmlspecialchars($b['username']) . '</td>'
+                        . '<td style="padding:8px 12px;color:var(--text);font-family:monospace">' . htmlspecialchars($b['password']) . '</td>'
+                        . '<td style="padding:8px 12px"><a href="' . htmlspecialchars($b['url']) . '" style="color:#2563eb;font-weight:600;font-size:11px" target="_blank">Ver QR</a></td>'
                         . '</tr>';
                 }
 
                 $tabla = '<div style="margin-top:16px;overflow-x:auto">'
-                    . '<table style="width:100%;border-collapse:collapse;font-size:11px;background:#000;border:1px solid #222">'
-                    . '<thead><tr style="background:#111">'
-                    . '<th style="padding:8px 10px;color:#555;text-align:left;text-transform:uppercase">Codigo QR</th>'
-                    . '<th style="padding:8px 10px;color:#555;text-align:left;text-transform:uppercase">Nombre</th>'
-                    . '<th style="padding:8px 10px;color:#555;text-align:left;text-transform:uppercase">Usuario</th>'
-                    . '<th style="padding:8px 10px;color:#555;text-align:left;text-transform:uppercase">Contrasena</th>'
-                    . '<th style="padding:8px 10px;color:#555;text-align:left;text-transform:uppercase">Enlace</th>'
+                    . '<table style="width:100%;border-collapse:collapse;font-size:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)">'
+                    . '<thead><tr style="background:var(--surface-2);border-bottom:1px solid var(--border)">'
+                    . '<th style="padding:10px 12px;color:var(--text-2);font-size:10px;text-align:left;text-transform:uppercase;letter-spacing:1px;font-weight:600">Código QR</th>'
+                    . '<th style="padding:10px 12px;color:var(--text-2);font-size:10px;text-align:left;text-transform:uppercase;letter-spacing:1px;font-weight:600">Nombre</th>'
+                    . '<th style="padding:10px 12px;color:var(--text-2);font-size:10px;text-align:left;text-transform:uppercase;letter-spacing:1px;font-weight:600">Usuario</th>'
+                    . '<th style="padding:10px 12px;color:var(--text-2);font-size:10px;text-align:left;text-transform:uppercase;letter-spacing:1px;font-weight:600">Contraseña</th>'
+                    . '<th style="padding:10px 12px;color:var(--text-2);font-size:10px;text-align:left;text-transform:uppercase;letter-spacing:1px;font-weight:600">Enlace</th>'
                     . '</tr></thead>'
                     . '<tbody>' . $filas . '</tbody>'
                     . '</table></div>'
-                    . '<button onclick="copiarTabla()" style="margin-top:12px;background:#00ff00;color:#000;border:none;padding:8px 16px;font-size:11px;font-weight:bold;cursor:pointer;text-transform:uppercase">Copiar tabla</button>';
+                    . '<button onclick="copiarTabla()" class="btn btn-secondary btn-small" style="margin-top:12px">Copiar tabla</button>';
 
                 if (session_status() === PHP_SESSION_NONE) session_start();
                 $_SESSION['bonos_resultado'] = '<strong>' . $num . '</strong> bono(s) creados. Descuento: <strong>' . $discount_label . '</strong>. Validos hasta: <strong>' . $expires_at . '</strong>' . $err_txt . $tabla;
@@ -232,6 +232,90 @@ $ultimos_scans = $pdo->query('SELECT u.canjeado_at, u.ip, u.bono_code, b.nombre,
         .stat-box{background:var(--surface);border:1px solid var(--border);padding:20px 24px;border-radius:var(--radius);box-shadow:var(--shadow)}
         .stat-num{font-size:32px;font-weight:700;color:var(--text);line-height:1;margin-bottom:4px}
         .stat-lbl{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-2)}
+        .btn{justify-content:center}
+        
+        /* Modales */
+        #create-modal, #qr-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(28, 25, 23, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        #create-modal.open, #qr-modal.open {
+            display: flex;
+            animation: fadeIn 0.2s ease-out forwards;
+        }
+        #create-modal.open .modal-inner, #qr-modal.open .qr-modal-inner {
+            animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .modal-inner, .qr-modal-inner {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 28px;
+            width: 90%;
+            max-width: 520px;
+            max-height: 92vh;
+            overflow-y: auto;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            box-sizing: border-box;
+        }
+        .qr-modal-inner {
+            max-width: 380px;
+            text-align: center;
+        }
+        .modal-close-btn {
+            background: none;
+            border: none;
+            color: var(--text-3);
+            font-size: 22px;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+            transition: color 0.15s ease;
+        }
+        .modal-close-btn:hover {
+            color: var(--text);
+        }
+        
+        /* Listado de escaneos */
+        .scan-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .scan-item:last-child {
+            border-bottom: none;
+        }
+        .scan-code {
+            font-family: monospace;
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--sent);
+            letter-spacing: 1px;
+        }
+        .scan-meta {
+            font-size: 11px;
+            color: var(--text-2);
+        }
     </style>
 </head>
 <body>
@@ -260,8 +344,8 @@ $ultimos_scans = $pdo->query('SELECT u.canjeado_at, u.ip, u.bono_code, b.nombre,
         <div>
             <div class="card">
                 <?php if ($bono_editar): ?>
-                    <h3 style="font-size:13px;border-bottom:1px solid #1a1a1a;padding-bottom:10px;margin-bottom:18px;color:#00ff00">
-                        Editando: <?= e($bono_editar['code']) ?>
+                    <h3 style="font-size:13px;border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:18px;color:var(--text);font-weight:700;letter-spacing:1.5px">
+                        EDITANDO BONO: <span style="font-family:monospace;color:var(--sent)"><?= e($bono_editar['code']) ?></span>
                     </h3>
                     <form method="POST" action="bonos.php?edit=<?= $bono_editar['id'] ?>">
                         <input type="hidden" name="action" value="editar_bono">
@@ -301,29 +385,29 @@ $ultimos_scans = $pdo->query('SELECT u.canjeado_at, u.ip, u.bono_code, b.nombre,
                             <div class="form-group"><label>Desde</label><input type="date" name="valid_from" value="<?= format_date_input($bono_editar['valid_from']) ?>"></div>
                             <div class="form-group"><label>Hasta</label><input type="date" name="valid_until" value="<?= format_date_input($bono_editar['valid_until']) ?>"></div>
                         </div>
-                        <div class="form-group" style="background:#111;border:1px solid #222;padding:10px">
-                            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;text-transform:none;font-size:13px;color:#fff;margin:0">
+                        <div class="form-group" style="background:var(--surface-2);border:1px solid var(--border);padding:10px">
+                            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;text-transform:none;font-size:13px;color:var(--text);margin:0">
                                 <input type="checkbox" name="is_active" value="1" <?= $bono_editar['is_active']?'checked':'' ?> style="width:16px;height:16px">
                                 Bono activo
                             </label>
                         </div>
                         <div style="display:flex;gap:10px;margin-top:18px">
                             <button type="submit" class="btn btn-primary" style="flex:1">Guardar</button>
-                            <a href="bonos.php" class="btn">Cancelar</a>
+                            <a href="bonos.php" class="btn btn-secondary" style="flex:1;text-align:center;justify-content:center">Cancelar</a>
                         </div>
                     </form>
                 <?php else: ?>
-                    <div style="text-align:center;color:#333;padding:60px 0">
-                        <div style="font-size:40px;margin-bottom:16px">&#128242;</div>
-                        <p style="font-size:13px">Selecciona un bono para editarlo aqui.</p>
+                    <div style="text-align:center;color:var(--text-3);padding:60px 0">
+                        <div style="font-size:40px;margin-bottom:16px">🎟️</div>
+                        <p style="font-size:13px;margin:0">Selecciona un bono para editarlo aquí.</p>
                     </div>
                 <?php endif; ?>
             </div>
 
             <div class="card">
-                <h3 style="font-size:12px;color:#555;text-transform:uppercase;letter-spacing:2px;margin-bottom:16px">Ultimos escaneos</h3>
+                <h3 style="font-size:12px;color:var(--text-2);text-transform:uppercase;letter-spacing:2px;margin-bottom:16px">Últimos escaneos</h3>
                 <?php if (empty($ultimos_scans)): ?>
-                    <p style="color:#333;font-size:12px;text-align:center;padding:20px 0">Sin escaneos aun</p>
+                    <p style="color:var(--text-3);font-size:12px;text-align:center;padding:20px 0">Sin escaneos aún</p>
                 <?php else: ?>
                     <?php foreach ($ultimos_scans as $s): ?>
                         <div class="scan-item">
@@ -332,7 +416,7 @@ $ultimos_scans = $pdo->query('SELECT u.canjeado_at, u.ip, u.bono_code, b.nombre,
                                 <div class="scan-meta"><?= e($s['nombre']) ?></div>
                             </div>
                             <div style="text-align:right">
-                                <div style="color:#fff;font-size:11px"><?= $s['discount_type']==='percent' ? number_format($s['discount_value'],0).'%' : 'EUR '.number_format($s['discount_value'],2) ?></div>
+                                <div style="color:var(--text);font-size:12px;font-weight:600"><?= $s['discount_type']==='percent' ? number_format($s['discount_value'],0).'%' : 'EUR '.number_format($s['discount_value'],2) ?></div>
                                 <div class="scan-meta"><?= date('d/m H:i', strtotime($s['canjeado_at'])) ?></div>
                             </div>
                         </div>
@@ -343,9 +427,9 @@ $ultimos_scans = $pdo->query('SELECT u.canjeado_at, u.ip, u.bono_code, b.nombre,
 
         <div>
             <div class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1a1a1a;padding-bottom:12px;margin-bottom:16px">
+                <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px">
                     <h3 style="font-size:13px;margin:0">Bonos creados</h3>
-                    <span style="font-size:11px;color:#555"><?= $total_bonos ?> bonos</span>
+                    <span style="font-size:11px;color:var(--text-2)"><?= $total_bonos ?> bonos</span>
                 </div>
                 <div class="table-wrap">
                     <table>
@@ -354,7 +438,7 @@ $ultimos_scans = $pdo->query('SELECT u.canjeado_at, u.ip, u.bono_code, b.nombre,
                         </thead>
                         <tbody>
                         <?php if (empty($bonos)): ?>
-                            <tr><td colspan="6" style="text-align:center;padding:40px;color:#333">No hay bonos creados.</td></tr>
+                            <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-3)">No hay bonos creados.</td></tr>
                         <?php else: ?>
                             <?php foreach ($bonos as $b):
                                 $now      = time();
@@ -365,21 +449,21 @@ $ultimos_scans = $pdo->query('SELECT u.canjeado_at, u.ip, u.bono_code, b.nombre,
                             ?>
                             <tr>
                                 <td>
-                                    <div style="font-family:monospace;font-size:13px;font-weight:bold;color:#00ff00;letter-spacing:2px"><?= e($b['code']) ?></div>
-                                    <div style="font-size:11px;color:#666;margin-top:2px"><?= e($b['nombre']) ?></div>
-                                    <?php if ($b['campaign']): ?><div style="font-size:9px;color:#3b82f6;margin-top:2px;text-transform:uppercase"><?= e($b['campaign']) ?></div><?php endif; ?>
+                                    <div style="font-family:monospace;font-size:13px;font-weight:bold;color:var(--sent);letter-spacing:2px"><?= e($b['code']) ?></div>
+                                    <div style="font-size:11px;color:var(--text-2);margin-top:2px"><?= e($b['nombre']) ?></div>
+                                    <?php if ($b['campaign']): ?><div style="font-size:9px;color:#2563eb;margin-top:2px;text-transform:uppercase"><?= e($b['campaign']) ?></div><?php endif; ?>
                                 </td>
                                 <td>
                                     <strong style="font-size:14px"><?= $b['discount_type']==='percent' ? number_format($b['discount_value'],0).'%' : 'EUR '.number_format($b['discount_value'],2) ?></strong>
-                                    <?php if ($b['series_slug']): ?><div style="font-size:9px;color:#555;text-transform:uppercase;margin-top:2px"><?= e($b['series_slug']) ?></div><?php endif; ?>
+                                    <?php if ($b['series_slug']): ?><div style="font-size:9px;color:var(--text-3);text-transform:uppercase;margin-top:2px"><?= e($b['series_slug']) ?></div><?php endif; ?>
                                 </td>
                                 <td>
                                     <strong><?= (int)$b['used_count'] ?></strong>
-                                    <span style="color:#555">/ <?= $b['max_uses'] ?? 'inf' ?></span>
-                                    <div style="font-size:9px;color:#444;margin-top:2px"><?= (int)$b['total_scans'] ?> escaneos</div>
+                                    <span style="color:var(--text-3)">/ <?= $b['max_uses'] ?? 'inf' ?></span>
+                                    <div style="font-size:9px;color:var(--text-3);margin-top:2px"><?= (int)$b['total_scans'] ?> escaneos</div>
                                 </td>
-                                <td style="font-size:11px;color:#666">
-                                    <?= $b['valid_until'] ? date('d/m/Y', strtotime($b['valid_until'])) : '<span style="color:#333">Sin limite</span>' ?>
+                                <td style="font-size:11px;color:var(--text-2)">
+                                    <?= $b['valid_until'] ? date('d/m/Y', strtotime($b['valid_until'])) : '<span style="color:var(--text-3)">Sin límite</span>' ?>
                                 </td>
                                 <td>
                                     <?php if ($expirado): ?>      <span class="badge badge-red">EXPIRADO</span>
@@ -419,9 +503,9 @@ $ultimos_scans = $pdo->query('SELECT u.canjeado_at, u.ip, u.bono_code, b.nombre,
 <!-- MODAL CREAR -->
 <div id="create-modal">
     <div class="modal-inner">
-        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1a1a1a;padding-bottom:14px;margin-bottom:20px">
-            <h3 style="margin:0;color:#00ff00;font-size:14px;letter-spacing:2px">NUEVO BONO QR</h3>
-            <button onclick="closeCreateModal()" style="background:none;border:none;color:#555;font-size:20px;cursor:pointer">x</button>
+        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:14px;margin-bottom:20px">
+            <h3 style="margin:0;color:var(--text);font-size:14px;letter-spacing:1.5px;font-weight:700">NUEVO BONO QR</h3>
+            <button type="button" class="modal-close-btn" onclick="closeCreateModal()">✕</button>
         </div>
         <form method="POST">
             <input type="hidden" name="action" value="crear_bono">
@@ -429,13 +513,13 @@ $ultimos_scans = $pdo->query('SELECT u.canjeado_at, u.ip, u.bono_code, b.nombre,
                 <label>Cantidad de bonos a crear</label>
                 <div style="display:flex;align-items:center;gap:12px">
                     <input type="number" name="cantidad" min="1" max="500" value="1" required style="width:100px">
-                    <span style="font-size:11px;color:#555">Si es mas de 1 el codigo se autogenera</span>
+                    <span style="font-size:11px;color:var(--text-3)">Si es más de 1, el código se autogenerará</span>
                 </div>
             </div>
-            <div class="form-group"><label>Nombre interno</label><input type="text" name="nombre" placeholder="Ej: Competicion CrossFit Mayo" required></div>
-            <div class="form-group"><label>Codigo (vacio = autogenerado)</label><input type="text" name="code" placeholder="Dejar vacio para lote" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
-            <div class="form-group"><label>Descripcion (visible al usuario)</label><textarea name="descripcion" rows="2" placeholder="Ej: Acceso exclusivo con 20% de descuento"></textarea></div>
-            <div class="form-group"><label>Campana</label><input type="text" name="campaign" placeholder="Ej: Influencer @nombre"></div>
+            <div class="form-group"><label>Nombre interno</label><input type="text" name="nombre" placeholder="Ej: Competición CrossFit Mayo" required></div>
+            <div class="form-group"><label>Código (vacío = autogenerado)</label><input type="text" name="code" placeholder="Dejar vacío para lote" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
+            <div class="form-group"><label>Descripción (visible al usuario)</label><textarea name="descripcion" rows="2" placeholder="Ej: Acceso exclusivo con 20% de descuento"></textarea></div>
+            <div class="form-group"><label>Campaña</label><input type="text" name="campaign" placeholder="Ej: Influencer @nombre"></div>
             <div class="form-group"><label>Creado por</label><input type="text" name="created_by" value="Admin"></div>
             <div class="section-sep">Descuento que otorga</div>
             <div class="grid-2">
@@ -463,15 +547,15 @@ $ultimos_scans = $pdo->query('SELECT u.canjeado_at, u.ip, u.bono_code, b.nombre,
                     </select>
                 </div>
             </div>
-            <div class="section-sep">Vigencia y limites</div>
-            <div class="form-group"><label>Maximo de usos (vacio = ilimitado)</label><input type="number" name="max_uses" min="1" placeholder="inf"></div>
+            <div class="section-sep">Vigencia y límites</div>
+            <div class="form-group"><label>Máximo de usos (vacío = ilimitado)</label><input type="number" name="max_uses" min="1" placeholder="inf"></div>
             <div class="grid-2">
-                <div class="form-group"><label>Valido desde</label><input type="date" name="valid_from"></div>
-                <div class="form-group"><label>Valido hasta</label><input type="date" name="valid_until"></div>
+                <div class="form-group"><label>Válido desde</label><input type="date" name="valid_from"></div>
+                <div class="form-group"><label>Válido hasta</label><input type="date" name="valid_until"></div>
             </div>
             <div style="display:flex;gap:10px;margin-top:22px">
                 <button type="submit" class="btn btn-primary" style="flex:1" onclick="this.disabled=true;this.textContent='Creando...';this.form.submit()">Crear Bono</button>
-                <button type="button" class="btn" onclick="closeCreateModal()">Cancelar</button>
+                <button type="button" class="btn btn-secondary" style="flex:1" onclick="closeCreateModal()">Cancelar</button>
             </div>
         </form>
     </div>
@@ -481,16 +565,16 @@ $ultimos_scans = $pdo->query('SELECT u.canjeado_at, u.ip, u.bono_code, b.nombre,
 <div id="qr-modal">
     <div class="qr-modal-inner">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-            <h3 style="margin:0;font-size:13px;color:#00ff00;letter-spacing:2px">CODIGO QR</h3>
-            <button onclick="cerrarQR()" style="background:none;border:none;color:#555;font-size:20px;cursor:pointer">x</button>
+            <h3 style="margin:0;font-size:13px;color:var(--text);letter-spacing:1.5px;font-weight:700">CÓDIGO QR</h3>
+            <button type="button" class="modal-close-btn" onclick="cerrarQR()">✕</button>
         </div>
-        <div style="font-size:18px;font-weight:900;color:#00ff00;letter-spacing:4px" id="qr-code-label"></div>
-        <div style="font-size:12px;color:#888;margin-bottom:16px" id="qr-nombre-label"></div>
-        <div id="qr-canvas" style="background:#fff;padding:12px;display:inline-block"></div>
-        <div style="font-size:11px;color:#555;word-break:break-all;margin-top:14px" id="qr-url-label"></div>
-        <div style="display:flex;gap:10px;margin-top:16px">
+        <div style="font-size:18px;font-weight:900;color:var(--sent);letter-spacing:4px;font-family:monospace;margin-bottom:4px" id="qr-code-label"></div>
+        <div style="font-size:12px;color:var(--text-2);margin-bottom:16px" id="qr-nombre-label"></div>
+        <div id="qr-canvas" style="background:#fff;padding:16px;display:inline-block;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px"></div>
+        <div style="font-size:11px;color:var(--text-3);word-break:break-all;margin-bottom:16px" id="qr-url-label"></div>
+        <div style="display:flex;gap:10px">
             <button class="btn btn-primary" style="flex:1" onclick="descargarQR()">Descargar PNG</button>
-            <button class="btn" onclick="copiarURLModal()">Copiar URL</button>
+            <button class="btn btn-secondary" style="flex:1" onclick="copiarURLModal()">Copiar URL</button>
         </div>
     </div>
 </div>
@@ -572,9 +656,17 @@ function copiarTabla() {
 function showToast(msg) {
     var t = document.createElement('div');
     t.textContent = msg;
-    t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#00ff00;color:#000;padding:10px 20px;font-weight:bold;font-size:13px;z-index:9999';
+    t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:var(--text);color:var(--surface);padding:12px 24px;font-weight:600;font-size:13px;border-radius:var(--radius);box-shadow:var(--shadow-md);z-index:9999;transition:opacity 0.3s ease, transform 0.3s ease;transform:translateY(10px);opacity:0;';
     document.body.appendChild(t);
-    setTimeout(function() { t.style.opacity = '0'; setTimeout(function() { t.remove(); }, 400); }, 2500);
+    // Forzar reflujo para activar la transición
+    t.offsetHeight;
+    t.style.opacity = '1';
+    t.style.transform = 'translateY(0)';
+    setTimeout(function() { 
+        t.style.opacity = '0'; 
+        t.style.transform = 'translateY(10px)'; 
+        setTimeout(function() { t.remove(); }, 300); 
+    }, 2500);
 }
 </script>
 

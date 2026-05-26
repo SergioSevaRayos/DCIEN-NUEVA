@@ -117,6 +117,13 @@ try {
 
     $order_id = $pdo->lastInsertId();
 
+    // Generar número de pedido: AAMMDD-(ID+15000)
+    $orderNumber = date('ymd') . '-' . ($order_id + 15000);
+    query("UPDATE orders SET order_number = :num WHERE id = :oid", [
+        'num' => $orderNumber,
+        'oid' => $order_id
+    ]);
+
     // ════════════════════════════════════════════════════════════════
     // 2. BYPASS DE STRIPE PARA PEDIDOS A COSTE 0
     // ════════════════════════════════════════════════════════════════
@@ -154,7 +161,7 @@ try {
 
                 $html = getEmailTemplate('order_confirmation', [
                     'username'         => htmlspecialchars($username),
-                    'order_id'         => $order_id,
+                    'order_id'         => $orderNumber,
                     'email_items'      => [[
                         'series_slug' => $seriesSlug,
                         'unit_number' => $unitNumber,
@@ -171,7 +178,7 @@ try {
 
                 sendEmail([
                     'to'      => $emailTo,
-                    'subject' => 'Pedido Confirmado #' . $order_id . ' — DCIEN',
+                    'subject' => 'Pedido Confirmado #' . $orderNumber . ' — DCIEN',
                     'html'    => $html,
                 ]);
             }

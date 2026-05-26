@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * DCIEN — Pipeline de Órdenes
  */
@@ -85,6 +85,7 @@ function get_order_items(PDO $pdo, array $pedido): array {
 }
 
 function generar_orden_trabajo(array $pedido, PDO $pdo): array {
+    $num_pedido = $pedido['order_number'] ?? $pedido['id'];
     $items    = get_order_items($pdo, $pedido);
     $shipping = json_decode($pedido['shipping_data'] ?? '{}', true) ?: [];
     $addr     = parse_shipping($shipping);
@@ -139,7 +140,7 @@ function generar_orden_trabajo(array $pedido, PDO $pdo): array {
     $html = "<!DOCTYPE html><html lang='es'>
 <head>
     <meta charset='UTF-8'>
-    <title>Orden #{$pedido['id']} - DCIEN</title>
+    <title>Orden #{$num_pedido} - DCIEN</title>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: Arial, sans-serif; font-size:10px; line-height:1.3; padding:10mm; }
@@ -175,7 +176,7 @@ function generar_orden_trabajo(array $pedido, PDO $pdo): array {
 <body>
     <div class='header'>
         <h1>DCIEN</h1>
-        <p>Orden de Producción #{$pedido['id']}</p>
+        <p>Orden de Producción #{$num_pedido}</p>
     </div>
 
     $productos_html
@@ -220,7 +221,8 @@ function generar_orden_trabajo(array $pedido, PDO $pdo): array {
 // ═══════════════════════════════════════════════
 
 function email_produccion(array $pedido, array $result): bool {
-    $subject = "Nueva Orden de Producción #{$pedido['id']} — DCIEN";
+    $num_pedido = $pedido['order_number'] ?? $pedido['id'];
+    $subject = "Nueva Orden de Producción #{$num_pedido} — DCIEN";
     $html = "
     <div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;'>
         <div style='background:#000;color:#fff;padding:30px;text-align:center;'>
@@ -229,7 +231,7 @@ function email_produccion(array $pedido, array $result): bool {
         </div>
         <div style='padding:30px;'>
             <div style='background:#000;color:#fff;padding:20px;text-align:center;font-size:42px;font-weight:900;font-family:monospace;letter-spacing:4px;margin:0 0 20px;'>
-                #{$pedido['id']}
+                #{$num_pedido}
             </div>
             <p style='margin:0 0 20px;color:#333;'>Se ha generado la orden de producción. Accede al documento para imprimir.</p>
             <a href='{$result['url']}' style='display:block;background:#000;color:#fff;padding:14px;text-align:center;text-decoration:none;font-weight:bold;letter-spacing:2px;text-transform:uppercase;'>
@@ -241,6 +243,7 @@ function email_produccion(array $pedido, array $result): bool {
 }
 
 function email_enviado_cliente(array $pedido, array $items, array $addr): bool {
+    $num_pedido = $pedido['order_number'] ?? $pedido['id'];
     $to = $addr['email'] ?: ($pedido['email'] ?? '');
     if (empty($to)) return false;
 
@@ -255,7 +258,7 @@ function email_enviado_cliente(array $pedido, array $items, array $addr): bool {
         </div>";
     }
 
-    $subject = "Tu pedido DCIEN #{$pedido['id']} va en camino";
+    $subject = "Tu pedido DCIEN #{$num_pedido} va en camino";
     $html = "
     <div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;'>
         <div style='background:#000;color:#fff;padding:30px;text-align:center;'>
@@ -264,7 +267,7 @@ function email_enviado_cliente(array $pedido, array $items, array $addr): bool {
         <div style='padding:30px;text-align:center;color:#111;'>
             <div style='font-size:40px;margin-bottom:16px;'>📦</div>
             <h2 style='margin:0 0 12px;'>Hola, $nombre</h2>
-            <p style='color:#555;margin:0 0 24px;'>Tu pedido <strong>#{$pedido['id']}</strong> ya ha salido de nuestras instalaciones y está en manos del transportista.</p>
+            <p style='color:#555;margin:0 0 24px;'>Tu pedido <strong>#{$num_pedido}</strong> ya ha salido de nuestras instalaciones y está en manos del transportista.</p>
             $items_html
             <p style='color:#777;font-size:13px;margin:24px 0;'>Si tienes alguna duda responde a este correo.</p>
             <a href='https://d-cien.es' style='display:inline-block;background:#000;color:#fff;padding:14px 32px;text-decoration:none;font-weight:bold;letter-spacing:2px;text-transform:uppercase;'>
@@ -660,7 +663,7 @@ $suma_total      = array_sum(array_column($pedidos, 'price'));
                         <input type="checkbox" class="order-checkbox" value="<?= $p['id'] ?>" style="transform:scale(1.2);">
                     </td>
                     <td class="col-id">
-                        <strong style="color:var(--accent);">#<?= $p['id'] ?></strong><br>
+                        <strong style="color:var(--accent);">#<?= $p['order_number'] ?? $p['id'] ?></strong><br>
                         <span style="font-size:10px;color:var(--text-2);"><?= format_date($p['created_at'], 'd/m H:i') ?></span>
                     </td>
                     <td class="col-producto">
@@ -722,7 +725,7 @@ $suma_total      = array_sum(array_column($pedidos, 'price'));
                                 </form>
                             <?php endif; ?>
                             <a href="/admin-descargas/modules/ver-pedido.php?id=<?= $p['id'] ?>" class="btn btn-small btn-secondary" title="Ver detalle">Ver</a>
-                            <form method="POST" style="display:inline;" onsubmit="return confirm('¿Eliminar pedido #<?= $p['id'] ?> y liberar sus unidades? Esta acción no se puede deshacer.');">
+                            <form method="POST" style="display:inline;" onsubmit="return confirm('¿Eliminar pedido #<?= $p['order_number'] ?? $p['id'] ?> y liberar sus unidades? Esta acción no se puede deshacer.');">
                                 <input type="hidden" name="action" value="eliminar_pedido">
                                 <input type="hidden" name="order_id" value="<?= $p['id'] ?>">
                                 <button type="submit" class="btn btn-small btn-danger" title="Eliminar pedido">✕</button>

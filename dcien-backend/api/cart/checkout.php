@@ -149,6 +149,13 @@ try {
 
     $orderId = $pdo->lastInsertId();
 
+    // Generar número de pedido: AAMMDD-(ID+15000)
+    $orderNumber = date('ymd') . '-' . ($orderId + 15000);
+    query(
+        "UPDATE orders SET order_number = :num WHERE id = :oid",
+        ['num' => $orderNumber, 'oid' => $orderId]
+    );
+
     // 4. Crear order_items y poner en checkout
     $stmtItem = $pdo->prepare('INSERT INTO order_items
         (order_id, series_slug, unit_number, size, color, type, unit_price)
@@ -214,7 +221,7 @@ try {
 
                 $html = getEmailTemplate('order_confirmation', [
                     'username'         => htmlspecialchars($username),
-                    'order_id'         => $orderId,
+                    'order_id'         => $orderNumber,
                     'email_items'      => $email_items,
                     'shipping_address' => $address_lines,
                     'total'            => '0.00',
@@ -225,7 +232,7 @@ try {
 
                 sendEmail([
                     'to'      => $emailTo,
-                    'subject' => 'Pedido Confirmado #' . $orderId . ' — DCIEN',
+                    'subject' => 'Pedido Confirmado #' . $orderNumber . ' — DCIEN',
                     'html'    => $html,
                 ]);
             }

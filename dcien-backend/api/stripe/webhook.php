@@ -159,8 +159,11 @@ try {
     try {
         require_once $backend_root . '/includes/mailer.php';
 
-        // Datos del usuario (username + email de registro)
-        $dbUser        = queryOne("SELECT username, email FROM users WHERE id = :uid", ['uid' => $user_id]);
+        // Datos del usuario (username + email de registro) y número de pedido
+        $dbUser           = queryOne("SELECT username, email FROM users WHERE id = :uid", ['uid' => $user_id]);
+        $dbOrder          = queryOne("SELECT order_number FROM orders WHERE id = :oid", ['oid' => $order_id]);
+        $order_display_id = $dbOrder['order_number'] ?? $order_id;
+
         $email_destino = $dbUser['email']
             ?? ($session->customer_details->email ?? ($shipping_from_form['email'] ?? null));
         $username      = $dbUser['username'] ?? ($shipping_from_form['firstName'] ?? 'Cliente');
@@ -194,7 +197,7 @@ try {
 
             $email_data = [
                 'username'         => htmlspecialchars($username),
-                'order_id'         => $order_id,
+                'order_id'         => $order_display_id,
                 'email_items'      => $email_items,
                 'shipping_address' => $address_lines,
                 'total'            => $total_pagado,
@@ -209,7 +212,7 @@ try {
 
             $sent = sendEmail([
                 'to'      => $email_destino,
-                'subject' => 'Pedido Confirmado #' . $order_id . ' — DCIEN',
+                'subject' => 'Pedido Confirmado #' . $order_display_id . ' — DCIEN',
                 'html'    => $html,
             ]);
 
