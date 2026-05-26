@@ -26,6 +26,9 @@ function sendEmail(array $params): bool {
         $port = $_ENV['EMAIL_PORT'] ?? getenv('EMAIL_PORT') ?: 465;
         $user = $_ENV['EMAIL_USER'] ?? getenv('EMAIL_USER');
         $pass = $_ENV['EMAIL_PASS'] ?? getenv('EMAIL_PASS');
+        if (empty($pass)) {
+            $pass = $_ENV['EMAIL_PASSWORD'] ?? getenv('EMAIL_PASSWORD');
+        }
         $from = $_ENV['EMAIL_FROM'] ?? getenv('EMAIL_FROM');
         $fromName = $_ENV['EMAIL_FROM_NAME'] ?? getenv('EMAIL_FROM_NAME') ?? 'DCIEN';
 

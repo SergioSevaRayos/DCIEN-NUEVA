@@ -12,28 +12,23 @@ $discount_html = '';
 if (!empty($data['discount_code']) && !empty($data['discount_amount'])) {
     $discount_html = '
     <tr>
-        <td style="padding: 15px 0; border-top: 1px solid rgba(255,255,255,0.1);">
+        <td style="padding: 12px 0; border-top: 1px solid #2a2a2a;">
             <table role="presentation" style="width: 100%;" cellpadding="0" cellspacing="0">
                 <tr>
-                    <td style="color: rgba(255,255,255,0.6); font-size: 13px;">Precio original:</td>
-                    <td align="right" style="color: rgba(255,255,255,0.6); font-size: 13px; text-decoration: line-through;">'
+                    <td style="color: #888888; font-size: 13px; font-weight: 500;">Precio original:</td>
+                    <td align="right" style="color: #888888; font-size: 13px; font-weight: 500; text-decoration: line-through;">'
                         . htmlspecialchars($data['original_price'] ?? '—') .
                     '</td>
                 </tr>
                 <tr>
-                    <td style="color: #4ade80; font-size: 14px; font-weight: 600; padding-top: 8px;">
+                    <td style="color: #4ade80; font-size: 13px; font-weight: 600; padding-top: 6px;">
                         Descuento (' . htmlspecialchars($data['discount_code']) . '):
                     </td>
-                    <td align="right" style="color: #4ade80; font-size: 14px; font-weight: 700; padding-top: 8px;">
+                    <td align="right" style="color: #4ade80; font-size: 13px; font-weight: 700; padding-top: 6px;">
                         -€' . htmlspecialchars($data['discount_amount']) . '
                     </td>
                 </tr>
             </table>
-        </td>
-    </tr>
-    <tr>
-        <td style="padding: 12px 0;">
-            <div style="height: 1px; background-color: rgba(255,255,255,0.2);"></div>
         </td>
     </tr>';
 }
@@ -50,13 +45,13 @@ foreach ($email_items as $item) {
 
     $items_rows .= '
         <tr>
-            <td colspan="2" style="padding: 10px 0; border-bottom: 1px solid #e8e8e8;">
+            <td style="padding: 14px 0; border-bottom: 1px solid #2a2a2a;">
                 <table role="presentation" style="width: 100%;" cellpadding="0" cellspacing="0">
                     <tr>
-                        <td style="color: #000000; font-size: 15px; font-weight: 700;">
-                            ' . htmlspecialchars($seriesLabel) . ' <span style="font-family: monospace;">#' . $unitPadded . '</span>
+                        <td style="color: #ffffff; font-size: 14px; font-weight: 700; letter-spacing: 0.5px;">
+                            ' . htmlspecialchars($seriesLabel) . ' <span style="font-family: monospace; color: #ffbd59;">#' . $unitPadded . '</span>
                         </td>
-                        <td align="right" style="color: #555555; font-size: 13px; white-space: nowrap;">
+                        <td align="right" style="color: #888888; font-size: 12px; font-weight: 500; letter-spacing: 0.3px;">
                             ' . htmlspecialchars($size) . ' · ' . htmlspecialchars($color) . ' · ' . htmlspecialchars($type) . '
                         </td>
                     </tr>
@@ -72,44 +67,63 @@ return '
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Confirmación de Pedido - DCIEN</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+            font-family: \'Inter\', -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        @media only screen and (max-width: 600px) {
+            .card {
+                padding: 40px 20px !important;
+            }
+            .title {
+                font-size: 20px !important;
+            }
+        }
+    </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #000000; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Arial, sans-serif;">
+<body style="margin: 0; padding: 0; background-color: #121212;">
 
-    <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #000000;" cellpadding="0" cellspacing="0">
+    <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #121212;" cellpadding="0" cellspacing="0">
         <tr>
             <td align="center" style="padding: 60px 20px;">
 
-                <table role="presentation" style="max-width: 600px; width: 100%; border-collapse: collapse; background-color: #ffffff;" cellpadding="0" cellspacing="0">
-
-                    <!-- Header -->
+                <!-- Card Principal -->
+                <table role="presentation" class="card" style="max-width: 600px; width: 100%; border-collapse: collapse; background-color: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 0px;" cellpadding="0" cellspacing="0">
+                    
+                    <!-- Header Logo -->
                     <tr>
                         <td align="center" style="padding: 50px 40px 30px 40px;">
-                            <h1 style="margin: 0; color: #000000; font-size: 48px; font-weight: 900; letter-spacing: 16px; text-transform: uppercase; line-height: 1;">
+                            <h1 style="margin: 0; color: #ffffff; font-family: \'Outfit\', \'Arial Black\', sans-serif; font-size: 40px; font-weight: 900; letter-spacing: 14px; text-transform: uppercase; line-height: 1;">
                                 DCIEN
                             </h1>
-                            <div style="width: 80px; height: 2px; background-color: #000000; margin: 20px auto 0 auto;"></div>
+                            <div style="width: 60px; height: 1px; background-color: rgba(255, 255, 255, 0.15); margin: 20px auto 0 auto;"></div>
                         </td>
                     </tr>
 
                     <!-- Contenido -->
                     <tr>
                         <td style="padding: 0 50px 50px 50px;">
-
-                            <h2 style="margin: 0 0 25px 0; color: #000000; font-size: 22px; font-weight: 700; text-align: center; letter-spacing: 2px; text-transform: uppercase;">
-                                ¡Pedido Confirmado!
+                            
+                            <h2 class="title" style="margin: 0 0 20px 0; color: #ffffff; font-family: \'Outfit\', \'Arial Black\', sans-serif; font-size: 22px; font-weight: 800; text-align: center; letter-spacing: 2px; text-transform: uppercase;">
+                                PEDIDO CONFIRMADO
                             </h2>
-
-                            <p style="margin: 0 0 30px 0; color: #333333; font-size: 15px; line-height: 1.7; text-align: center;">
-                                Hola <strong>{username}</strong>,<br>
-                                Tu pedido <strong>#{order_id}</strong> está siendo procesado.
+                            
+                            <p style="margin: 0 0 30px 0; color: #a3a3a3; font-size: 14px; line-height: 1.8; text-align: center; font-weight: 400; letter-spacing: 0.5px;">
+                                Hola <strong style="color: #ffffff; font-weight: 600;">{username}</strong>,<br>
+                                Tu pedido <strong style="color: #ffffff; font-weight: 600;">#{order_id}</strong> ha sido confirmado y registrado correctamente. A continuación, tienes los detalles del activo adquirido y el protocolo de entrega.
                             </p>
-
-                            <!-- Detalles del/los productos -->
-                            <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f8f8f8; margin: 25px 0;" cellpadding="0" cellspacing="0">
+                            
+                            <!-- Detalles de los Productos (Estilo técnico) -->
+                            <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #222222; border: 1px solid #2a2a2a; margin: 25px 0;" cellpadding="0" cellspacing="0">
                                 <tr>
-                                    <td style="padding: 30px;">
-                                        <p style="margin: 0 0 16px 0; color: #999999; font-size: 10px; text-transform: uppercase; letter-spacing: 3px; font-weight: 600;">
-                                            Detalles del Pedido
+                                    <td style="padding: 24px 30px;">
+                                        <p style="margin: 0 0 14px 0; color: #888888; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 3px;">
+                                            ACTIVOS ADQUIRIDOS
                                         </p>
                                         <table role="presentation" style="width: 100%;" cellpadding="0" cellspacing="0">
                                             ' . $items_rows . '
@@ -118,36 +132,34 @@ return '
                                 </tr>
                             </table>
 
-                            <!-- Dirección de envío -->
-                            <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f8f8f8; margin: 25px 0;" cellpadding="0" cellspacing="0">
+                            <!-- Dirección de Envío (Ficha técnica) -->
+                            <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #222222; border: 1px solid #2a2a2a; margin: 25px 0;" cellpadding="0" cellspacing="0">
                                 <tr>
-                                    <td style="padding: 30px;">
-                                        <p style="margin: 0 0 12px 0; color: #999999; font-size: 10px; text-transform: uppercase; letter-spacing: 3px; font-weight: 600;">
-                                            Dirección de Envío
+                                    <td style="padding: 24px 30px;">
+                                        <p style="margin: 0 0 12px 0; color: #888888; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 3px;">
+                                            DIRECCIÓN DE ENTREGA
                                         </p>
-                                        <p style="margin: 0; color: #000000; font-size: 14px; line-height: 1.6;">
+                                        <p style="margin: 0; color: #ffffff; font-size: 13px; line-height: 1.7; letter-spacing: 0.3px; font-weight: 400;">
                                             {shipping_address}
                                         </p>
                                     </td>
                                 </tr>
                             </table>
 
-                            <!-- Total (fondo negro) -->
-                            <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #000000; margin: 30px 0;" cellpadding="0" cellspacing="0">
+                            <!-- Desglose de Importes (Caja Negra) -->
+                            <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #0c0c0c; border: 1px solid #2a2a2a; margin: 30px 0;" cellpadding="0" cellspacing="0">
                                 <tr>
-                                    <td style="padding: 30px;">
+                                    <td style="padding: 24px 30px;">
                                         <table role="presentation" style="width: 100%;" cellpadding="0" cellspacing="0">
-
                                             ' . $discount_html . '
-
                                             <tr>
-                                                <td style="padding: 15px 0;">
+                                                <td style="padding: 6px 0;">
                                                     <table role="presentation" style="width: 100%;" cellpadding="0" cellspacing="0">
                                                         <tr>
-                                                            <td style="color: rgba(255,255,255,0.8); font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">
-                                                                Total Pagado:
+                                                            <td style="color: #888888; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px;">
+                                                                TOTAL PAGADO:
                                                             </td>
-                                                            <td align="right" style="color: #ffffff; font-size: 32px; font-weight: 900; font-family: monospace;">
+                                                            <td align="right" style="color: #ffffff; font-size: 26px; font-weight: 800; font-family: monospace;">
                                                                 €{total}
                                                             </td>
                                                         </tr>
@@ -159,40 +171,38 @@ return '
                                 </tr>
                             </table>
 
-                            <!-- Próximos pasos -->
-                            <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f0f9ff; border-left: 4px solid #3b82f6; margin: 30px 0;" cellpadding="0" cellspacing="0">
+                            <!-- Próximos Pasos (Protocolo de entrega azul DCIEN) -->
+                            <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #101622; border-left: 3px solid #1800ad; margin: 30px 0;" cellpadding="0" cellspacing="0">
                                 <tr>
-                                    <td style="padding: 25px;">
-                                        <p style="margin: 0 0 12px 0; color: #1e40af; font-size: 13px; font-weight: 700;">
-                                            Próximos Pasos
+                                    <td style="padding: 20px 24px;">
+                                        <p style="margin: 0 0 10px 0; color: #728cfc; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">
+                                            ℹ️ PROTOCOLO DE ENTREGA
                                         </p>
-                                        <p style="margin: 0; color: #1e3a8a; font-size: 13px; line-height: 1.7;">
-                                            1. Preparamos tu pedido (24-48h)<br>
-                                            2. Cuando esté listo te avisaremos (7 días máx.)<br>
-                                            3. Recibes tu DCIEN en casa
+                                        <p style="margin: 0; color: #a4b6fc; font-size: 12px; line-height: 1.7; letter-spacing: 0.3px;">
+                                            1. <strong>Producción Semanal:</strong> Los pedidos realizados antes de los miércoles a las 23:59h entran en el ciclo de producción de esa semana.<br>
+                                            2. <strong>Plazo de Envío:</strong> Una vez fabricado, el plazo estimado de entrega es de 10 días laborables.<br>                                            
                                         </p>
                                     </td>
                                 </tr>
                             </table>
 
-                            <p style="margin: 30px 0 0 0; padding-top: 25px; border-top: 1px solid #e0e0e0; color: #999999; font-size: 13px; line-height: 1.6; text-align: center;">
-                                ¿Necesitas ayuda? Responde a este email o contáctanos en<br>
-                                <a href="mailto:soporte@d-cien.es" style="color: #000000; text-decoration: underline;">soporte@d-cien.es</a>
+                            <p style="margin: 30px 0 0 0; padding-top: 25px; border-top: 1px solid #2a2a2a; color: #666666; font-size: 11px; line-height: 1.6; text-align: center; letter-spacing: 0.5px;">
+                                ¿Necesitas ayuda o realizar cambios en tu dirección de envío? Responde directamente a este correo o escríbenos a <a href="mailto:contacto@d-cien.es" style="color: #ffffff; text-decoration: underline;">soporte@d-cien.es</a>
                             </p>
-
+                            
                         </td>
                     </tr>
-
+                    
                     <!-- Footer -->
                     <tr>
-                        <td style="background-color: #f8f8f8; padding: 30px 40px; text-align: center; border-top: 1px solid #e0e0e0;">
-                            <p style="margin: 0 0 15px 0; color: #999999; font-size: 12px;">
+                        <td style="background-color: #151515; padding: 30px 40px; text-align: center; border-top: 1px solid #2a2a2a;">
+                            <p style="margin: 0 0 12px 0; color: #666666; font-size: 11px; letter-spacing: 1px;">
                                 © ' . date('Y') . ' DCIEN - Ediciones Limitadas Exclusivas
                             </p>
                             <p style="margin: 0; font-size: 11px;">
-                                <a href="https://www.instagram.com/dcien.esp/" style="color: #999999; text-decoration: none; margin: 0 10px;">Instagram</a>
-                                <span style="color: #cccccc;">·</span>
-                                <a href="https://d-cien.es" style="color: #999999; text-decoration: none; margin: 0 10px;">Web</a>
+                                <a href="https://www.instagram.com/dcien.esp/" style="color: #a3a3a3; text-decoration: none; margin: 0 10px; font-weight: 500; letter-spacing: 0.5px;">Instagram</a>
+                                <span style="color: #333333;">·</span>
+                                <a href="https://d-cien.es" style="color: #a3a3a3; text-decoration: none; margin: 0 10px; font-weight: 500; letter-spacing: 0.5px;">Web Oficial</a>
                             </p>
                         </td>
                     </tr>
@@ -202,7 +212,7 @@ return '
             </td>
         </tr>
     </table>
-
+    
 </body>
 </html>
 ';

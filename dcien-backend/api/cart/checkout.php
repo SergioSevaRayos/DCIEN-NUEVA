@@ -184,6 +184,55 @@ try {
                 ['uid' => $userId, 'slug' => $vi['seriesSlug'], 'num' => $vi['unitNumber']]);
         }
         $pdo->commit();
+
+        // Enviar email de confirmación para pedidos gratuitos
+        try {
+            require_once $backend_root . '/includes/mailer.php';
+            $dbUser   = queryOne("SELECT username, email FROM users WHERE id = :uid", ['uid' => $userId]);
+            $emailTo  = $dbUser['email'] ?? ($shippingData['email'] ?? null);
+            $username = $dbUser['username'] ?? ($shippingData['firstName'] ?? 'Cliente');
+
+            if ($emailTo) {
+                $s = $shippingData;
+                $address_lines = implode('<br>', array_filter([
+                    trim(($s['firstName'] ?? '') . ' ' . ($s['lastName'] ?? '')),
+                    trim(($s['address'] ?? '') . ($s['addressExtra'] ? ', ' . $s['addressExtra'] : '')),
+                    trim(($s['postalCode'] ?? '') . ' ' . ($s['city'] ?? '') . (isset($s['province']) ? ', ' . $s['province'] : '')),
+                    ($s['email'] ?? $emailTo) . (isset($s['phone']) ? ' | ' . $s['phone'] : ''),
+                ]));
+
+                $email_items = [];
+                foreach ($validatedItems as $vi) {
+                    $email_items[] = [
+                        'series_slug' => $vi['seriesSlug'],
+                        'unit_number' => $vi['unitNumber'],
+                        'size'        => $vi['size'],
+                        'color'       => $vi['color'],
+                        'type'        => $vi['type'],
+                    ];
+                }
+
+                $html = getEmailTemplate('order_confirmation', [
+                    'username'         => htmlspecialchars($username),
+                    'order_id'         => $orderId,
+                    'email_items'      => $email_items,
+                    'shipping_address' => $address_lines,
+                    'total'            => '0.00',
+                    'discount_code'    => $discountCode ?? '',
+                    'discount_amount'  => $discountAmount > 0 ? number_format($discountAmount, 2, '.', '') : '',
+                    'original_price'   => $discountAmount > 0 ? '€' . number_format($subtotal, 2, '.', '') : '',
+                ]);
+
+                sendEmail([
+                    'to'      => $emailTo,
+                    'subject' => 'Pedido Confirmado #' . $orderId . ' — DCIEN',
+                    'html'    => $html,
+                ]);
+            }
+        } catch (Exception $emailEx) {
+            logError('Free cart order email error', ['error' => $emailEx->getMessage()]);
+        }
+
         $successUrl = ($_ENV['STRIPE_SUCCESS_URL'] ?? getenv('STRIPE_SUCCESS_URL')) . '?session_id=' . $freeSessionId;
         jsonSuccess('Pedido gratuito procesado', ['url' => $successUrl, 'session_id' => $freeSessionId]);
         exit;

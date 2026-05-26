@@ -3,8 +3,8 @@
  * Configuración de Base de Datos
  */
 
-// Cargar .env si no está cargado aún
-if (!getenv('DB_HOST') && file_exists(dirname(__DIR__) . '/.env')) {
+// Cargar .env si existe el archivo
+if (file_exists(dirname(__DIR__) . '/.env')) {
     require_once dirname(__DIR__) . '/vendor/autoload.php';
     $dotenv = Dotenv\Dotenv::createUnsafeImmutable(dirname(__DIR__));
     $dotenv->safeLoad();

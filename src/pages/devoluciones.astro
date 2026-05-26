@@ -11,73 +11,94 @@ const seo = getSEO('devoluciones');
       <h1 class="font-brand text-5xl md:text-6xl mb-16 uppercase tracking-wider text-black dark:text-white transition-colors">
         Devoluciones
       </h1>
-      
+
       <div class="space-y-16 text-black/70 dark:text-white/70 text-sm leading-relaxed transition-colors">
-        
+
         <div class="relative pl-8 border-l border-black/10 dark:border-white/10">
           <div class="absolute -left-[5px] top-0 w-2 h-2 bg-black dark:bg-white rounded-full"></div>
           <h2 class="text-black dark:text-white font-bold text-lg mb-4 uppercase tracking-wider">
-            Política de Devolución
+            Exclusión del Derecho de Desistimiento
           </h2>
           <p>
-            De acuerdo con la legislación vigente, dispones de un periodo de <span class="text-black dark:text-white font-bold">14 días naturales</span> desde la recepción del paquete para ejercer tu derecho de desistimiento. Al tratarse de unidades numeradas, este proceso es crítico para reintegrar la pieza al stock activo.
+            Conforme al artículo 103.c del Real Decreto Legislativo 1/2007, las adquisiciones realizadas en DCIEN quedan excluidas del derecho de desistimiento al tratarse de productos confeccionados y asignados bajo especificaciones concretas del comprador.
+          </p>
+          <p class="mt-4">
+            Cada prenda incorpora una combinación única de modelo, color, talla, serie y numeración individual irrepetible dentro de una edición limitada de 100 unidades, quedando vinculada de forma irreversible al pedido confirmado.
           </p>
         </div>
 
         <div class="relative pl-8 border-l border-black/10 dark:border-white/10">
           <div class="absolute -left-[5px] top-0 w-2 h-2 bg-black dark:bg-white rounded-full"></div>
           <h2 class="text-black dark:text-white font-bold text-lg mb-4 uppercase tracking-wider">
-            Condiciones de Aceptación
+            Supuestos de Incidencia Aceptados
           </h2>
-          <p class="mb-4">Para que la devolución sea validada, la unidad debe cumplir estrictamente:</p>
+          <p class="mb-4">
+            Únicamente se atenderán solicitudes cuando concurra alguna de las siguientes circunstancias:
+          </p>
           <ul class="list-disc list-inside space-y-2 marker:text-black/30 dark:marker:text-white/30">
-            <li>Estado impecable: sin señales de uso, lavado o desgaste.</li>
-            <li>Etiquetado original intacto vinculado al número de serie.</li>
-            <li>Embalaje original DCIEN completo.</li>
+            <li>Defecto de fabricación.</li>
+            <li>Error de producción o numeración imputable a DCIEN.</li>
+            <li>Recepción de talla, color, modelo o serie distinta a la solicitada.</li>
+            <li>Daños ocasionados durante el transporte.</li>
           </ul>
         </div>
 
         <div class="relative pl-8 border-l border-black/10 dark:border-white/10">
           <div class="absolute -left-[5px] top-0 w-2 h-2 bg-black dark:bg-white rounded-full"></div>
           <h2 class="text-black dark:text-white font-bold text-lg mb-4 uppercase tracking-wider">
-            Protocolo de Retorno
+            Comunicación de Incidencias
           </h2>
           <ol class="list-decimal list-inside space-y-3 marker:text-black/50 dark:marker:text-white/50 marker:font-bold">
-            <li>Notifica la intención al email <a href="mailto:contacto@d-cien.es" class="text-black dark:text-white underline decoration-black/20 dark:decoration-white/20">contacto@d-cien.es</a> indicando el ID de pedido.</li>
-            <li>Recibirás las instrucciones de envío y la dirección del centro de logística.</li>
-            <li>Gestiona el envío mediante una agencia que facilite código de seguimiento.</li>
-            <li>Tras la inspección técnica de la prenda, se autorizará el reembolso.</li>
+            <li>
+              Notifica la incidencia en un plazo máximo de <strong>48 horas desde la recepción</strong>.
+            </li>
+            <li>
+              Envía un correo a 
+              <a href="mailto:contacto@d-cien.es" class="text-black dark:text-white underline decoration-black/20 dark:decoration-white/20">
+                contacto@d-cien.es
+              </a>
+              indicando el ID del pedido.
+            </li>
+            <li>Aporta evidencia fotográfica suficiente para su validación.</li>
+            <li>Una vez revisada la incidencia, recibirás instrucciones específicas.</li>
           </ol>
         </div>
 
         <div class="relative pl-8 border-l border-black/10 dark:border-white/10">
           <div class="absolute -left-[5px] top-0 w-2 h-2 bg-black dark:bg-white rounded-full"></div>
           <h2 class="text-black dark:text-white font-bold text-lg mb-4 uppercase tracking-wider">
-            Gastos de Gestión
+            Resolución
           </h2>
           <p>
-            Los costes directos del envío de devolución corren a cargo del cliente. En caso de que el producto presente un defecto de fabricación o error en la numeración enviada, DCIEN asumirá íntegramente los gastos de recogida.
+            Tras la verificación técnica, DCIEN podrá optar por la reposición de la prenda, su reparación o el reembolso íntegro mediante el mismo método de pago utilizado en la compra.
           </p>
         </div>
 
         <div class="relative pl-8 border-l border-black/10 dark:border-white/10">
           <div class="absolute -left-[5px] top-0 w-2 h-2 bg-black dark:bg-white rounded-full"></div>
           <h2 class="text-black dark:text-white font-bold text-lg mb-4 uppercase tracking-wider">
-            Liquidación
+            Exclusiones
           </h2>
-          <p>
-            El reembolso se ejecutará a través del mismo método de pago (Stripe) en un plazo máximo de <span class="text-black dark:text-white font-bold">14 días</span> tras confirmar el estado óptimo de la unidad devuelta.
+          <p class="mb-4">
+            No se aceptarán devoluciones o reclamaciones derivadas de:
           </p>
+          <ul class="list-disc list-inside space-y-2 marker:text-black/30 dark:marker:text-white/30">
+            <li>Error del comprador al seleccionar talla, color, modelo o serie.</li>
+            <li>Cambio de opinión o preferencias personales.</li>
+            <li>Uso, lavado, manipulación o alteración posterior a la recepción.</li>
+            <li>Desgaste derivado del uso ordinario.</li>
+          </ul>
         </div>
 
         <div class="pt-8 border-t border-black/10 dark:border-white/10 flex justify-between items-center">
           <p class="text-[10px] text-black/40 dark:text-white/40 uppercase tracking-[0.3em]">
-            REF: RETURNS-PROTOCOL
+            REF: DCIEN-INCIDENCE-PROTOCOL
           </p>
           <p class="text-xs text-black/40 dark:text-white/40 italic">
             Rev. {new Date().getFullYear()}
           </p>
         </div>
+
       </div>
     </div>
   </section>

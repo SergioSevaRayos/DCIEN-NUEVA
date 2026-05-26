@@ -128,7 +128,7 @@ try {
         // Pedido multi-item: marcar todos los items como sold
         logError("WEBHOOK: Pedido de carrito - procesando order_items para order_id: $order_id");
         $items = queryAll(
-            "SELECT series_slug, unit_number FROM order_items WHERE order_id = :oid",
+            "SELECT series_slug, unit_number, size, color, type FROM order_items WHERE order_id = :oid",
             ['oid' => $order_id]
         );
         foreach ($items as $item) {
