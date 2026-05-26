@@ -67,6 +67,16 @@ if ($frontend -or $all) {
     } else {
         Write-Err "Fallo al subir frontend"
     }
+
+    # Las imagenes de public/ son grandes y a veces no llegan via dist/
+    # Se suben explicitamente para garantizar que esten en el servidor
+    Write-Step "Subiendo imagenes estaticas (public/images/)..."
+    scp -P $PORT -r "$LOCAL\public\images" "${SERVER}:${REMOTE}/public_html/"
+    if ($LASTEXITCODE -eq 0) {
+        Write-OK "Imagenes subidas"
+    } else {
+        Write-Err "Fallo al subir imagenes (no critico si ya estaban)"
+    }
 }
 
 # STEP 3: Subir backend (NUNCA sube .env ni vendor al servidor)
