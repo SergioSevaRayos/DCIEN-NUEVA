@@ -235,7 +235,7 @@ $ultimos_scans = $pdo->query('SELECT u.canjeado_at, u.ip, u.bono_code, b.nombre,
         .btn{justify-content:center}
         
         /* Modales */
-        #create-modal, #qr-modal {
+        #create-modal, #qr-modal, #creds-modal {
             display: none;
             position: fixed;
             top: 0;
@@ -257,11 +257,11 @@ $ultimos_scans = $pdo->query('SELECT u.canjeado_at, u.ip, u.bono_code, b.nombre,
             from { transform: translateY(20px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
-        #create-modal.open, #qr-modal.open {
+        #create-modal.open, #qr-modal.open, #creds-modal.open {
             display: flex;
             animation: fadeIn 0.2s ease-out forwards;
         }
-        #create-modal.open .modal-inner, #qr-modal.open .qr-modal-inner {
+        #create-modal.open .modal-inner, #qr-modal.open .qr-modal-inner, #creds-modal.open .qr-modal-inner {
             animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
         .modal-inner, .qr-modal-inner {
