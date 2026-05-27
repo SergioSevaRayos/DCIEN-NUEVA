@@ -446,6 +446,12 @@ $ultimos_scans = $pdo->query('SELECT u.canjeado_at, u.ip, u.bono_code, b.nombre,
                                 $agotado  = $b['max_uses'] && $b['used_count'] >= $b['max_uses'];
                                 $activo   = $b['is_active'] && !$expirado && !$agotado;
                                 $bono_url = 'https://d-cien.es/bono/?code=' . urlencode($b['code']);
+                                // Extraer username del campo created_by (formato: "Admin | user:BONO_XXXX | discount_id:X")
+                                $temp_user = '';
+                                if (preg_match('/user:([^\s|]+)/', $b['created_by'] ?? '', $m)) {
+                                    $temp_user = $m[1];
+                                }
+                                $temp_pass = $b['temp_password'] ?? '';
                             ?>
                             <tr>
                                 <td>
@@ -475,6 +481,7 @@ $ultimos_scans = $pdo->query('SELECT u.canjeado_at, u.ip, u.bono_code, b.nombre,
                                 <td>
                                     <div style="display:flex;gap:4px;flex-wrap:wrap">
                                         <button class="btn btn-sm btn-qr" onclick="mostrarQR('<?= e($b['code']) ?>','<?= e(addslashes($b['nombre'])) ?>','<?= e($bono_url) ?>')">QR</button>
+                                        <button class="btn btn-sm" style="background:#f0fdf4;color:#16a34a;border-color:#bbf7d0" onclick="mostrarCredenciales('<?= e(addslashes($temp_user)) ?>','<?= e(addslashes($temp_pass)) ?>','<?= e($b['code']) ?>')">CREDS</button>
                                         <a href="bonos.php?edit=<?= $b['id'] ?>" class="btn btn-sm">Edit</a>
                                         <form method="POST" style="display:inline">
                                             <input type="hidden" name="action" value="toggle">
@@ -579,6 +586,39 @@ $ultimos_scans = $pdo->query('SELECT u.canjeado_at, u.ip, u.bono_code, b.nombre,
     </div>
 </div>
 
+<!-- MODAL CREDENCIALES -->
+<div id="creds-modal">
+    <div class="qr-modal-inner" style="max-width:440px;text-align:left">
+        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:14px;margin-bottom:20px">
+            <h3 style="margin:0;font-size:14px;color:var(--text);letter-spacing:1.5px;font-weight:700">ACCESO TEMPORAL</h3>
+            <button type="button" class="modal-close-btn" onclick="cerrarCreds()">✕</button>
+        </div>
+        <div style="font-family:monospace;font-size:18px;font-weight:900;color:var(--sent);letter-spacing:3px;margin-bottom:4px" id="creds-code-label"></div>
+        <p style="font-size:12px;color:var(--text-2);margin:0 0 20px">Credenciales de acceso para este bono QR.</p>
+
+        <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-3);font-weight:600;margin-bottom:6px">Usuario</div>
+            <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-family:monospace;font-size:14px;font-weight:700;color:var(--text);flex:1" id="creds-usuario"></span>
+                <button class="btn btn-secondary btn-small" onclick="copiarCred('usuario')">Copiar</button>
+            </div>
+        </div>
+
+        <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:20px">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-3);font-weight:600;margin-bottom:6px">Contraseña</div>
+            <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-family:monospace;font-size:14px;font-weight:700;color:var(--text);flex:1" id="creds-password"></span>
+                <button class="btn btn-secondary btn-small" onclick="copiarCred('password')">Copiar</button>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:10px">
+            <button class="btn btn-primary" style="flex:1" onclick="copiarCredsCompleto()">Copiar todo</button>
+            <button class="btn btn-secondary" style="flex:1" onclick="cerrarCreds()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
 <script>
 var _qrCurrentURL = '';
 
@@ -599,6 +639,31 @@ function mostrarQR(code, nombre, url) {
 
 function cerrarQR() { document.getElementById('qr-modal').classList.remove('open'); }
 document.getElementById('qr-modal').addEventListener('click', function(e) { if (e.target === this) cerrarQR(); });
+
+function mostrarCredenciales(user, pass, code) {
+    document.getElementById('creds-code-label').textContent = code;
+    document.getElementById('creds-usuario').textContent = user;
+    document.getElementById('creds-password').textContent = pass;
+    document.getElementById('creds-modal').classList.add('open');
+}
+function cerrarCreds() { document.getElementById('creds-modal').classList.remove('open'); }
+document.getElementById('creds-modal').addEventListener('click', function(e) { if (e.target === this) cerrarCreds(); });
+
+function copiarCred(tipo) {
+    var txt = document.getElementById('creds-' + tipo).textContent;
+    navigator.clipboard.writeText(txt)
+        .then(function() { showToast(tipo === 'usuario' ? 'Usuario copiado' : 'Contraseña copiada'); })
+        .catch(function() { prompt('Copia:', txt); });
+}
+
+function copiarCredsCompleto() {
+    var user = document.getElementById('creds-usuario').textContent;
+    var pass = document.getElementById('creds-password').textContent;
+    var txt  = 'Usuario: ' + user + '\nContraseña: ' + pass;
+    navigator.clipboard.writeText(txt)
+        .then(function() { showToast('Credenciales copiadas'); })
+        .catch(function() { prompt('Copia:', txt); });
+}
 
 function descargarQR() {
     setTimeout(function() {
