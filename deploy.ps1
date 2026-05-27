@@ -112,4 +112,17 @@ if ($extras -or $all) {
     }
 }
 
+# STEP FINAL: Corregir permisos en public_html (SCP sube con 700/600 por defecto)
+# Esto evita el 403 Forbidden recurrente tras cada deploy
+if ($frontend -or $extras -or $all) {
+    Write-Step "Corrigiendo permisos en public_html (chmod 755/644)..."
+    $sshCmd = "find ${REMOTE}/public_html/ -type d -exec chmod 755 {} \; ; find ${REMOTE}/public_html/ -type f -exec chmod 644 {} \;"
+    ssh -p $PORT $SERVER $sshCmd
+    if ($LASTEXITCODE -eq 0) {
+        Write-OK "Permisos corregidos (dirs 755, files 644)"
+    } else {
+        Write-Err "No se pudieron corregir permisos. Ejecuta manualmente en SSH."
+    }
+}
+
 Write-Host "`n Deploy completado. Verifica en https://d-cien.es`n" -ForegroundColor Green
