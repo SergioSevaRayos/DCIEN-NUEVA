@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * DCIEN - Gestor de Atletas (Usuarios)
  * Permite editar, ASIGNAR PROTOCOLOS (Individual y Masivo), NOTIFICAR y FILTRAR AVANZADO.
@@ -259,8 +259,10 @@ $having = ['1=1'];
 $params = [];
 
 if ($search) {
-    $where[] = "(u.username LIKE :search OR u.email LIKE :search OR u.instagram_username LIKE :search)";
-    $params['search'] = "%$search%";
+    $where[] = "(u.username LIKE :search_u OR u.email LIKE :search_e OR u.instagram_username LIKE :search_ig)";
+    $params['search_u']  = "%$search%";
+    $params['search_e']  = "%$search%";
+    $params['search_ig'] = "%$search%";
 }
 if ($desde) {
     $where[] = "u.created_at >= :desde";
