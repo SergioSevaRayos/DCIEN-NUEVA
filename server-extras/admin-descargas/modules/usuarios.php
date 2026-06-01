@@ -56,8 +56,7 @@ function enviar_email_protocolo($email, $username, $code, $description, $type, $
         </div>
     </body></html>";
 
-    $headers = "MIME-Version: 1.0\r\nContent-type:text/html;charset=UTF-8\r\nFrom: DCIEN Protocolos <acceso@d-cien.es>\r\n";
-    return mail($email, $subject, $message_html, $headers);
+    return sendAdminMail($email, $subject, $message_html);
 }
 
 // ═══════════════════════════════════════════════════════════════
