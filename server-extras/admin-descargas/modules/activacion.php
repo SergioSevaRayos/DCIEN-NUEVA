@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * DCIEN - Crear Token de Activación
  * Compatible con estructura CLI (sin metadata)
@@ -9,6 +9,14 @@ require_once 'config.php';
 $pdo = get_db_connection();
 $message = '';
 $token_generado = null;
+
+// Cargar descuentos activos para el selector
+$descuentos_disponibles = $pdo->query("
+    SELECT id, code, description, type, value 
+    FROM discounts 
+    WHERE is_active = 1 
+    ORDER BY code ASC
+")->fetchAll();
 
 /**
  * Generar password aleatoria segura
@@ -23,7 +31,8 @@ function generateRandomPassword(int $length = 12): string {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $instagram = trim($_POST['instagram'] ?? '');
+    $instagram   = trim($_POST['instagram'] ?? '');
+    $discount_id = !empty($_POST['discount_id']) ? (int)$_POST['discount_id'] : null;
     
     if (empty($instagram)) {
         $message = show_message('error', '❌ El nombre de Instagram es obligatorio');
@@ -43,16 +52,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($existing) {
                 $message = show_message('warning', "⚠️ Ya existe un token activo para @{$instagram}");
             } else {
-                // 2. Verificar descuento de bienvenida
-                $stmt = $pdo->prepare("
-                    SELECT id, code, description, type, value 
-                    FROM discounts 
-                    WHERE code = 'DCIEN10' 
-                      AND is_active = 1
-                    LIMIT 1
-                ");
-                $stmt->execute();
-                $welcomeDiscount = $stmt->fetch();
+                // 2. Obtener el descuento seleccionado (si hay)
+                $selectedDiscount = null;
+                if ($discount_id) {
+                    $stmt = $pdo->prepare("SELECT id, code, description, type, value FROM discounts WHERE id = ? AND is_active = 1 LIMIT 1");
+                    $stmt->execute([$discount_id]);
+                    $selectedDiscount = $stmt->fetch();
+                }
                 
                 // 3. Generar credenciales temporales
                 $token = bin2hex(random_bytes(32));
@@ -63,28 +69,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Expiración: 72 horas
                 $expires_at = date('Y-m-d H:i:s', strtotime('+72 hours'));
                 
-                // 4. Insertar token
+                // 4. Insertar token con discount_id
                 $stmt = $pdo->prepare("
                     INSERT INTO activation_tokens
-                    (token, instagram_username, temp_username, temp_password_hash, expires_at, created_at)
+                    (token, instagram_username, temp_username, temp_password_hash, expires_at, discount_id, created_at)
                     VALUES
-                    (:token, :instagram, :temp_username, :hash, :expires, NOW())
+                    (:token, :instagram, :temp_username, :hash, :expires, :discount_id, NOW())
                 ");
                 $stmt->execute([
-                    'token' => $token,
-                    'instagram' => $instagram,
+                    'token'       => $token,
+                    'instagram'   => $instagram,
                     'temp_username' => $temp_username,
-                    'hash' => $temp_password_hash,
-                    'expires' => $expires_at
+                    'hash'        => $temp_password_hash,
+                    'expires'     => $expires_at,
+                    'discount_id' => $discount_id
                 ]);
                 
                 $token_generado = [
-                    'token' => $token,
-                    'instagram' => $instagram,
+                    'token'        => $token,
+                    'instagram'    => $instagram,
                     'temp_username' => $temp_username,
                     'temp_password' => $temp_password,
-                    'expires' => $expires_at,
-                    'discount' => $welcomeDiscount
+                    'expires'      => $expires_at,
+                    'discount'     => $selectedDiscount
                 ];
                 
                 $message = show_message('success', '✅ Token de activación creado correctamente');
@@ -203,8 +210,22 @@ Al activar tu cuenta recibirás automáticamente:
                         <input type="text" name="instagram" required placeholder="usuario_instagram" autofocus>
                         <small style="font-size: 11px; color: #666;">Sin @ inicial, solo el nombre de usuario</small>
                     </div>
-                    
-                    <button type="submit" class="btn">🎟️ Generar Token de Activación</button>
+
+                    <div class="form-group" style="margin-top: 16px;">
+                        <label>Descuento asociado al token</label>
+                        <select name="discount_id" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);font-size:13px;">
+                            <option value="">— Sin descuento —</option>
+                            <?php foreach ($descuentos_disponibles as $d): ?>
+                                <option value="<?= (int)$d['id'] ?>">
+                                    <?= e($d['code']) ?> — <?= e($d['description']) ?>
+                                    (<?= $d['type'] === 'percent' ? $d['value'] . '%' : 'EUR ' . number_format($d['value'], 2) ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <small style="font-size: 11px; color: #666;">El usuario recibirá este descuento automáticamente al activar su cuenta</small>
+                    </div>
+
+                    <button type="submit" class="btn" style="margin-top: 20px;">🎟️ Generar Token de Activación</button>
                 </form>
             </div>
 
@@ -213,7 +234,8 @@ Al activar tu cuenta recibirás automáticamente:
                 <ul style="font-size: 12px; line-height: 1.8; color: #666; list-style-position: inside;">
                     <li>El sistema generará credenciales temporales automáticamente</li>
                     <li>El token expira en 72 horas</li>
-                    <li>Al activar, el usuario recibirá automáticamente el descuento DCIEN10</li>
+                    <li>Selecciona un descuento para que el usuario lo reciba al activar</li>
+                    <li>Si no seleccionas descuento, el sistema asignará DCIEN10 por defecto (si está activo)</li>
                     <li>Las credenciales temporales permiten hacer login en /acceso</li>
                     <li>Una vez activada, las credenciales temporales ya no funcionan</li>
                 </ul>

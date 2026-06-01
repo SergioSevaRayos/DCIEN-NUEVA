@@ -92,7 +92,7 @@ try {
     } else {
         // CASO REGISTRO: Crear nuevo usuario
         $tokenData = queryOne(
-            "SELECT instagram_username FROM activation_tokens WHERE token = :token AND used_at IS NULL AND expires_at > NOW() LIMIT 1",
+            "SELECT instagram_username, discount_id FROM activation_tokens WHERE token = :token AND used_at IS NULL AND expires_at > NOW() LIMIT 1",
             ['token' => $token]
         );
 
@@ -113,46 +113,56 @@ try {
         $userId = getDatabaseConnection()->lastInsertId();
         
         // ═══════════════════════════════════════════════════════════════
-        // ASIGNAR DESCUENTO: BONO QR o bienvenida DCIEN10
+        // ASIGNAR DESCUENTO: del token, bono QR, o bienvenida DCIEN10
         // ═══════════════════════════════════════════════════════════════
         try {
-            // Si viene de bono QR, buscar descuento BONO_XXX
-            $bonoDiscount = null;
-            if (!empty($_SESSION['qr_bono'])) {
+            $discountToAssign = null;
+
+            // Prioridad 1: descuento específico vinculado al token de activación
+            if (!empty($tokenData['discount_id'])) {
+                $discountToAssign = queryOne(
+                    "SELECT id FROM discounts WHERE id = :id AND is_active = 1 LIMIT 1",
+                    ['id' => $tokenData['discount_id']]
+                );
+            }
+
+            // Prioridad 2: bono QR (si viene de un escaneo QR)
+            if (!$discountToAssign && !empty($_SESSION['qr_bono'])) {
                 $bonoCode = 'BONO_' . $_SESSION['qr_bono']['code'];
-                $bonoDiscount = queryOne(
+                $discountToAssign = queryOne(
                     "SELECT id FROM discounts WHERE code = :code AND is_active = 1 LIMIT 1",
                     ['code' => $bonoCode]
                 );
                 unset($_SESSION['qr_bono']);
             }
 
-            $welcomeDiscount = $bonoDiscount ?? queryOne(
-                "SELECT id FROM discounts 
-                 WHERE code = 'DCIEN10' 
-                   AND is_active = 1 
-                 LIMIT 1"
-            );
+            // Prioridad 3: fallback a DCIEN10 (retrocompatibilidad)
+            if (!$discountToAssign) {
+                $discountToAssign = queryOne(
+                    "SELECT id FROM discounts WHERE code = 'DCIEN10' AND is_active = 1 LIMIT 1"
+                );
+            }
+
             
-            if ($welcomeDiscount) {
+            if ($discountToAssign) {
                 query(
                     "INSERT INTO user_discounts 
                      (user_id, discount_id, assigned_at)
                      VALUES (:user_id, :discount_id, NOW())",
                     [
-                        'user_id' => $userId,
-                        'discount_id' => $welcomeDiscount['id']
+                        'user_id'     => $userId,
+                        'discount_id' => $discountToAssign['id']
                     ]
                 );
                 
-                logError('WELCOME_DISCOUNT_ASSIGNED', [
-                    'user_id' => $userId,
-                    'username' => $username,
-                    'discount_code' => 'DCIEN10'
+                logError('DISCOUNT_ASSIGNED', [
+                    'user_id'    => $userId,
+                    'username'   => $username,
+                    'discount_id'=> $discountToAssign['id']
                 ]);
             } else {
-                logError('WARNING: Welcome discount DCIEN10 not found or inactive', [
-                    'user_id' => $userId,
+                logError('WARNING: No discount found to assign', [
+                    'user_id'  => $userId,
                     'username' => $username
                 ]);
             }
