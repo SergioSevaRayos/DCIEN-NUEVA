@@ -66,8 +66,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $temp_password = $instagram . '_' . str_pad(random_int(0, 9999), 4, '0', STR_PAD_LEFT);
                 $temp_password_hash = password_hash($temp_password, PASSWORD_BCRYPT);
                 
-                // Expiración: 72 horas
-                $expires_at = date('Y-m-d H:i:s', strtotime('+72 hours'));
+                // Expiración: 1 año
+                $expires_at = date('Y-m-d H:i:s', strtotime('+1 year'));
                 
                 // 4. Insertar token con discount_id
                 $stmt = $pdo->prepare("
@@ -148,27 +148,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div style="background:var(--bg); padding:20px; border:1px solid var(--border); margin-bottom:20px; border-radius:var(--radius); font-family: 'Courier New', monospace;">
                     <h4 style="color:var(--sent); margin-bottom: 12px;">📩 ENVIAR POR DM:</h4>
                     <div style="background:var(--surface); padding:16px; border-left:3px solid var(--sent); margin-bottom:12px;">
-                        <pre style="margin: 0; white-space: pre-wrap; font-size: 13px; line-height: 1.6;">🎯 ACCESO EXCLUSIVO DCIEN
+                        <pre style="margin: 0; white-space: pre-wrap; font-size: 13px; line-height: 1.6;">DCIEN no es para todos, pero sí para ti.
+Te hemos dado acceso — úsalo bien.
 
-Usuario temporal: <?php echo e($token_generado['temp_username']); ?>
+Usuario:
+<?php echo e($token_generado['temp_username']); ?>
 
-Contraseña temporal: <?php echo e($token_generado['temp_password']); ?>
+Contraseña:
+<?php echo e($token_generado['temp_password']); ?>
 
-
-Activar cuenta:
+Activa tu cuenta:
 https://d-cien.es/registro/activar
 <?php if ($token_generado['discount']): ?>
-
 
 🎁 REGALO DE BIENVENIDA
 Al activar tu cuenta recibirás automáticamente:
 • <?php echo e($token_generado['discount']['description']); ?>
 
-• Código: <?php echo e($token_generado['discount']['code']); ?>
-
 <?php endif; ?>
 
-⏱️ Válido durante 72 horas</pre>
+⏱️ Válido durante 1 año</pre>
                     </div>
                     <button onclick="copiarMensaje()" class="btn btn-small" style="margin-right: 8px;">📋 Copiar Mensaje</button>
                     <button onclick="this.previousElementSibling.querySelector('pre').select()" class="btn btn-small btn-secondary">📝 Seleccionar</button>
@@ -233,7 +232,7 @@ Al activar tu cuenta recibirás automáticamente:
                 <h4 style="margin-bottom: 12px;">ℹ️ INFORMACIÓN</h4>
                 <ul style="font-size: 12px; line-height: 1.8; color: #666; list-style-position: inside;">
                     <li>El sistema generará credenciales temporales automáticamente</li>
-                    <li>El token expira en 72 horas</li>
+                    <li>El token expira en 1 año</li>
                     <li>Selecciona un descuento para que el usuario lo reciba al activar</li>
                     <li>Si no seleccionas descuento, el sistema asignará DCIEN10 por defecto (si está activo)</li>
                     <li>Las credenciales temporales permiten hacer login en /acceso</li>
