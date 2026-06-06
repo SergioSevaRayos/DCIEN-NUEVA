@@ -67,7 +67,7 @@
         <span id="cart-subtotal">€0.00</span>
       </div>
       <div class="flex justify-between text-black/60 dark:text-white/60">
-        <span class="text-[11px] uppercase tracking-wider">IVA (21%)</span>
+        <span class="text-[11px] uppercase tracking-wider">IVA (21% incl.)</span>
         <span id="cart-iva">€0.00</span>
       </div>
       <div id="cart-discount-row" class="hidden flex justify-between text-green-600 dark:text-green-400">
@@ -206,8 +206,8 @@
     const priceAfterDisc = Math.max(0, subtotal - discAmt);
     const isFree         = priceAfterDisc < 0.10;
     const shipping       = isFree ? 0 : SHIPPING_FEE;
-    const iva            = Math.round(priceAfterDisc * TAX_RATE * 100) / 100;
-    const total          = Math.round((priceAfterDisc + iva + shipping) * 100) / 100;
+    const iva            = Math.round((priceAfterDisc - (priceAfterDisc / (1 + TAX_RATE))) * 100) / 100;
+    const total          = Math.round((priceAfterDisc + shipping) * 100) / 100;
 
     if (subtotalEl) subtotalEl.textContent = `€${priceAfterDisc.toFixed(2)}`;
     if (ivaEl)      ivaEl.textContent      = `€${iva.toFixed(2)}`;

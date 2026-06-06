@@ -20,10 +20,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     jsonError('Metodo no permitido', 405);
 }
 
-$input        = getJsonInput();
-$items        = $input['items']        ?? [];
-$shippingData = $input['shippingData'] ?? [];
-$discountData = $input['discount']     ?? null;
+$input         = getJsonInput();
+$items         = $input['items']        ?? [];
+$shippingData  = $input['shippingData'] ?? [];
+$discountData  = $input['discount']     ?? null;   // compat. flujo antiguo / QR bono
+$discountsData = $input['discounts']    ?? null;   // nuevo: array de descuentos
 
 if (empty($items) || !is_array($items)) {
     jsonError('El carrito esta vacio', 400);
@@ -85,32 +86,51 @@ try {
         ];
     }
 
-    // 2. Calcular descuento
-    $discountAmount = 0.0;
-    $discountId     = null;
-    $discountCode   = null;
+    // 2. Calcular descuento(s)
+    $discountAmount   = 0.0;
+    $discountId       = null;
+    $discountIds      = [];   // array de discount.id aplicados
+    $userDiscountIds  = [];   // array de user_discounts.id para marcar usados
+    $discountCodes    = [];
 
-    if ($discountData) {
+    // 2a. Nuevo flujo: array de descuentos stackables
+    if (!empty($discountsData) && is_array($discountsData)) {
+        $ids = array_filter(array_map(fn($d) => (int)($d['id'] ?? 0), $discountsData));
+        if (!empty($ids)) {
+            $validDiscounts = validateMultipleDiscounts($userId, $ids);
+            if (!empty($validDiscounts)) {
+                $discountAmount  = calculateMultipleDiscountsAmount($subtotal, $validDiscounts);
+                $discountId      = $validDiscounts[0]['discount_id'];
+                $discountIds     = array_column($validDiscounts, 'discount_id');
+                $userDiscountIds = array_column($validDiscounts, 'user_discount_id');
+                $discountCodes   = array_column($validDiscounts, 'code');
+            }
+        }
+    }
+    // 2b. Flujo antiguo: descuento único (QR bono o item individual)
+    elseif ($discountData) {
         $isQrBono = isset($discountData['discount_type']) && ($discountData['id'] ?? -1) === 0;
 
         if ($isQrBono || isset($discountData['discount_type'])) {
             $type  = $discountData['discount_type'] ?? $discountData['type'] ?? 'percent';
             $value = (float)($discountData['discount_value'] ?? $discountData['value'] ?? 0);
-            if ($type === 'percent') {
-                $discountAmount = $subtotal * ($value / 100);
-            } else {
-                $discountAmount = min($value, $subtotal);
-            }
-            $discountCode = $discountData['code'] ?? null;
+            $discountAmount = $type === 'percent'
+                ? $subtotal * ($value / 100)
+                : min($value, $subtotal);
+            $discountCodes[] = $discountData['code'] ?? null;
         } elseif (!empty($discountData['id'])) {
             $validDiscount = validateUserDiscount($userId, $discountData['id']);
             if ($validDiscount) {
-                $discountAmount = calculateSavings($subtotal, $validDiscount);
-                $discountId     = $validDiscount['discount_id'];
-                $discountCode   = $validDiscount['code'];
+                $discountAmount  = calculateSavings($subtotal, $validDiscount);
+                $discountId      = $validDiscount['discount_id'];
+                $discountIds[]   = $validDiscount['discount_id'];
+                $userDiscountIds[] = $validDiscount['user_discount_id'];
+                $discountCodes[] = $validDiscount['code'];
             }
         }
     }
+
+    $discountCode = implode('+', array_filter($discountCodes));
 
     $discountAmount     = round($discountAmount, 2);
     $shippingFee        = 5.00;
@@ -121,16 +141,16 @@ try {
         $shippingFee = 0.00;
     }
 
-    $ivaAmount  = round($priceAfterDiscount * 0.21, 2);
-    $grandTotal = round($priceAfterDiscount + $ivaAmount + $shippingFee, 2);
+    $ivaAmount  = round($priceAfterDiscount - ($priceAfterDiscount / 1.21), 2);
+    $grandTotal = round($priceAfterDiscount + $shippingFee, 2);
 
     // 3. Crear cabecera de orden
     $firstItem = $validatedItems[0];
     $shippingJson = json_encode($shippingData, JSON_UNESCAPED_UNICODE);
     $stmt = $pdo->prepare('INSERT INTO orders
-        (user_id, series_slug, unit_number, size, color, type, price, discount_id, shipping_data,
-         subtotal, discount_amount, shipping_fee, is_cart_order, created_at)
-        VALUES (:uid,:slug,:num,:size,:color,:type,:price,:did,:shipping,:subtotal,:disc,:ship,1,NOW())');
+        (user_id, series_slug, unit_number, size, color, type, price, discount_id, discount_ids,
+         shipping_data, subtotal, discount_amount, shipping_fee, is_cart_order, created_at)
+        VALUES (:uid,:slug,:num,:size,:color,:type,:price,:did,:dids,:shipping,:subtotal,:disc,:ship,1,NOW())');
 
     $stmt->execute([
         'uid'      => $userId,
@@ -141,6 +161,7 @@ try {
         'type'     => $firstItem['type'],
         'price'    => $grandTotal,
         'did'      => $discountId,
+        'dids'     => !empty($discountIds) ? json_encode($discountIds) : null,
         'shipping' => $shippingJson,
         'subtotal' => $subtotal,
         'disc'     => $discountAmount,
@@ -300,8 +321,10 @@ try {
             'items_summary'   => substr($itemsSummary, 0, 500),
             'shipping_json'   => json_encode($shippingData),
             'subtotal'        => (string)$subtotal,
-            'discount_amount' => (string)$discountAmount,
-            'discount_code'   => (string)($discountCode ?? ''),
+            'discount_amount'   => (string)$discountAmount,
+            'discount_code'     => (string)($discountCode ?? ''),
+            'discount_ids_json' => !empty($discountIds) ? json_encode($discountIds) : '',
+            'user_discount_ids' => !empty($userDiscountIds) ? json_encode($userDiscountIds) : '',
             'shipping_fee'    => (string)$shippingFee,
             'grand_total'     => (string)$grandTotal,
         ],

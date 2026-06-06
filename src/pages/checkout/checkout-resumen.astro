@@ -43,15 +43,10 @@ const apiUrl = import.meta.env.PUBLIC_API_URL;
             <div id="shipping-details" class="space-y-2 text-sm"></div>
           </div>
 
-          <!-- Descuento aplicado -->
+          <!-- Descuentos aplicados -->
           <div id="discount-applied-card" class="hidden p-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-            <div class="flex justify-between items-center">
-              <div>
-                <h2 class="text-sm font-bold uppercase tracking-wider text-green-800 dark:text-green-300">✓ Descuento Aplicado</h2>
-                <p id="discount-card-desc" class="text-xs text-green-700 dark:text-green-400 mt-1 uppercase tracking-widest"></p>
-              </div>
-              <span id="discount-card-badge" class="text-sm font-bold uppercase px-3 py-1 bg-green-600 text-white dark:bg-green-500 dark:text-black"></span>
-            </div>
+            <h2 class="text-sm font-bold uppercase tracking-wider text-green-800 dark:text-green-300 mb-3">✓ Descuentos Aplicados</h2>
+            <div id="discount-list" class="space-y-2"></div>
           </div>
 
         </div>
@@ -68,7 +63,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL;
                 <span id="subtotal-price" class="text-black dark:text-white">€0.00</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-black/60 dark:text-white/60">IVA (21%):</span>
+                <span class="text-black/60 dark:text-white/60">IVA (21% incl.):</span>
                 <span id="tax-price" class="text-black dark:text-white">€0.00</span>
               </div>
               <div class="flex justify-between border-b border-black/5 pb-2">
@@ -120,14 +115,18 @@ const apiUrl = import.meta.env.PUBLIC_API_URL;
   const confirmError    = document.getElementById('confirm-error');
 
   // Leer estado del carrito
-  let cart     = [];
-  let discount = null;
-  let shipping = null;
+  let cart      = [];
+  let discounts = [];
+  let shipping  = null;
 
   try {
-    cart     = JSON.parse(localStorage.getItem('dcien_cart')          || '[]');
-    discount = JSON.parse(localStorage.getItem('dcien_cart_discount') || 'null');
+    cart     = JSON.parse(localStorage.getItem('dcien_cart') || '[]');
     shipping = JSON.parse(sessionStorage.getItem('checkout_shipping') || 'null');
+    // Leer array nuevo; fallback a legacy
+    const arrRaw    = localStorage.getItem('dcien_cart_discounts');
+    const legacyRaw = localStorage.getItem('dcien_cart_discount');
+    if (arrRaw)    discounts = JSON.parse(arrRaw);
+    else if (legacyRaw) discounts = [JSON.parse(legacyRaw)];
   } catch { /* ignore */ }
 
   if (!cart.length) {
@@ -137,6 +136,9 @@ const apiUrl = import.meta.env.PUBLIC_API_URL;
   } else {
     renderResumen();
   }
+
+  // Compat: alias para código que siga usando discount singular
+  const discount = discounts.length > 0 ? discounts[0] : null;
 
   function renderResumen() {
     // ── Productos ─────────────────────────────────────────────
@@ -170,45 +172,50 @@ const apiUrl = import.meta.env.PUBLIC_API_URL;
     const subtotal = cart.reduce((s, i) => s + Number(i.price), 0);
 
     let discAmt = 0;
-    if (discount) {
-      if (discount.type === 'percent') {
-        discAmt = subtotal * (parseFloat(discount.value) / 100);
-      } else {
-        discAmt = Math.min(parseFloat(discount.value), subtotal);
-      }
-      discAmt = Math.round(discAmt * 100) / 100;
+    for (const d of discounts) {
+      if (d.type === 'percent') discAmt += subtotal * (parseFloat(d.value) / 100);
+      else                      discAmt += parseFloat(d.value);
     }
+    discAmt = Math.min(Math.round(discAmt * 100) / 100, subtotal);
 
     const priceAfterDisc = Math.max(0, subtotal - discAmt);
     const isFree         = priceAfterDisc < 0.10;
     const shippingFee    = isFree ? 0 : SHIPPING_FEE;
-    const iva            = Math.round(priceAfterDisc * TAX_RATE * 100) / 100;
-    const total          = Math.round((priceAfterDisc + iva + shippingFee) * 100) / 100;
+    const iva            = Math.round((priceAfterDisc - (priceAfterDisc / (1 + TAX_RATE))) * 100) / 100;
+    const total          = Math.round((priceAfterDisc + shippingFee) * 100) / 100;
 
-    if (subtotalEl)    subtotalEl.textContent    = `€${priceAfterDisc.toFixed(2)}`;
-    if (taxEl)         taxEl.textContent         = `€${iva.toFixed(2)}`;
+    if (subtotalEl)     subtotalEl.textContent    = `€${priceAfterDisc.toFixed(2)}`;
+    if (taxEl)          taxEl.textContent          = `€${iva.toFixed(2)}`;
     if (shippingCostEl) shippingCostEl.textContent = shippingFee === 0 ? 'GRATIS' : `€${shippingFee.toFixed(2)}`;
-    if (totalEl)       totalEl.textContent       = `€${total.toFixed(2)}`;
+    if (totalEl)        totalEl.textContent        = `€${total.toFixed(2)}`;
 
-    // ── UI descuento ──────────────────────────────────────────
+    // ── Fila de descuento en sidebar ──────────────────────────
     const discRow       = document.getElementById('discount-row');
     const discRowLabel  = document.getElementById('discount-row-label');
     const discRowAmount = document.getElementById('discount-row-amount');
 
-    if (discount && discAmt > 0 && discRow) {
-      if (discRowLabel)  discRowLabel.textContent  = `Descuento (${discount.code}):`;
+    if (discounts.length > 0 && discAmt > 0 && discRow) {
+      const codes = discounts.map(d => d.code).filter(Boolean).join('+');
+      if (discRowLabel)  discRowLabel.textContent  = `Descuento (${codes}):`;
       if (discRowAmount) discRowAmount.textContent = `-€${discAmt.toFixed(2)}`;
       discRow.classList.remove('hidden');
       discRow.classList.add('flex');
     }
 
-    const discCard      = document.getElementById('discount-applied-card');
-    const discCardDesc  = document.getElementById('discount-card-desc');
-    const discCardBadge = document.getElementById('discount-card-badge');
+    // ── Tarjeta de descuentos aplicados ───────────────────────
+    const discCard = document.getElementById('discount-applied-card');
+    const discList = document.getElementById('discount-list');
 
-    if (discount && discCard) {
-      if (discCardDesc)  discCardDesc.textContent  = discount.description || discount.code;
-      if (discCardBadge) discCardBadge.textContent = discount.label       || `-${discount.value}%`;
+    if (discounts.length > 0 && discCard && discList) {
+      discList.innerHTML = discounts.map(d => `
+        <div class="flex justify-between items-center py-1">
+          <div>
+            <p class="text-xs font-bold text-green-800 dark:text-green-300 uppercase tracking-tight">${d.code}</p>
+            <p class="text-[10px] text-green-700 dark:text-green-400 uppercase tracking-widest">${d.description || ''}</p>
+          </div>
+          <span class="text-xs font-bold px-2 py-1 bg-green-600 text-white">${d.label || `-${d.value}%`}</span>
+        </div>
+      `).join('');
       discCard.classList.remove('hidden');
     }
 
@@ -240,13 +247,26 @@ const apiUrl = import.meta.env.PUBLIC_API_URL;
           type:       item.type || 'standard',
         })),
         shippingData: shipping,
-        discount: discount ? {
-          id:               discount.id               ?? null,
-          user_discount_id: discount.user_discount_id ?? null,
+        // Nuevo: array de descuentos stackables
+        discounts: discounts.length > 0
+          ? discounts.map(d => ({
+              id:               d.id               ?? null,
+              user_discount_id: d.user_discount_id ?? null,
+              code:             d.code,
+              type:             d.type,
+              value:            d.value,
+              is_stackable:     d.is_stackable      ?? 0,
+            }))
+          : null,
+        // Compat. legacy para QR bono (id === 0)
+        discount: (discount && discount.id === 0) ? {
+          id:               0,
+          user_discount_id: 0,
           code:             discount.code,
           type:             discount.type,
           value:            discount.value,
-          description:      discount.description      ?? null,
+          discount_type:    discount.type,
+          discount_value:   discount.value,
         } : null,
       };
 

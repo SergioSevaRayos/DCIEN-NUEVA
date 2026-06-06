@@ -267,8 +267,8 @@ const seo = {
     const priceAfterDisc = Math.max(0, subtotal - discAmt);
     const isFree         = priceAfterDisc < 0.10;
     const shipping       = isFree ? 0 : SHIPPING_FEE;
-    const iva            = Math.round(priceAfterDisc * TAX_RATE * 100) / 100;
-    const total          = Math.round((priceAfterDisc + iva + shipping) * 100) / 100;
+    const iva            = Math.round((priceAfterDisc - (priceAfterDisc / (1 + TAX_RATE))) * 100) / 100;
+    const total          = Math.round((priceAfterDisc + shipping) * 100) / 100;
 
     let discountHTML = '';
     if (discount && discAmt > 0) {
@@ -288,7 +288,7 @@ const seo = {
           <span class="text-black dark:text-white">€${priceAfterDisc.toFixed(2)}</span>
         </div>
         <div class="flex justify-between items-center">
-          <span class="text-black/60 dark:text-white/60">IVA (21%):</span>
+          <span class="text-black/60 dark:text-white/60">IVA (21% incl.):</span>
           <span class="text-black dark:text-white">€${iva.toFixed(2)}</span>
         </div>
         ${discountHTML}

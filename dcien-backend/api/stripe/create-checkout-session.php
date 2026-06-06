@@ -31,8 +31,8 @@ $color = sanitizeInput($input['color'] ?? '');
 $type = sanitizeInput($input['type'] ?? '');
 $shippingData = $input['shippingData'] ?? [];
 
-// Datos de descuento (opcional)
-$discountData = $input['discount'] ?? null;
+$discountData  = $input['discount']  ?? null;   // compat. / QR bono
+$discountsData = $input['discounts'] ?? null;   // nuevo: array stackable
 $userId = getUserId();
 
 // Validaciones básicas
@@ -53,44 +53,54 @@ try {
         jsonError('Serie no encontrada', 404);
     }
 
-    $basePrice = (float)$series['price'];
-    $finalPrice = $basePrice;
-    $discountAmount = 0;
-    $discountId = null;
-    $userDiscountId = null;
-    $discountCode = null;
+    $basePrice       = (float)$series['price'];
+    $discountAmount  = 0.0;
+    $discountId      = null;
+    $discountIds     = [];
+    $userDiscountIds = [];
+    $discountCodes   = [];
 
-    // Procesamiento de descuento
-    if ($discountData && isset($discountData['id'])) {
+    // Nuevo flujo: array de descuentos stackables
+    if (!empty($discountsData) && is_array($discountsData)) {
+        $ids = array_filter(array_map(fn($d) => (int)($d['id'] ?? 0), $discountsData));
+        if (!empty($ids)) {
+            $validDiscounts = validateMultipleDiscounts($userId, $ids);
+            if (!empty($validDiscounts)) {
+                $discountAmount  = calculateMultipleDiscountsAmount($basePrice, $validDiscounts);
+                $discountId      = $validDiscounts[0]['discount_id'];
+                $discountIds     = array_column($validDiscounts, 'discount_id');
+                $userDiscountIds = array_column($validDiscounts, 'user_discount_id');
+                $discountCodes   = array_column($validDiscounts, 'code');
+            }
+        }
+    }
+    // Flujo antiguo: descuento único
+    elseif ($discountData && isset($discountData['id'])) {
         $validDiscount = validateUserDiscount($userId, $discountData['id']);
         if ($validDiscount) {
-            $finalPrice = calculateDiscountedPrice($basePrice, $validDiscount);
-            $discountAmount = calculateSavings($basePrice, $validDiscount);
-            $discountId = $validDiscount['discount_id'];
-            $userDiscountId = $validDiscount['user_discount_id'];
-            $discountCode = $validDiscount['code'];
+            $discountAmount    = calculateSavings($basePrice, $validDiscount);
+            $discountId        = $validDiscount['discount_id'];
+            $discountIds[]     = $validDiscount['discount_id'];
+            $userDiscountIds[] = $validDiscount['user_discount_id'];
+            $discountCodes[]   = $validDiscount['code'];
         }
     }
 
+    $discountCode = implode('+', array_filter($discountCodes));
+    $finalPrice   = max(0, round($basePrice - $discountAmount, 2));
+
     // ════════════════════════════════════════════════════════════════
-    // CÁLCULOS DE IVA Y ENVÍO (OPCIÓN NUCLEAR DEL 100%)
+    // CÁLCULOS DE IVA Y ENVÍO
     // ════════════════════════════════════════════════════════════════
     $shippingFee = 5.00;
-    
-    // REGLA 1: Si el cupón que viene del frontend dice 100%, forzamos a 0.
-    if ($discountData && isset($discountData['value']) && $discountData['value'] == 100) {
-        $finalPrice = 0.00;
-        $shippingFee = 0.00;
-    } 
-    // REGLA 2: Margen de seguridad amplio para decimales de PHP
-    elseif ($finalPrice <= 0.10) {
-        $finalPrice = 0.00;
+
+    if ($finalPrice <= 0.10) {
+        $finalPrice  = 0.00;
         $shippingFee = 0.00;
     }
 
-    $ivaRate = 0.21;
-    $ivaAmount = $finalPrice * $ivaRate;
-    $priceWithTax = $finalPrice + $ivaAmount;
+    $priceWithTax = $finalPrice;
+    $ivaAmount = round($priceWithTax - ($priceWithTax / 1.21), 2);
     
     // Si entró en las reglas anteriores, $grandTotal será matemáticamente 0.00
     $grandTotal = $priceWithTax + $shippingFee;
@@ -101,8 +111,8 @@ try {
     $pdo->beginTransaction();
 
     $stmt = $pdo->prepare("INSERT INTO orders
-        (user_id, series_slug, unit_number, size, color, type, price, discount_id, created_at)
-        VALUES (:uid, :slug, :num, :size, :color, :type, :price, :did, NOW())");
+        (user_id, series_slug, unit_number, size, color, type, price, discount_id, discount_ids, created_at)
+        VALUES (:uid, :slug, :num, :size, :color, :type, :price, :did, :dids, NOW())");
 
     $stmt->execute([
         'uid'   => $userId,
@@ -112,7 +122,8 @@ try {
         'color' => $color,
         'type'  => $type,
         'price' => round($grandTotal, 2),
-        'did'   => $discountId
+        'did'   => $discountId,
+        'dids'  => !empty($discountIds) ? json_encode($discountIds) : null,
     ]);
 
     $order_id = $pdo->lastInsertId();
@@ -256,10 +267,11 @@ try {
             'final_price'      => (string)$priceWithTax,
             'shipping_fee'     => (string)$shippingFee,
             'grand_total'      => (string)$grandTotal,
-            'discount_id'      => (string)$discountId,
-            'user_discount_id' => (string)$userDiscountId,
-            'discount_code'    => $discountCode,
-            'discount_amount'  => (string)$discountAmount
+            'discount_id'       => (string)$discountId,
+            'discount_ids_json' => !empty($discountIds) ? json_encode($discountIds) : '',
+            'user_discount_ids' => !empty($userDiscountIds) ? json_encode($userDiscountIds) : '',
+            'discount_code'     => $discountCode,
+            'discount_amount'   => (string)$discountAmount
         ],
     ]);
 

@@ -255,8 +255,8 @@ const seo = {
       }
       const priceAfter = Math.max(0, subtotal - discAmt);
       const ship       = priceAfter < 0.10 ? 0 : 5;
-      const iva        = Math.round(priceAfter * 0.21 * 100) / 100;
-      const total      = Math.round((priceAfter + iva + ship) * 100) / 100;
+      const iva        = Math.round((priceAfter - (priceAfter / 1.21)) * 100) / 100;
+      const total      = Math.round((priceAfter + ship) * 100) / 100;
 
       if (cart.length === 1) {
         const item = cart[0];

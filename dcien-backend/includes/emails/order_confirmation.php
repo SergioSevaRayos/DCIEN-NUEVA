@@ -157,7 +157,7 @@ return '
                                                     <table role="presentation" style="width: 100%;" cellpadding="0" cellspacing="0">
                                                         <tr>
                                                             <td style="color: #888888; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px;">
-                                                                TOTAL PAGADO:
+                                                                TOTAL PAGADO (IVA INCL.):
                                                             </td>
                                                             <td align="right" style="color: #ffffff; font-size: 26px; font-weight: 800; font-family: monospace;">
                                                                 €{total}
