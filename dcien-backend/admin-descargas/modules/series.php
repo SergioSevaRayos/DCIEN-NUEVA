@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * DCIEN - GESTOR DE SERIES (PRODUCTOS)
  * Reflejo exacto 1:1 de la tabla 'series' en BD.
@@ -133,7 +133,7 @@ function format_date_for_input($datetime) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gestor de Series - DCIEN</title>
-    <link rel="stylesheet" href="/admin-descargas/assets/style.css">
+    <link rel="stylesheet" href="/admin-descargas/assets/style.css?v=<?php echo time(); ?>">
     <style>
         /* Layout */
         .split-layout { display:grid; grid-template-columns:1fr 2fr; gap:20px; margin-top:20px; align-items:start; }
@@ -172,7 +172,10 @@ function format_date_for_input($datetime) {
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="app-layout">
+        <?php require_once dirname(__DIR__) . '/includes/nav.php'; ?>
+        <div class="main-content">
+            <div class="container">
         <header class="header">
             <div>
                 <h1>👕 GESTIÓN DE SERIES</h1>
@@ -364,9 +367,11 @@ function format_date_for_input($datetime) {
             </div>
         </div>
 
-        <footer style="margin-top: 40px; padding-bottom: 20px; text-align: center; font-size: 11px; color:var(--text-2);">
-            <p>DCIEN · Sistema de Gestión de Catálogo BD</p>
+        <footer class="footer">
+            <p>&copy; <?php echo date('Y'); ?> DCIEN. Gestión de Series.</p>
         </footer>
+    </div>
+        </div>
     </div>
 </body>
 </html>

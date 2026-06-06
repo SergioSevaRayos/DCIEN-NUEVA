@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * DCIEN - GESTOR DE PROTOCOLOS DE RECOMPENSA (Validación de Perfil)
  * Permite crear, editar, gestionar créditos y NOTIFICAR a los atletas.
@@ -127,7 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 " . ($u['series_slug'] ? "<br><strong>Válido para:</strong> " . strtoupper($u['series_slug']) : "") . "
                             </div>
                             
-                            <p>Tu crédito ha sido vinculado a tu perfil. Aplica el código en el proceso de checkout para acceder al activo.</p>
+                            <p>Tu crédito ha sido vinculado a tu perfil. Cuando vayas a tu carrito de la compra, podrás activarlo seleccionando la casilla correspondiente o guardarlo para utilizarlo en el futuro.</p>
                             <a href='https://d-cien.es' class='btn'>Acceder a DCIEN</a>
                         </div>
                         <div class='footer'>
@@ -186,7 +186,7 @@ function format_date_for_input($datetime) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Validación de Esfuerzo - DCIEN</title>
-    <link rel="stylesheet" href="/admin-descargas/assets/style.css">
+    <link rel="stylesheet" href="/admin-descargas/assets/style.css?v=<?php echo time(); ?>">
     <style>
         /* Layout */
         .split-layout { display:grid; grid-template-columns:1fr 2fr; gap:20px; margin-top:20px; align-items:start; }
@@ -225,7 +225,10 @@ function format_date_for_input($datetime) {
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="app-layout">
+        <?php require_once dirname(__DIR__) . '/includes/nav.php'; ?>
+        <div class="main-content">
+            <div class="container">
         <header class="header">
             <div>
                 <h1>🏅 VALIDACIÓN DE ESFUERZO</h1>
@@ -506,6 +509,8 @@ function format_date_for_input($datetime) {
         <footer style="margin-top: 40px; padding-bottom:20px; text-align:center; font-size:11px; color:var(--text-2);">
             <p>DCIEN · Sistema de Gestión de Validaciones</p>
         </footer>
+    </div>
+        </div>
     </div>
 </body>
 </html>

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * DCIEN - Auditor de Pedidos
  * Con función de email PROBADA del CLI
@@ -534,14 +534,17 @@ $suma_total = array_sum(array_column($pedidos, 'price'));
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Auditor de Pedidos - DCIEN</title>
-    <link rel="stylesheet" href="/admin-descargas/assets/style.css">
+    <link rel="stylesheet" href="/admin-descargas/assets/style.css?v=<?php echo time(); ?>">
     <style>
         .checkbox-column { width: 40px; text-align: center; }
         .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="app-layout">
+        <?php require_once dirname(__DIR__) . '/includes/nav.php'; ?>
+        <div class="main-content">
+            <div class="container">
         <header class="header">
             <div>
                 <h1>AUDITOR DE PEDIDOS</h1>
@@ -657,10 +660,11 @@ $suma_total = array_sum(array_column($pedidos, 'price'));
         </div>
 
         <footer class="footer">
-            <p>DCIEN Auditor · Últimos 100 resultados · Email: <?php echo ADMIN_EMAIL; ?></p>
+            <p>&copy; <?php echo date('Y'); ?> DCIEN. Auditor de Pedidos.</p>
         </footer>
     </div>
-
+        </div>
+    </div>
     <script>
     function toggleAll(cb) { document.querySelectorAll('.order-checkbox').forEach(c => c.checked = cb.checked); }
     function seleccionarTodos() { document.querySelectorAll('.order-checkbox').forEach(c => c.checked = true); document.getElementById('selectAll').checked = true; }

@@ -15,6 +15,11 @@ export default defineConfig({
           changeOrigin: true,
           secure: false,
         },
+        '/admin-descargas': {
+          target: 'http://dcien-backend.test',
+          changeOrigin: true,
+          secure: false,
+        },
       },
     },
     build: {

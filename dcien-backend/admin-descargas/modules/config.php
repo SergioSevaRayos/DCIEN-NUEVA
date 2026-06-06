@@ -4,7 +4,7 @@
  */
 
 // Configuración de base de datos (local vs producción)
-$isLocal = in_array($_SERVER['HTTP_HOST'] ?? '', ['localhost', 'localhost:8080', '127.0.0.1', '127.0.0.1:8080']);
+$isLocal = strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '.test') !== false;
 define('DB_HOST', $isLocal ? '127.0.0.1' : 'localhost');
 define('DB_NAME', 'u755459505_limited_tees');
 define('DB_USER', $isLocal ? 'root' : 'u755459505_sergio');
@@ -43,7 +43,7 @@ function get_db_connection() {
 }
 
 function sendAdminMail(string $to, string $subject, string $html): bool {
-    $autoload = __DIR__ . '/../../../dcien-backend/vendor/autoload.php';
+    $autoload = __DIR__ . '/../../vendor/autoload.php';
     if (!file_exists($autoload)) return false;
     require_once $autoload;
 

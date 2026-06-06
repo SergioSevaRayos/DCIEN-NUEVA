@@ -1,0 +1,91 @@
+<!DOCTYPE html><html lang='es'>
+    <head>
+        <meta charset='UTF-8'>
+        <title>Orden #27 - DCIEN</title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: Arial, sans-serif; font-size: 10px; line-height: 1.3; padding: 10mm; }
+            .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 6px; margin-bottom: 10px; }
+            .header h1 { font-size: 24px; font-weight: 900; letter-spacing: 4px; }
+            .header p { font-size: 9px; text-transform: uppercase; letter-spacing: 2px; margin-top: 3px; }
+            
+            /* Ajuste para 2 imágenes */
+            .block-product { display: grid; grid-template-columns: 320px 1fr; gap: 10px; margin-bottom: 10px; page-break-inside: avoid; }
+            .image-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+            .series-image { width: 100%; height: 155px; object-fit: contain; border: 1px solid #000; background: #fff; }
+            
+            .product-details { border: 2px solid #000; padding: 10px; display: flex; flex-direction: column; justify-content: center; }
+            .product-details .serie { font-size: 16px; font-weight: 900; letter-spacing: 1px; margin-bottom: 8px; text-align: center; }
+            .product-details .unit { font-size: 36px; font-weight: 900; font-family: monospace; text-align: center; margin: 8px 0; letter-spacing: 2px; }
+            .product-specs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; }
+            .spec-box { text-align: center; padding: 5px; background: #f0f0f0; border: 1px solid #ccc; }
+            .spec-label { font-size: 7px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; color: #666; }
+            .spec-value { font-size: 12px; font-weight: 900; text-transform: uppercase; }
+            .block-shipping { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; page-break-inside: avoid; }
+            .info-box { border: 2px solid #000; padding: 8px; }
+            .info-box h3 { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #000; padding-bottom: 3px; margin-bottom: 6px; }
+            .info-row { display: flex; margin-bottom: 3px; }
+            .info-label { font-weight: bold; width: 70px; flex-shrink: 0; font-size: 9px; }
+            .info-value { flex: 1; font-size: 9px; }
+            .shipping-address { line-height: 1.4; font-size: 9px; }
+            .checklist { border: 3px solid #000; padding: 8px; page-break-inside: avoid; }
+            .checklist h3 { font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; border-bottom: 1px solid #000; padding-bottom: 3px; }
+            .checklist ul { list-style: none; padding: 0; }
+            .checklist li { padding: 4px 0; font-size: 9px; border-bottom: 1px dashed #ddd; }
+            .checklist li:last-child { border-bottom: none; }
+            .footer { margin-top: 10px; padding-top: 6px; border-top: 2px solid #000; text-align: center; font-size: 7px; color: #666; }
+        </style>
+    </head>
+    <body>
+        <div class='header'>
+            <h1>DCIEN</h1>
+            <p>Orden de Producción #27</p>
+        </div>
+        <div class='block-product'>
+            <div class='image-pair'>
+                <img src='https://d-cien.es/images/series/serie-06/main.png' class='series-image' onerror="this.src='https://via.placeholder.com/150?text=FRONT'">
+                <img src='https://d-cien.es/images/series/serie-06/detail-1.png' class='series-image' onerror="this.src='https://via.placeholder.com/150?text=BACK'">
+            </div>
+            <div class='product-details'>
+                <div class='serie'>SERIE 06</div>
+                <div class='unit'>#001</div>
+                <div class='product-specs'>
+                    <div class='spec-box'><div class='spec-label'>Talla</div><div class='spec-value'>XL</div></div>
+                    <div class='spec-box'><div class='spec-label'>Color</div><div class='spec-value'>blanco</div></div>
+                    <div class='spec-box'><div class='spec-label'>Corte</div><div class='spec-value'>standard</div></div>
+                </div>
+            </div>
+        </div>
+        <div class='block-shipping'>
+            <div class='info-box'>
+                <h3>👤 PERFIL ATLETA</h3>
+                <div class='info-row'><div class='info-label'>Usuario:</div><div class='info-value'>jefe</div></div>
+                <div class='info-row'><div class='info-label'>Email:</div><div class='info-value'>sergiosevarayos@gmail.com</div></div>
+                <div class='info-row'><div class='info-label'>Instagram:</div><div class='info-value'>@d-cien.es</div></div>
+            </div>
+            <div class='info-box'>
+                <h3>📦 DIRECCIÓN DE ENVÍO</h3>
+                <div class='shipping-address'>SERGIO SEVA RAYOS<br />
+C/ Santa Pola 4<br />
+2<br />
+03349 San Isisdro<br />
+valencia<br />
+ES<br />
+Tel: +34633841203</div>
+            </div>
+        </div>
+        <div class='checklist'>
+            <h3>⚙️ CHECKLIST DE PRODUCCIÓN</h3>
+            <ul>
+                <li>☐ 1. Verificar stock en almacén <strong>(Talla XL / Color Blanco / Corte Standard)</strong></li>
+                <li>☐ 2. Preparar unidad <strong>#001</strong></li>
+                <li>☐ 3. Imprimir diseño SERIE 06</li>
+                <li>☐ 4. Control de calidad final</li>
+                <li>☐ 5. Empaquetar con tarjeta de autenticidad DCIEN</li>
+                <li>☐ 6. Imprimir etiqueta y preparar envío a nombre de <strong>SERGIO SEVA RAYOS</strong></li>
+            </ul>
+        </div>
+        <div class='footer'>
+            Documento generado el 01/04/2026 11:35:38
+        </div>
+    </body></html>
