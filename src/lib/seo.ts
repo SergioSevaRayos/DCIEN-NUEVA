@@ -30,8 +30,6 @@ export interface SEOConfig {
   description: string;
   keywords: string;
   ogImage?: string;
-  ogType?: string;
-  ogImageAlt?: string;
   canonical?: string;
   noindex?: boolean;
   nofollow?: boolean;
@@ -141,14 +139,12 @@ export function getSeriesSEO(
   availableUnits: number
 ): SEOConfig {
   const mainImage = images[0] ? (images[0].startsWith('http') ? images[0] : `${SITE_CONFIG.url}${images[0]}`) : SITE_CONFIG.ogImage;
-  
+
   return {
     title: `${name} | Equipación Técnica DCIEN`,
     description: `${description} Activo numerado de edición limitada (100 unidades). Diseñado para atletas de alta intensidad.`,
     keywords: `${name.toLowerCase()}, equipación técnica, dcien, serie limitada, ropa entrenamiento fuerza, halterofilia, crossfit`,
     ogImage: mainImage,
-    ogType: 'product',
-    ogImageAlt: `${name} - Equipación técnica DCIEN. Edición limitada de 100 unidades.`,
     canonical: `${SITE_CONFIG.url}/series-activas/${slug}`,
   };
 }

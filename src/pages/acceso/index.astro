@@ -18,7 +18,7 @@ const seo = getSEO('acceso');
       </p>
 
       <!-- Form -->
-      <form id="login-form" class="space-y-8">
+      <form id="login-form" class="space-y-8" method="POST" onsubmit="event.preventDefault();">
         <div>
           <label for="identifier" class="block text-xs uppercase tracking-[0.2em] mb-3 text-black/60 dark:text-white/60">
             Usuario o Email

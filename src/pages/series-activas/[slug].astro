@@ -95,9 +95,9 @@ const apiUrl      = import.meta.env.PUBLIC_API_URL;
         <div class="flex flex-col">
           <header class="mb-8">
             <h1 class="font-brand text-4xl md:text-5xl uppercase tracking-tighter text-black dark:text-white leading-none mb-4">{seriesInfo.name}</h1>
-            <div class="flex items-baseline gap-3">
+            <div class="flex items-end gap-3 mb-6">
               <span id="price-display" class="text-3xl font-light">€{seriesInfo.price.toFixed(2)}</span>
-              <span class="text-[10px] text-black/40 dark:text-white/40 tracking-wider uppercase ml-1">IVA incl.</span>
+              <span class="text-xs text-black/60 dark:text-white/60 mb-1">IVA INCL.</span>
               <span id="price-original" class="text-xl font-light line-through text-black/30 dark:text-white/30 hidden"></span>
               <span id="price-badge" class="text-[10px] font-bold uppercase tracking-widest px-2 py-1 bg-black text-white dark:bg-white dark:text-black hidden"></span>
             </div>
@@ -167,26 +167,6 @@ const apiUrl      = import.meta.env.PUBLIC_API_URL;
                 </div>
               </div>
 
-              <div id="discount-section" class="bg-zinc-50 dark:bg-zinc-900/50 p-4 border border-black/5 dark:border-white/5">
-                <div id="personal-discount-block" class="hidden mb-4">
-                  <label class="flex items-start gap-3 cursor-pointer">
-                    <input type="checkbox" id="apply-personal-discount" class="peer sr-only" />
-                    <div class="w-5 h-5 border-2 border-black/20 dark:border-white/20 peer-checked:border-black dark:peer-checked:border-white peer-checked:bg-black dark:peer-checked:bg-white transition-all flex items-center justify-center">
-                      <svg id="personal-check-icon" class="w-3 h-3 text-white dark:text-black hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <p id="personal-discount-label" class="text-xs font-bold text-black dark:text-white uppercase tracking-tighter">—</p>
-                      <p id="personal-discount-desc" class="text-[9px] text-black/50 dark:text-white/50 uppercase tracking-widest mt-0.5">—</p>
-                    </div>
-                    <span id="personal-discount-badge" class="text-xs font-bold text-green-600 dark:text-green-400 self-center"></span>
-                  </label>
-                </div>
-                <div class="flex gap-2">
-                  <input id="coupon-input" type="text" placeholder="CÓDIGO PROMOCIONAL" class="flex-1 border border-black/10 dark:border-white/10 bg-white dark:bg-black px-3 py-2 text-xs uppercase tracking-widest placeholder-black/20 focus:outline-none" />
-                  <button id="apply-coupon-btn" class="px-4 py-2 bg-black text-white dark:bg-white dark:text-black text-[10px] uppercase tracking-widest font-bold">Validar</button>
-                </div>
-                <p id="coupon-msg" class="mt-2 text-[9px] uppercase tracking-widest hidden"></p>
-              </div>
 
               <div id="buy-section">
                 <button id="main-buy-button" disabled class="w-full py-5 bg-black text-white dark:bg-white dark:text-black uppercase text-xs tracking-[0.3em] font-bold disabled:opacity-20 transition-all">
@@ -343,9 +323,6 @@ const apiUrl      = import.meta.env.PUBLIC_API_URL;
 <script define:vars={{ seriesPrice, seriesSlug, seriesName, apiUrl }}>
   const API = apiUrl;
   let selectedNumber  = null;
-  let activeDiscounts = [];   // array de descuentos stackables auto-aplicados
-  let activeDiscount  = null; // compat. legacy (apunta al primero)
-
   // ═══════════════════════════════════════════════════════════
   // MODAL GUÍA DE TALLAS
   // ═══════════════════════════════════════════════════════════
@@ -539,133 +516,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeOverlay();
 });
 
-  // ═══════════════════════════════════════════════════════════
-  // FUNCIONES DE DESCUENTOS
-  // ═══════════════════════════════════════════════════════════
 
-  function calcTotalDiscount(price, discList) {
-    let total = 0;
-    for (const d of discList) {
-      if (d.type === 'percent') total += price * (parseFloat(d.value) / 100);
-      else                      total += parseFloat(d.value);
-    }
-    return Math.min(+total.toFixed(2), price);
-  }
-
-  /** Actualiza el precio en UI según activeDiscounts */
-  function renderDiscountUI() {
-    const priceDisplay  = document.getElementById('price-display');
-    const priceOriginal = document.getElementById('price-original');
-    const priceBadge    = document.getElementById('price-badge');
-    if (!priceDisplay) return;
-
-    if (activeDiscounts.length === 0) {
-      priceDisplay.textContent = `€${seriesPrice.toFixed(2)}`;
-      priceOriginal?.classList.add('hidden');
-      priceBadge?.classList.add('hidden');
-      return;
-    }
-
-    const savings    = calcTotalDiscount(seriesPrice, activeDiscounts);
-    const finalPrice = Math.max(0, seriesPrice - savings);
-
-    priceDisplay.textContent = `€${finalPrice.toFixed(2)}`;
-    if (priceOriginal) {
-      priceOriginal.textContent = `€${seriesPrice.toFixed(2)}`;
-      priceOriginal.classList.remove('hidden');
-    }
-    if (priceBadge) {
-      const label = activeDiscounts.map(d => d.label || `-${d.value}%`).join(' + ');
-      priceBadge.textContent = `${label} · AHORRO: €${savings.toFixed(2)}`;
-      priceBadge.classList.remove('hidden');
-    }
-  }
-
-  /**
-   * Muestra los descuentos stackables como bloque auto-aplicado (sin checkbox).
-   * Los no-stackables siguen mostrando checkbox para elegir.
-   */
-  function showPersonalDiscounts(discList) {
-    const block    = document.getElementById('personal-discount-block');
-    const label    = document.getElementById('personal-discount-label');
-    const desc     = document.getElementById('personal-discount-desc');
-    const badge    = document.getElementById('personal-discount-badge');
-    const checkbox = document.getElementById('apply-personal-discount');
-    const checkIcon = document.getElementById('personal-check-icon');
-    if (!block) return;
-
-    const stackable   = discList.filter(d => d.is_stackable);
-    const standalone  = discList.filter(d => !d.is_stackable);
-
-    if (stackable.length > 0) {
-      // Auto-aplicar todos los stackables
-      activeDiscounts = stackable;
-      activeDiscount  = stackable[0];
-      renderDiscountUI();
-
-      const codes   = stackable.map(d => d.code).join(' + ');
-      const labels  = stackable.map(d => d.label || `-${d.value}%`).join(' + ');
-      const descs   = stackable.map(d => d.description).filter(Boolean).join(' · ');
-      if (label) label.textContent = `✓ DESCUENTOS APLICADOS: ${codes}`;
-      if (desc)  desc.textContent  = descs;
-      if (badge) badge.textContent = labels;
-
-      // Ocultar checkbox — los stackables se aplican siempre
-      if (checkbox) checkbox.style.display = 'none';
-      if (checkIcon) checkIcon.classList.remove('hidden');
-      block.classList.remove('hidden');
-    } else if (standalone.length > 0) {
-      // Un descuento no-stackable: mostrar con checkbox (comportamiento original)
-      const disc = standalone[0];
-      if (label) label.textContent = `DESCUENTO DISPONIBLE: ${disc.code}`;
-      if (desc)  desc.textContent  = disc.description;
-      if (badge) badge.textContent = disc.label;
-      block.classList.remove('hidden');
-      if (checkbox) checkbox.style.display = '';
-      checkbox.checked = false;
-      if (checkIcon) checkIcon.classList.add('hidden');
-      checkbox.onchange = null;
-      checkbox.addEventListener('change', () => {
-        if (checkbox.checked) {
-          activeDiscounts = [disc];
-          activeDiscount  = disc;
-          if (checkIcon) checkIcon.classList.remove('hidden');
-        } else {
-          activeDiscounts = [];
-          activeDiscount  = null;
-          if (checkIcon) checkIcon.classList.add('hidden');
-        }
-        renderDiscountUI();
-      });
-    }
-  }
-
-  async function checkUserDiscounts() {
-    try {
-      const r = await fetch(`${API}/discounts/get-user-discount.php?series_slug=${seriesSlug}`, {
-        credentials: 'include'
-      });
-      const d = await r.json();
-      if (d.success && d.discounts && d.discounts.length > 0) {
-        showPersonalDiscounts(d.discounts);
-      }
-    } catch (err) {
-      console.error('Error verificando descuentos:', err);
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // INICIALIZACIÓN DE DESCUENTOS
-  // ═══════════════════════════════════════════════════════════
-  document.addEventListener('DOMContentLoaded', async () => {
-    try {
-      const r = await fetch(`${API}/auth/check.php`, { credentials: 'include' });
-      const session = await r.json();
-      if (session.authenticated) await checkUserDiscounts();
-    } catch (err) {
-      console.error('Error verificando sesión:', err);
-    }
-  });
 
   // ═══════════════════════════════════════════════════════════
   // SELECCIÓN DE NÚMERO Y COMPRA
@@ -700,22 +551,8 @@ document.addEventListener('keydown', (e) => {
       price: seriesPrice,
     };
 
-    // Pasar array de descuentos al carrito
-    const discountsPayload = activeDiscounts.length > 0
-      ? activeDiscounts.map(d => ({
-          id:               d.id               ?? null,
-          user_discount_id: d.user_discount_id ?? null,
-          code:             d.code,
-          type:             d.type,
-          value:            d.value,
-          description:      d.description      ?? null,
-          label:            d.label            ?? null,
-          is_stackable:     d.is_stackable      ?? 0,
-        }))
-      : null;
-
     window.dispatchEvent(new CustomEvent('cart:addItem', {
-      detail: { item: cartItem, discounts: discountsPayload }
+      detail: { item: cartItem, discounts: null }
     }));
   });
 </script>

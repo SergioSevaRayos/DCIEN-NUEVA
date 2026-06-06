@@ -30,18 +30,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $description = trim($_POST['description']);
         $type = $_POST['type'];
         $value = (float)$_POST['value'];
-        $applies_to = $_POST['applies_to'];
-        $series_slug = !empty($_POST['series_slug']) ? $_POST['series_slug'] : null;
-        $max_uses = !empty($_POST['max_uses']) ? (int)$_POST['max_uses'] : null;
-        $valid_from = !empty($_POST['valid_from']) ? $_POST['valid_from'] . ' 00:00:00' : null;
-        $valid_until = !empty($_POST['valid_until']) ? $_POST['valid_until'] . ' 23:59:59' : null;
-        
+        $applies_to   = $_POST['applies_to'];
+        $is_stackable = isset($_POST['is_stackable']) ? 1 : 0;
+        $series_slug  = !empty($_POST['series_slug']) ? $_POST['series_slug'] : null;
+        $max_uses     = !empty($_POST['max_uses']) ? (int)$_POST['max_uses'] : null;
+        $valid_from   = !empty($_POST['valid_from']) ? $_POST['valid_from'] . ' 00:00:00' : null;
+        $valid_until  = !empty($_POST['valid_until']) ? $_POST['valid_until'] . ' 23:59:59' : null;
+
         try {
             $stmt = $pdo->prepare("
-                INSERT INTO discounts (code, description, type, value, applies_to, series_slug, max_uses, valid_from, valid_until, is_active) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+                INSERT INTO discounts (code, description, type, value, applies_to, is_stackable, series_slug, max_uses, valid_from, valid_until, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
             ");
-            $stmt->execute([$code, $description, $type, $value, $applies_to, $series_slug, $max_uses, $valid_from, $valid_until]);
+            $stmt->execute([$code, $description, $type, $value, $applies_to, $is_stackable, $series_slug, $max_uses, $valid_from, $valid_until]);
             $message = show_message('success', "✅ Protocolo '{$code}' creado con éxito.");
         } catch (Exception $e) {
             $message = show_message('error', "❌ Error al crear: " . $e->getMessage());
@@ -55,20 +56,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $description = trim($_POST['description']);
         $type = $_POST['type'];
         $value = (float)$_POST['value'];
-        $applies_to = $_POST['applies_to'];
-        $series_slug = !empty($_POST['series_slug']) ? $_POST['series_slug'] : null;
-        $max_uses = !empty($_POST['max_uses']) ? (int)$_POST['max_uses'] : null;
-        $valid_from = !empty($_POST['valid_from']) ? $_POST['valid_from'] . ' 00:00:00' : null;
-        $valid_until = !empty($_POST['valid_until']) ? $_POST['valid_until'] . ' 23:59:59' : null;
-        $is_active = isset($_POST['is_active']) ? 1 : 0;
+        $applies_to   = $_POST['applies_to'];
+        $is_stackable = isset($_POST['is_stackable']) ? 1 : 0;
+        $series_slug  = !empty($_POST['series_slug']) ? $_POST['series_slug'] : null;
+        $max_uses     = !empty($_POST['max_uses']) ? (int)$_POST['max_uses'] : null;
+        $valid_from   = !empty($_POST['valid_from']) ? $_POST['valid_from'] . ' 00:00:00' : null;
+        $valid_until  = !empty($_POST['valid_until']) ? $_POST['valid_until'] . ' 23:59:59' : null;
+        $is_active    = isset($_POST['is_active']) ? 1 : 0;
 
         try {
             $stmt = $pdo->prepare("
-                UPDATE discounts 
-                SET code = ?, description = ?, type = ?, value = ?, applies_to = ?, series_slug = ?, max_uses = ?, valid_from = ?, valid_until = ?, is_active = ?
+                UPDATE discounts
+                SET code = ?, description = ?, type = ?, value = ?, applies_to = ?, is_stackable = ?, series_slug = ?, max_uses = ?, valid_from = ?, valid_until = ?, is_active = ?
                 WHERE id = ?
             ");
-            $stmt->execute([$code, $description, $type, $value, $applies_to, $series_slug, $max_uses, $valid_from, $valid_until, $is_active, $id]);
+            $stmt->execute([$code, $description, $type, $value, $applies_to, $is_stackable, $series_slug, $max_uses, $valid_from, $valid_until, $is_active, $id]);
             $message = show_message('success', "✅ Protocolo '{$code}' actualizado correctamente.");
         } catch (Exception $e) {
             $message = show_message('error', "❌ Error al actualizar: " . $e->getMessage());
@@ -282,6 +284,12 @@ function format_date_for_input($datetime) {
                             </select>
                         </div>
                     </div>
+                    <div class="form-group">
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; text-transform:none; letter-spacing:0; font-size:13px; color:var(--text);">
+                            <input type="checkbox" name="is_stackable" value="1" style="width:16px;height:16px;">
+                            <span><strong>Acumulable</strong> — se combina con otros descuentos acumulables del usuario</span>
+                        </label>
+                    </div>
                     <div style="display:flex; gap:10px; margin-top: 20px;">
                         <button type="submit" class="btn" style="flex:1;">Activar Protocolo</button>
                         <button type="button" class="btn btn-secondary" onclick="document.getElementById('create-modal').style.display='none'">Cancelar</button>
@@ -344,6 +352,13 @@ function format_date_for_input($datetime) {
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; text-transform:none; letter-spacing:0; font-size:13px; color:var(--text);">
+                                    <input type="checkbox" name="is_stackable" value="1" style="width:16px;height:16px;" <?php echo !empty($descuento_editar['is_stackable']) ? 'checked' : ''; ?>>
+                                    <span><strong>Acumulable</strong> — se combina con otros descuentos acumulables del usuario</span>
+                                </label>
                             </div>
 
                             <div class="section-title">Límites y Fechas</div>

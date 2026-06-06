@@ -228,6 +228,7 @@ try {
             [
                 'price_data' => [
                     'currency' => 'eur',
+                    'tax_behavior' => 'inclusive',
                     'product_data' => [
                         'name' => $series['name'] . ' #' . str_pad($unitNumber, 3, '0', STR_PAD_LEFT),
                         'description' => sprintf(
@@ -243,6 +244,7 @@ try {
             [
                 'price_data' => [
                     'currency' => 'eur',
+                    'tax_behavior' => 'inclusive',
                     'product_data' => [
                         'name' => 'Gastos de Envío',
                     ],

@@ -10,12 +10,10 @@ interface Props {
   description: string;
   keywords: string;
   ogImage?: string;
-  ogType?: string;       // 'website' | 'product' etc.
-  ogImageAlt?: string;   // Alt text descriptivo para la imagen OG
   canonical?: string;
   noindex?: boolean;
   nofollow?: boolean;
-  schemas?: any[];
+  schemas?: any[]; // Schemas adicionales (producto, breadcrumbs, etc)
 }
 
 const { 
@@ -23,8 +21,6 @@ const {
   description, 
   keywords, 
   ogImage, 
-  ogType = 'website',
-  ogImageAlt,
   canonical,
   noindex = false,
   nofollow = false,
@@ -65,18 +61,15 @@ const allSchemas = [...defaultSchemas, ...schemas];
 <meta name="robots" content={robotsContent} />
 
 <!-- Open Graph / Facebook -->
-<meta property="og:type" content={ogType} />
+<meta property="og:type" content="website" />
 <meta property="og:url" content={canonicalURL} />
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
 <meta property="og:site_name" content="DCIEN" />
 <meta property="og:locale" content="es_ES" />
-{ogImageURL && <meta property="og:image" content={ogImageURL.href} />}
-{ogImageURL && <meta property="og:image:secure_url" content={ogImageURL.href} />}
+{ogImageURL && <meta property="og:image" content={ogImageURL} />}
 {ogImageURL && <meta property="og:image:width" content="1200" />}
 {ogImageURL && <meta property="og:image:height" content="630" />}
-{ogImageURL && <meta property="og:image:type" content="image/png" />}
-{ogImageURL && ogImageAlt && <meta property="og:image:alt" content={ogImageAlt} />}
 
 <!-- Twitter -->
 <meta property="twitter:card" content="summary_large_image" />
@@ -84,8 +77,7 @@ const allSchemas = [...defaultSchemas, ...schemas];
 <meta property="twitter:title" content={title} />
 <meta property="twitter:description" content={description} />
 <meta property="twitter:site" content="@dcien" />
-{ogImageURL && <meta property="twitter:image" content={ogImageURL.href} />}
-{ogImageURL && ogImageAlt && <meta property="twitter:image:alt" content={ogImageAlt} />}
+{ogImageURL && <meta property="twitter:image" content={ogImageURL} />}
 
 <!-- Additional SEO -->
 <meta name="language" content="Spanish" />

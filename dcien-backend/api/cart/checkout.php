@@ -277,11 +277,12 @@ try {
             $itemDisc  = round($discountAmount * $prop, 2);
             $itemPrice = max(0, $vi['unitPrice'] - $itemDisc);
         }
-        $itemWithTax = round($itemPrice * 1.21, 2);
+        $itemWithTax = $itemPrice; // El precio de la camiseta ya incluye el IVA
 
         $lineItems[] = [
             'price_data' => [
                 'currency'     => 'eur',
+                'tax_behavior' => 'inclusive',
                 'product_data' => [
                     'name'        => $vi['seriesName'] . ' #' . str_pad($vi['unitNumber'], 3, '0', STR_PAD_LEFT),
                     'description' => 'Talla: ' . strtoupper($vi['size'])
@@ -298,6 +299,7 @@ try {
     $lineItems[] = [
         'price_data' => [
             'currency'     => 'eur',
+            'tax_behavior' => 'inclusive',
             'product_data' => ['name' => 'Gastos de Envio'],
             'unit_amount'  => (int)round($shippingFee * 100),
         ],

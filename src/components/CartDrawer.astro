@@ -49,13 +49,17 @@
     <!-- Lista de items -->
     <div id="cart-items-list" class="hidden space-y-4"></div>
 
-    <!-- Bloque descuento -->
-    <div id="cart-discount-block" class="hidden mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-      <div class="flex items-center justify-between">
-        <span class="text-[10px] uppercase tracking-widest text-green-700 dark:text-green-400 font-medium">Descuento activo</span>
-        <span id="cart-discount-badge" class="text-[10px] uppercase tracking-widest font-bold text-green-700 dark:text-green-400"></span>
+    <!-- Sección de descuentos -->
+    <div id="cart-discount-section" class="mt-4 p-4 bg-zinc-50 dark:bg-zinc-900 border border-black/5 dark:border-white/5 space-y-4">
+      <h4 class="text-[9px] uppercase tracking-widest font-bold text-black/60 dark:text-white/60">Añadir Descuento</h4>
+      
+      <div id="cart-personal-discounts" class="space-y-3"></div>
+
+      <div class="flex gap-2">
+        <input id="cart-coupon-input" type="text" placeholder="CÓDIGO PROMOCIONAL" class="flex-1 border border-black/10 dark:border-white/10 bg-white dark:bg-black px-3 py-2 text-[10px] uppercase tracking-widest placeholder-black/20 focus:outline-none" />
+        <button id="cart-apply-coupon-btn" class="px-4 py-2 bg-black text-white dark:bg-white dark:text-black text-[10px] uppercase tracking-widest font-bold">Validar</button>
       </div>
-      <p id="cart-discount-desc" class="text-[10px] text-green-600 dark:text-green-500 mt-0.5"></p>
+      <p id="cart-coupon-msg" class="text-[9px] uppercase tracking-widest hidden"></p>
     </div>
   </div>
 
@@ -102,10 +106,11 @@
 </div>
 
 <script>
-  import { getCart, getDiscount, removeFromCart, getCartSubtotal, getCartCount } from '../scripts/cart.js';
+  import { getCart, getDiscounts, setDiscounts, removeFromCart, getCartSubtotal } from '../scripts/cart.js';
 
   const SHIPPING_FEE = 5.00;
   const TAX_RATE = 0.21;
+  const API = import.meta.env.PUBLIC_API_URL;
 
   const overlay      = document.getElementById('cart-overlay');
   const drawer       = document.getElementById('cart-drawer');
@@ -115,9 +120,13 @@
   const itemsList    = document.getElementById('cart-items-list');
   const footer       = document.getElementById('cart-footer');
   const countLabel   = document.getElementById('cart-drawer-count');
-  const discountBlock  = document.getElementById('cart-discount-block');
-  const discountBadge  = document.getElementById('cart-discount-badge');
-  const discountDesc   = document.getElementById('cart-discount-desc');
+  
+  const discountSection = document.getElementById('cart-discount-section');
+  const personalDiscountsContainer = document.getElementById('cart-personal-discounts');
+  const couponInput = document.getElementById('cart-coupon-input') as HTMLInputElement | null;
+  const applyCouponBtn = document.getElementById('cart-apply-coupon-btn') as HTMLButtonElement | null;
+  const couponMsg = document.getElementById('cart-coupon-msg');
+  
   const discountRow    = document.getElementById('cart-discount-row');
   const discountAmount = document.getElementById('cart-discount-amount');
   const subtotalEl   = document.getElementById('cart-subtotal');
@@ -125,10 +134,42 @@
   const shippingEl   = document.getElementById('cart-shipping');
   const totalEl      = document.getElementById('cart-total');
 
+  let availableDiscounts: any[] = [];
+  let loadedDiscounts = false;
+
+  async function loadUserDiscounts() {
+    if (loadedDiscounts) return;
+    try {
+      const res = await fetch(`${API}/auth/check.php`, { credentials: 'include' });
+      const session = await res.json();
+      if (!session.authenticated) {
+        loadedDiscounts = true; // Prevent re-fetching if not logged in
+        return;
+      }
+      
+      const r2 = await fetch(`${API}/discounts/get-user-discount.php?series_slug=*`, { credentials: 'include' });
+      const d2 = await r2.json();
+      if (d2.success && d2.discounts) {
+        availableDiscounts = d2.discounts;
+        loadedDiscounts = true;
+        
+        // Auto-apply all stackables by default if cart has no discounts yet
+        if (getDiscounts().length === 0 && availableDiscounts.length > 0) {
+          setDiscounts(availableDiscounts.filter((d: any) => d.is_stackable || availableDiscounts.length === 1));
+        } else {
+          renderCart(); // just to draw the checkboxes
+        }
+      }
+    } catch (err) {
+      console.error('Error loading cart discounts:', err);
+    }
+  }
+
   function openDrawer() {
     overlay?.classList.remove('opacity-0', 'pointer-events-none');
     drawer?.classList.remove('translate-x-full');
     document.body.style.overflow = 'hidden';
+    loadUserDiscounts();
   }
 
   function closeDrawer() {
@@ -137,10 +178,60 @@
     document.body.style.overflow = '';
   }
 
+  // Cupones manuales
+  applyCouponBtn?.addEventListener('click', async () => {
+    const code = couponInput?.value.trim();
+    if (!code) return;
+
+    if (applyCouponBtn) {
+      applyCouponBtn.textContent = '...';
+      applyCouponBtn.disabled = true;
+    }
+
+    try {
+      // Validate code
+      const res = await fetch(`${API}/discounts/validate-discount.php?code=${encodeURIComponent(code)}`, { credentials: 'include' });
+      const data = await res.json();
+      
+      if (data.success && data.discount) {
+        const current = getDiscounts();
+        // If it's not stackable, clear others. If it is stackable, just add it.
+        if (!data.discount.is_stackable) {
+          setDiscounts([data.discount]);
+        } else {
+          if (!current.find((d: any) => d.code === code)) {
+             current.push(data.discount);
+             setDiscounts(current);
+          }
+        }
+        if (couponMsg) {
+          couponMsg.textContent = 'Cupón aplicado';
+          couponMsg.classList.replace('text-red-500', 'text-green-500');
+          couponMsg.classList.remove('hidden');
+        }
+        if (couponInput) couponInput.value = '';
+      } else {
+        throw new Error(data.message || 'Cupón inválido');
+      }
+    } catch (err: any) {
+      if (couponMsg) {
+        couponMsg.textContent = err.message || 'Error validando cupón';
+        couponMsg.classList.replace('text-green-500', 'text-red-500');
+        couponMsg.classList.remove('hidden');
+      }
+    } finally {
+      if (applyCouponBtn) {
+        applyCouponBtn.textContent = 'Validar';
+        applyCouponBtn.disabled = false;
+      }
+      setTimeout(() => couponMsg?.classList.add('hidden'), 3000);
+    }
+  });
+
   function renderCart() {
-    const cart     = getCart();
-    const discount = getDiscount();
-    const count    = cart.length;
+    const cart      = getCart();
+    const discounts = getDiscounts();
+    const count     = cart.length;
 
     if (countLabel) countLabel.textContent = count > 0 ? `${count} item${count > 1 ? 's' : ''}` : '';
 
@@ -149,7 +240,7 @@
       emptyEl?.classList.add('flex');
       itemsList?.classList.add('hidden');
       footer?.classList.add('hidden');
-      discountBlock?.classList.add('hidden');
+      discountSection?.classList.add('hidden');
       return;
     }
 
@@ -157,6 +248,7 @@
     emptyEl?.classList.remove('flex');
     itemsList?.classList.remove('hidden');
     footer?.classList.remove('hidden');
+    discountSection?.classList.remove('hidden');
 
     // Render items
     if (itemsList) {
@@ -194,13 +286,12 @@
     const subtotal = getCartSubtotal(cart);
 
     let discAmt = 0;
-    if (discount) {
-      if (discount.type === 'percent') {
-        discAmt = subtotal * (parseFloat(discount.value) / 100);
-      } else {
-        discAmt = Math.min(parseFloat(discount.value), subtotal);
+    if (discounts && discounts.length > 0) {
+      for (const d of discounts) {
+        if (d.type === 'percent') discAmt += subtotal * (parseFloat(d.value) / 100);
+        else                      discAmt += parseFloat(d.value);
       }
-      discAmt = Math.round(discAmt * 100) / 100;
+      discAmt = Math.min(Math.round(discAmt * 100) / 100, subtotal);
     }
 
     const priceAfterDisc = Math.max(0, subtotal - discAmt);
@@ -209,21 +300,55 @@
     const iva            = Math.round((priceAfterDisc - (priceAfterDisc / (1 + TAX_RATE))) * 100) / 100;
     const total          = Math.round((priceAfterDisc + shipping) * 100) / 100;
 
-    if (subtotalEl) subtotalEl.textContent = `€${priceAfterDisc.toFixed(2)}`;
+    if (subtotalEl) subtotalEl.textContent = `€${subtotal.toFixed(2)}`;
     if (ivaEl)      ivaEl.textContent      = `€${iva.toFixed(2)}`;
     if (shippingEl) shippingEl.textContent = shipping === 0 ? 'GRATIS' : `€${shipping.toFixed(2)}`;
     if (totalEl)    totalEl.textContent    = `€${total.toFixed(2)}`;
 
-    // Descuento UI
-    if (discount && discAmt > 0) {
-      discountBlock?.classList.remove('hidden');
+    // Render discount section (Checkboxes)
+    if (personalDiscountsContainer && availableDiscounts.length > 0) {
+      const appliedIds = discounts.map((d: any) => d.user_discount_id || d.id || d.code);
+      personalDiscountsContainer.innerHTML = availableDiscounts.map((d: any) => {
+        const isChecked = appliedIds.includes(d.user_discount_id || d.id || d.code);
+        return `
+          <label class="flex items-start gap-3 cursor-pointer">
+            <input type="checkbox" class="peer sr-only cart-discount-cb" data-code="${d.code}" ${isChecked ? 'checked' : ''} />
+            <div class="w-5 h-5 border-2 border-black/20 dark:border-white/20 peer-checked:border-black dark:peer-checked:border-white peer-checked:bg-black dark:peer-checked:bg-white transition-all flex items-center justify-center">
+              <svg class="w-3 h-3 text-white dark:text-black ${isChecked ? '' : 'hidden'}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs font-bold text-black dark:text-white uppercase tracking-tighter">DESCUENTO: ${d.code}</p>
+              <p class="text-[9px] text-black/50 dark:text-white/50 uppercase tracking-widest mt-0.5">${d.description || ''}</p>
+            </div>
+            <span class="text-xs font-bold text-green-600 dark:text-green-400 self-center">${d.label || `-${d.value}%`}</span>
+          </label>
+        `;
+      }).join('');
+      
+      // Checkbox events
+      personalDiscountsContainer.querySelectorAll('.cart-discount-cb').forEach(cb => {
+        cb.addEventListener('change', (e: any) => {
+          const code = e.target.dataset.code;
+          const discObj = availableDiscounts.find((d: any) => d.code === code);
+          let current = getDiscounts();
+          if (e.target.checked) {
+             if (!current.find((d: any) => d.code === code)) current.push(discObj);
+          } else {
+             current = current.filter((d: any) => d.code !== code);
+          }
+          setDiscounts(current); // Triggers cart:updated
+        });
+      });
+    } else if (personalDiscountsContainer) {
+      personalDiscountsContainer.innerHTML = '';
+    }
+
+    // Descuento UI in totals row
+    if (discAmt > 0 && discounts.length > 0) {
       discountRow?.classList.remove('hidden');
       discountRow?.classList.add('flex');
-      if (discountBadge) discountBadge.textContent = discount.label || `-${discount.value}%`;
-      if (discountDesc)  discountDesc.textContent  = discount.description || discount.code;
       if (discountAmount) discountAmount.textContent = `-€${discAmt.toFixed(2)}`;
     } else {
-      discountBlock?.classList.add('hidden');
       discountRow?.classList.add('hidden');
       discountRow?.classList.remove('flex');
     }
@@ -241,4 +366,7 @@
 
   // Render inicial
   renderCart();
+  
+  // Call loadUserDiscounts immediately if we are on checkout page or already opened
+  loadUserDiscounts();
 </script>

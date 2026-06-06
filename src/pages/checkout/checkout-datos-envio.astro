@@ -225,11 +225,14 @@ const seo = {
 
   function loadCartSummary() {
     let cart: any[]  = [];
-    let discount: any = null;
+    let discounts: any[] = [];
 
     try {
       cart     = JSON.parse(localStorage.getItem('dcien_cart')          || '[]');
-      discount = JSON.parse(localStorage.getItem('dcien_cart_discount') || 'null');
+      const arrRaw    = localStorage.getItem('dcien_cart_discounts');
+      const legacyRaw = localStorage.getItem('dcien_cart_discount');
+      if (arrRaw)    discounts = JSON.parse(arrRaw);
+      else if (legacyRaw) discounts = [JSON.parse(legacyRaw)];
     } catch { /* ignore */ }
 
     if (!cart.length) {
@@ -255,14 +258,11 @@ const seo = {
     const subtotal = cart.reduce((s: number, i: any) => s + Number(i.price), 0);
 
     let discAmt = 0;
-    if (discount) {
-      if (discount.type === 'percent') {
-        discAmt = subtotal * (parseFloat(discount.value) / 100);
-      } else {
-        discAmt = Math.min(parseFloat(discount.value), subtotal);
-      }
-      discAmt = Math.round(discAmt * 100) / 100;
+    for (const d of discounts) {
+      if (d.type === 'percent') discAmt += subtotal * (parseFloat(d.value) / 100);
+      else                      discAmt += parseFloat(d.value);
     }
+    discAmt = Math.min(Math.round(discAmt * 100) / 100, subtotal);
 
     const priceAfterDisc = Math.max(0, subtotal - discAmt);
     const isFree         = priceAfterDisc < 0.10;
@@ -271,10 +271,11 @@ const seo = {
     const total          = Math.round((priceAfterDisc + shipping) * 100) / 100;
 
     let discountHTML = '';
-    if (discount && discAmt > 0) {
+    if (discounts.length > 0 && discAmt > 0) {
+      const codes = discounts.map((d: any) => d.code).filter(Boolean).join('+');
       discountHTML = `
         <div class="flex justify-between items-center">
-          <span class="text-green-600 dark:text-green-400 text-xs">Descuento (${discount.code}):</span>
+          <span class="text-green-600 dark:text-green-400 text-xs">Descuento (${codes}):</span>
           <span class="text-green-600 dark:text-green-400 font-bold">-€${discAmt.toFixed(2)}</span>
         </div>
       `;
