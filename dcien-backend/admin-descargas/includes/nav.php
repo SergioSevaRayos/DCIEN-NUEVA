@@ -18,6 +18,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
             </a>
         </li>
         <li>
+            <a href="/admin-descargas/modules/activacion.php" class="<?php echo $current_page == 'activacion.php' ? 'active' : ''; ?>">
+                <span class="icon">🎟️</span> Invitar
+            </a>
+        </li>
+        <li>
             <a href="/admin-descargas/modules/descuentos.php" class="<?php echo $current_page == 'descuentos.php' ? 'active' : ''; ?>">
                 <span class="icon">🏅</span> Validaciones
             </a>
@@ -35,6 +40,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
         <li>
             <a href="/admin-descargas/modules/marketing.php" class="<?php echo $current_page == 'marketing.php' ? 'active' : ''; ?>">
                 <span class="icon">🎁</span> Marketing
+            </a>
+        </li>
+        <li>
+            <a href="/admin-descargas/ordenes/index.php" class="<?php echo strpos($_SERVER['PHP_SELF'], '/ordenes/') !== false ? 'active' : ''; ?>">
+                <span class="icon">📄</span> Órdenes HTML
             </a>
         </li>
     </ul>

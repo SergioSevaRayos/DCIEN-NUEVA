@@ -127,7 +127,7 @@ function generar_orden_marketing_html($pedido) {
     $filepath = dirname(__DIR__) . "/ordenes/$filename";
     file_put_contents($filepath, $html);
 
-    return "https://d-cien.es/admin-descargas/ordenes/$filename";
+    return "/admin-descargas/ordenes/$filename";
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -152,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt->execute([$uid]);
                     $u = $stmt->fetch();
                     if ($u && $u['status'] === 'available') {
-                        $pdo->prepare("UPDATE series_units SET status = 'sold', sold_at = NOW(), reserved_by = ? WHERE id = ?")
+                        $pdo->prepare("UPDATE series_units SET status = 'sold', sold_at = NOW(), reserved_by = NULL, notes = ? WHERE id = ?")
                             ->execute([$notas, $uid]);
                         $pdo->prepare("UPDATE series SET available_units = available_units - 1, sold_units = sold_units + 1 WHERE slug = ?")
                             ->execute([$u['series_slug']]);
@@ -183,7 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt->execute([$uid]);
                     $u = $stmt->fetch();
                     if ($u && $u['status'] === 'sold' && is_null($u['order_id'])) {
-                        $pdo->prepare("UPDATE series_units SET status = 'available', sold_at = NULL, reserved_by = NULL WHERE id = ?")
+                        $pdo->prepare("UPDATE series_units SET status = 'available', sold_at = NULL, reserved_by = NULL, notes = NULL WHERE id = ?")
                             ->execute([$uid]);
                         $pdo->prepare("UPDATE series SET available_units = available_units + 1, sold_units = sold_units - 1 WHERE slug = ?")
                             ->execute([$u['series_slug']]);
@@ -206,13 +206,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $color = $_POST['color'] ?? '';
         $type = $_POST['type'] ?? 'standard';
         
+        $precio = (float)($_POST['precio'] ?? 0);
+        $entrega_mano = isset($_POST['entrega_mano']);
+
         $nombre = $_POST['nombre'] ?? '';
         $email = $_POST['email'] ?? '';
-        $direccion = $_POST['direccion'] ?? '';
-        $cp = $_POST['cp'] ?? '';
-        $ciudad = $_POST['ciudad'] ?? '';
-        $provincia = $_POST['provincia'] ?? '';
-        $telefono = $_POST['telefono'] ?? '';
+        
+        if ($entrega_mano) {
+            $direccion = 'ENTREGA EN MANO';
+            $cp = '00000';
+            $ciudad = 'Local';
+            $provincia = 'Local';
+            $telefono = $_POST['telefono'] ?? '';
+        } else {
+            $direccion = $_POST['direccion'] ?? '';
+            $cp = $_POST['cp'] ?? '';
+            $ciudad = $_POST['ciudad'] ?? '';
+            $provincia = $_POST['provincia'] ?? '';
+            $telefono = $_POST['telefono'] ?? '';
+        }
 
         if ($unit_id && $size && $nombre && $direccion) {
             try {
@@ -241,24 +253,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         "province" => $provincia, "country" => "ES",
                         "email" => $email, "phone" => $telefono
                     ],
-                    "payment" => ["status" => "paid", "amount_total" => 0, "amount_euros" => 0, "currency" => "EUR"],
-                    "processed_by" => "admin_marketing"
+                    "payment" => ["status" => "paid", "amount_total" => $precio * 100, "amount_euros" => $precio, "currency" => "EUR"],
+                    "processed_by" => "admin_marketing",
+                    "entrega_mano" => $entrega_mano
                 ];
 
                 $fakeSessionId = 'PROMO_VIP_' . time();
 
                 $insertOrder = $pdo->prepare("INSERT INTO orders 
                     (user_id, series_slug, unit_number, size, color, type, price, stripe_session_id, shipping_data, created_at, status) 
-                    VALUES (0, :slug, :num, :size, :color, :type, 0.00, :session_id, :shipping, NOW(), 'produccion')");
+                    VALUES (0, :slug, :num, :size, :color, :type, :price, :session_id, :shipping, NOW(), 'produccion')");
 
                 $insertOrder->execute([
                     'slug' => $series_slug, 'num' => $unit_number, 'size' => $size, 'color' => $color, 'type' => $type,
+                    'price' => $precio,
                     'session_id' => $fakeSessionId, 'shipping' => json_encode($shippingData)
                 ]);
                 $order_id = $pdo->lastInsertId();
 
-                $pdo->prepare("UPDATE series_units SET status = 'sold', sold_at = NOW(), reserved_by = ?, order_id = ? WHERE id = ?")
-                    ->execute(["Marketing VIP: $nombre", $order_id, $unit_id]);
+                $pdo->prepare("UPDATE series_units SET status = 'sold', sold_at = NOW(), reserved_by = NULL, order_id = ?, notes = ? WHERE id = ?")
+                    ->execute([$order_id, "Marketing VIP: $nombre", $unit_id]);
                 
                 $pdo->prepare("UPDATE series SET available_units = available_units - 1, sold_units = sold_units + 1 WHERE slug = ?")
                     ->execute([$series_slug]);
@@ -433,14 +447,19 @@ if ($current_series_slug) {
                                     $class = 'box-available';
                                     $type = 'available';
                                     $title = "Libre - Clic para seleccionar";
+                                } elseif ($u['status'] === 'sold' && strpos($u['notes'] ?? '', 'Marketing VIP') !== false) {
+                                    $class = 'box-marketing';
+                                    $type = 'vip';
+                                    $title = "Envío VIP: " . htmlspecialchars($u['notes']);
+                                } elseif ($u['status'] === 'sold' && ($u['notes'] === 'Vendido (Entrega en mano)' || !is_null($u['order_id']))) {
+                                    $class = 'box-sold';
+                                    $type = 'sold';
+                                    $title = "Vendido / Bloqueado";
+                                    if ($u['notes']) $title .= " (" . htmlspecialchars($u['notes']) . ")";
                                 } elseif ($u['status'] === 'sold' && is_null($u['order_id'])) {
                                     $class = 'box-withdrawn';
                                     $type = 'withdrawn';
-                                    $title = "Retiro: " . htmlspecialchars($u['reserved_by'] ?? 'Manual') . " - Clic para restaurar";
-                                } elseif ($u['status'] === 'sold' && !is_null($u['order_id']) && strpos($u['reserved_by'] ?? '', 'Marketing VIP') !== false) {
-                                    $class = 'box-marketing';
-                                    $type = 'vip';
-                                    $title = "Envío VIP: " . htmlspecialchars($u['reserved_by']);
+                                    $title = "Retiro: " . htmlspecialchars($u['notes'] ?? 'Manual') . " - Clic para restaurar";
                                 }
                             ?>
                                 <div class="unit-box <?php echo $class; ?>" 
@@ -509,40 +528,59 @@ if ($current_series_slug) {
 
                 <div class="form-group">
                     <label>Color</label>
-                    <input type="text" name="color" value="negro" required>
+                    <select name="color" required>
+                        <option value="negro" selected>Negro</option>
+                        <option value="blanco">Blanco</option>
+                    </select>
+                </div>
+
+                <div class="grid-2" style="margin-top:15px;">
+                    <div class="form-group">
+                        <label>Precio Pagado (€)</label>
+                        <input type="number" step="0.01" name="precio" value="0.00" required>
+                    </div>
+                    <div class="form-group" style="display:flex; align-items:center; margin-top:25px;">
+                        <label style="cursor:pointer; font-weight:bold; color:#4ade80; display:flex; align-items:center; gap:8px;">
+                            <input type="checkbox" name="entrega_mano" onchange="toggleShipping(this.checked)" style="width:20px; height:20px;">
+                            🤝 Entrega en Mano
+                        </label>
+                    </div>
                 </div>
 
                 <div class="form-group" style="margin-top:15px;">
-                    <label>Nombre del Influencer / VIP</label>
+                    <label>Nombre del Influencer / Cliente</label>
                     <input type="text" name="nombre" required>
                 </div>
                 <div class="form-group">
                     <label>Email (Tracking)</label>
                     <input type="email" name="email" value="marketing@d-cien.es">
                 </div>
-                <div class="form-group">
-                    <label>Dirección de Envío Completa</label>
-                    <input type="text" name="direccion" required placeholder="Calle, Piso...">
-                </div>
+                
+                <div id="shipping-fields">
+                    <div class="form-group">
+                        <label>Dirección de Envío Completa</label>
+                        <input type="text" name="direccion" id="field_dir" required placeholder="Calle, Piso...">
+                    </div>
 
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label>C. Postal</label>
-                        <input type="text" name="cp" required>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>C. Postal</label>
+                            <input type="text" name="cp" id="field_cp" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Ciudad</label>
+                            <input type="text" name="ciudad" id="field_ciudad" required>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Ciudad</label>
-                        <input type="text" name="ciudad" required>
-                    </div>
-                </div>
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label>Provincia</label>
-                        <input type="text" name="provincia" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Teléfono (Transportista)</label>
-                        <input type="text" name="telefono">
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Provincia</label>
+                            <input type="text" name="provincia" id="field_prov" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Teléfono (Transportista)</label>
+                            <input type="text" name="telefono">
+                        </div>
                     </div>
                 </div>
 
@@ -638,6 +676,19 @@ if ($current_series_slug) {
 
         function closeVipModal() {
             document.getElementById('vip-modal').classList.remove('active');
+        }
+
+        function toggleShipping(isHandDelivery) {
+            const shipFields = document.getElementById('shipping-fields');
+            const reqInputs = [document.getElementById('field_dir'), document.getElementById('field_cp'), document.getElementById('field_ciudad'), document.getElementById('field_prov')];
+            
+            if (isHandDelivery) {
+                shipFields.style.display = 'none';
+                reqInputs.forEach(input => input.removeAttribute('required'));
+            } else {
+                shipFields.style.display = 'block';
+                reqInputs.forEach(input => input.setAttribute('required', 'true'));
+            }
         }
 
         // Cierre del modal al hacer clic fuera del contenido

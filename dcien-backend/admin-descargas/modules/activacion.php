@@ -111,16 +111,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="/admin-descargas/assets/style.css">
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <div>
-                <h1>CREAR TOKEN</h1>
-                <p>Generar credencial de activación</p>
-            </div>
-            <div class="header-actions">
-                <a href="/admin-descargas/">← Dashboard</a>
-            </div>
-        </header>
+    <div class="app-layout">
+        <?php require_once dirname(__DIR__) . '/includes/nav.php'; ?>
+        <div class="main-content">
+            <div class="container">
+                <header class="header">
+                    <div>
+                        <h1>CREAR TOKEN</h1>
+                        <p>Generar credencial de activación</p>
+                    </div>
+                </header>
 
         <?php if ($message): ?>
             <?php echo $message; ?>
@@ -241,9 +241,11 @@ Al activar tu cuenta recibirás automáticamente:
             </div>
         <?php endif; ?>
 
-        <footer class="footer">
-            <p>DCIEN Crear Token de Activación</p>
-        </footer>
+                <footer class="footer">
+                    <p>DCIEN Crear Token de Activación</p>
+                </footer>
+            </div>
+        </div>
     </div>
 </body>
 </html>

@@ -101,12 +101,18 @@ if ($backend -or $all) {
     }
 }
 
-# STEP 4: Subir server-extras
+# STEP 4: Subir server-extras y admin-descargas
 if ($extras -or $all) {
     Write-Step "Subiendo server-extras (carrito, api, admin, js, bono)..."
     scp -P $PORT -r "$LOCAL\server-extras\*" "${SERVER}:${REMOTE}/public_html/"
-    if ($LASTEXITCODE -eq 0) {
-        Write-OK "Extras subidos"
+    $scpExtrasOk = $LASTEXITCODE -eq 0
+
+    Write-Step "Subiendo admin-descargas (desde dcien-backend) a public_html..."
+    scp -P $PORT -r "$LOCAL\dcien-backend\admin-descargas" "${SERVER}:${REMOTE}/public_html/"
+    $scpAdminOk = $LASTEXITCODE -eq 0
+
+    if ($scpExtrasOk -and $scpAdminOk) {
+        Write-OK "Extras y admin-descargas subidos"
     } else {
         Write-Err "Fallo al subir extras"
     }

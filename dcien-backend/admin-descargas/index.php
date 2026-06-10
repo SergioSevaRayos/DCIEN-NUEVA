@@ -43,9 +43,13 @@ $tasa_uso = $protocolos_asignados > 0 ? round(($protocolos_usados / $protocolos_
 $stmt = $pdo->query("SELECT COUNT(*) FROM discounts WHERE is_active = 1 AND (valid_until IS NULL OR valid_until >= NOW())");
 $descuentos_activos = $stmt->fetchColumn();
 
-// 5. Unidades
-$stmt = $pdo->query("SELECT COUNT(*) FROM series_units WHERE status = 'sold'");
+// 5. Unidades (Excluyendo retiros visuales)
+$stmt = $pdo->query("SELECT COUNT(*) FROM series_units WHERE status = 'sold' AND (order_id IS NOT NULL OR notes LIKE 'Marketing%' OR notes LIKE 'Vendido%')");
 $unidades_vendidas = $stmt->fetchColumn();
+
+// 6. Retiros Visuales
+$stmt = $pdo->query("SELECT COUNT(*) FROM series_units WHERE status = 'sold' AND order_id IS NULL AND (notes IS NULL OR (notes NOT LIKE 'Marketing%' AND notes NOT LIKE 'Vendido%'))");
+$unidades_retiradas = $stmt->fetchColumn();
 
 // --- RANKINGS ---
 
@@ -92,7 +96,7 @@ $ultimos_pedidos = $stmt->fetchAll();
     <style>
         .insights-row {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 12px;
             margin-bottom: 30px;
         }
@@ -181,6 +185,10 @@ $ultimos_pedidos = $stmt->fetchAll();
                     <div class="stat-secondary">
                         <div class="stat-sec-label">Unidades Vendidas</div>
                         <div class="stat-sec-value"><?php echo $unidades_vendidas; ?> pcs</div>
+                    </div>
+                    <div class="stat-secondary">
+                        <div class="stat-sec-label">Retiradas Manualmente</div>
+                        <div class="stat-sec-value" style="color:#f97316;"><?php echo $unidades_retiradas; ?> pcs</div>
                     </div>
                     <div class="stat-secondary">
                         <div class="stat-sec-label">Éxito de Protocolos</div>

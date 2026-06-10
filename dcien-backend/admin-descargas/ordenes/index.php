@@ -534,7 +534,10 @@ $suma_total      = array_sum(array_column($pedidos, 'price'));
     </style>
 </head>
 <body>
-<div class="container">
+<div class="app-layout">
+    <?php require_once dirname(__DIR__) . '/includes/nav.php'; ?>
+    <div class="main-content">
+        <div class="container">
 
     <header class="header">
         <div>
@@ -741,6 +744,8 @@ $suma_total      = array_sum(array_column($pedidos, 'price'));
     <footer class="footer">
         <p>DCIEN Pipeline · Fase: <?= strtoupper($estado_actual) ?> · <?= $total_mostrados ?> pedidos</p>
     </footer>
+        </div>
+    </div>
 </div>
 
 <script>
