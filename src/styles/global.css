@@ -63,10 +63,27 @@
   }
 
   .input-minimal {
-    @apply w-full px-0 py-3 border-b border-black/20 dark:border-white/20 
-           bg-transparent text-black dark:text-white 
-           placeholder-black/40 dark:placeholder-white/40 
-           focus:border-black dark:focus:border-white transition-all text-sm;
+    @apply w-full px-4 py-3 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 
+           text-black dark:text-white placeholder-black/40 dark:placeholder-white/40 
+           focus:border-black/50 dark:focus:border-white/50 focus:bg-transparent focus:ring-0
+           transition-all duration-300 text-sm text-center;
+  }
+
+  /* --- FIX PARA AUTOCOMPLETADO (Evita el fondo blanco/amarillo del navegador) --- */
+  .input-minimal:-webkit-autofill,
+  .input-minimal:-webkit-autofill:hover, 
+  .input-minimal:-webkit-autofill:focus, 
+  .input-minimal:-webkit-autofill:active {
+      transition: background-color 5000s ease-in-out 0s !important;
+      -webkit-text-fill-color: black !important;
+  }
+  
+  .dark .input-minimal:-webkit-autofill,
+  .dark .input-minimal:-webkit-autofill:hover, 
+  .dark .input-minimal:-webkit-autofill:focus, 
+  .dark .input-minimal:-webkit-autofill:active {
+      transition: background-color 5000s ease-in-out 0s !important;
+      -webkit-text-fill-color: white !important;
   }
 
   .section-title {
@@ -142,4 +159,41 @@
 
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-black/40 dark:bg-zinc-600;
+}
+
+/* ---------------------------------------------------
+   DRIVER.JS CUSTOM STYLES (DCIEN AESTHETIC)
+--------------------------------------------------- */
+.driver-popover {
+  @apply !bg-white dark:!bg-zinc-900 !text-black dark:!text-white !border !border-black/10 dark:!border-white/10 !rounded-none !shadow-2xl !p-6 !max-w-sm;
+  font-family: inherit;
+}
+
+.driver-popover-title {
+  @apply !font-bold !uppercase !tracking-wider !text-sm !mb-3 !text-black dark:!text-white;
+}
+
+.driver-popover-description {
+  @apply !text-xs !text-black/60 dark:!text-white/60 !leading-relaxed !font-normal;
+}
+
+.driver-popover-footer {
+  @apply !mt-6 !pt-4 !border-t !border-black/5 dark:!border-white/5;
+}
+
+.driver-popover-progress-text {
+  @apply !text-[10px] !uppercase !tracking-widest !text-black/40 dark:!text-white/40;
+}
+
+.driver-popover-footer button {
+  @apply !text-[10px] !uppercase !tracking-widest !bg-transparent !text-black dark:!text-white !border !border-black/20 dark:!border-white/20 !rounded-none !px-4 !py-2 hover:!bg-black hover:!text-white dark:hover:!bg-white dark:hover:!text-black !transition-colors !duration-300 !font-bold !shadow-none;
+  text-shadow: none !important;
+}
+
+.driver-popover-footer button.driver-next-btn {
+  @apply !bg-black !text-white dark:!bg-white dark:!text-black hover:!opacity-90;
+}
+
+.driver-popover-arrow {
+  @apply dark:!border-zinc-900;
 }

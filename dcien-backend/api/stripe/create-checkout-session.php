@@ -223,7 +223,9 @@ try {
     \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY'] ?? getenv('STRIPE_SECRET_KEY'));
 
     $session = \Stripe\Checkout\Session::create([
+        'customer_email' => $shippingData['email'] ?? null,
         'payment_method_types' => ['card'],
+        'invoice_creation' => ['enabled' => true],
         'line_items' => [
             [
                 'price_data' => [

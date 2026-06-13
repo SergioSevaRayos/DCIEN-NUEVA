@@ -9,18 +9,26 @@ const seo = getSEO('acceso');
   <section class="min-h-screen flex items-center justify-center py-20 pt-32">
     <div class="container-custom max-w-md mx-auto px-6">
       <!-- Logo -->
-      <h1 class="font-brand text-6xl md:text-7xl text-center mb-4 tracking-wider text-black dark:text-white">
-        DCIEN
-      </h1>
-      <p class="text-xs text-center uppercase tracking-[0.3em] text-black/60 dark:text-white/60 mb-2">
-        Completa tu registro
-      </p>
-      <p id="instagram-origin" class="text-xs text-center text-black/40 dark:text-white/40 mb-12">
-        <!-- Muestra el username de Instagram de origen, se rellena con JS -->
-      </p>
+      <div>
+        <h1 class="font-brand text-6xl md:text-7xl text-center mb-4 tracking-wider text-black dark:text-white">
+          DCIEN
+        </h1>
+        <p class="text-xs text-center uppercase tracking-[0.3em] text-black/60 dark:text-white/60 mb-2">
+          Completa tu registro
+        </p>
+        <p id="instagram-origin" class="text-xs text-center text-black/40 dark:text-white/40 mb-8">
+          <!-- Muestra el username de Instagram de origen, se rellena con JS -->
+        </p>
+        <div class="flex justify-center mb-12">
+          <button id="btn-tour" type="button" class="text-[10px] uppercase tracking-[0.2em] text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors flex items-center gap-2">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            Guía de registro
+          </button>
+        </div>
+      </div>
 
       <!-- Instrucciones -->
-      <div class="mb-8 p-6 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10">
+      <div id="tour-step-1" class="mb-8 p-6 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10">
         <h2 class="text-sm font-bold uppercase tracking-wider mb-3 text-black dark:text-white">
           ✍️ Crea tu cuenta definitiva
         </h2>
@@ -34,7 +42,7 @@ const seo = getSEO('acceso');
       <form id="registration-form" class="space-y-8">
 
         <!-- Nombre de usuario permanente -->
-        <div>
+        <div id="tour-step-2">
           <label for="username" class="block text-xs uppercase tracking-[0.2em] mb-3 text-black/60 dark:text-white/60">
             Nombre de Usuario
           </label>
@@ -57,7 +65,7 @@ const seo = getSEO('acceso');
         </div>
 
         <!-- Email -->
-        <div>
+        <div id="tour-step-3">
           <label for="email" class="block text-xs uppercase tracking-[0.2em] mb-3 text-black/60 dark:text-white/60">
             Email
           </label>
@@ -93,7 +101,7 @@ const seo = getSEO('acceso');
         </div>
 
         <!-- Confirmar contraseña -->
-        <div>
+        <div id="tour-step-4">
           <label for="password-confirm" class="block text-xs uppercase tracking-[0.2em] mb-3 text-black/60 dark:text-white/60">
             Confirmar Contraseña
           </label>
@@ -109,19 +117,95 @@ const seo = getSEO('acceso');
           />
         </div>
 
-        <button type="submit" class="btn-primary w-full mt-12">
-          Crear Cuenta
-        </button>
+        <div id="tour-step-5">
+          <button type="submit" class="btn-primary w-full mt-12">
+            Crear Cuenta
+          </button>
+        </div>
       </form>
     </div>
   </section>
 </BaseLayout>
 
 <script>
+  import { driver } from 'driver.js';
+  import 'driver.js/dist/driver.css';
+
   const registrationForm = document.getElementById('registration-form') as HTMLFormElement;
   const instagramOriginEl = document.getElementById('instagram-origin');
   const usernameInput      = document.getElementById('username') as HTMLInputElement;
   const usernameFeedback   = document.getElementById('username-feedback');
+
+  // --- TOUR INTERACTIVO (DRIVER.JS) ---
+  const driverObj = driver({
+    showProgress: true,
+    animate: true,
+    doneBtnText: '¡Entendido!',
+    nextBtnText: 'Siguiente →',
+    prevBtnText: '← Anterior',
+    progressText: 'Paso {{current}} de {{total}}',
+    steps: [
+      {
+        element: '#tour-step-1',
+        popover: {
+          title: 'Configura tu Cuenta',
+          description: '¡Credenciales temporales validadas con éxito! Ahora vas a crear tu usuario y contraseña definitivos para usar a partir de ahora.',
+          side: 'bottom',
+          align: 'start'
+        }
+      },
+      {
+        element: '#tour-step-2',
+        popover: {
+          title: 'Nombre de Usuario',
+          description: 'Elige un nombre único y sin espacios. Puedes usar letras, números, puntos y guiones. Será tu identificador en la comunidad DCIEN.',
+          side: 'bottom',
+          align: 'start'
+        }
+      },
+      {
+        element: '#tour-step-3',
+        popover: {
+          title: 'Email de Contacto',
+          description: 'Tu correo real. Lo usaremos para enviarte los recibos de compra y notificaciones, y también podrás usarlo para iniciar sesión.',
+          side: 'bottom',
+          align: 'start'
+        }
+      },
+      {
+        element: '#tour-step-4',
+        popover: {
+          title: 'Contraseña Definitiva',
+          description: 'Escribe tu nueva contraseña personal en los dos campos (mínimo 8 caracteres). Esta será la que uses de ahora en adelante.',
+          side: 'top',
+          align: 'start'
+        }
+      },
+      {
+        element: '#tour-step-5',
+        popover: {
+          title: 'Paso Final',
+          description: 'Una vez que todo esté relleno y el nombre de usuario esté disponible, pulsa aquí para finalizar y entrar en la tienda.',
+          side: 'top',
+          align: 'center'
+        }
+      }
+    ]
+  });
+
+  const btnTour = document.getElementById('btn-tour');
+  if (btnTour) {
+    btnTour.addEventListener('click', () => {
+      driverObj.drive();
+    });
+  }
+
+  if (!localStorage.getItem('dcien_tour_completar_visto')) {
+    localStorage.setItem('dcien_tour_completar_visto', 'true');
+    setTimeout(() => {
+      driverObj.drive();
+    }, 1000);
+  }
 
   const getSwalConfig = () => {
     const isDark = document.documentElement.classList.contains('dark');

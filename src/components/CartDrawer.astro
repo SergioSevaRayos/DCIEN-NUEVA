@@ -21,6 +21,10 @@
     <div class="flex items-center gap-3">
       <span class="font-brand text-2xl text-black dark:text-white">Carrito</span>
       <span id="cart-drawer-count" class="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40"></span>
+      <button id="btn-tour-cart" type="button" class="text-[9px] uppercase tracking-[0.2em] text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors flex items-center gap-1 ml-2 hidden">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        Guía
+      </button>
     </div>
     <button
       id="cart-close"
@@ -106,6 +110,8 @@
 </div>
 
 <script>
+  import { driver } from 'driver.js';
+  import 'driver.js/dist/driver.css';
   import { getCart, getDiscounts, setDiscounts, removeFromCart, getCartSubtotal } from '../scripts/cart.js';
 
   const SHIPPING_FEE = 5.00;
@@ -170,6 +176,17 @@
     drawer?.classList.remove('translate-x-full');
     document.body.style.overflow = 'hidden';
     loadUserDiscounts();
+
+    // Auto-iniciar tour del carrito si no se ha visto y hay items
+    if (getCart().length > 0) {
+      document.getElementById('btn-tour-cart')?.classList.remove('hidden');
+      if (!localStorage.getItem('dcien_tour_carrito_visto')) {
+        localStorage.setItem('dcien_tour_carrito_visto', 'true');
+        setTimeout(() => startCartTour(), 500);
+      }
+    } else {
+      document.getElementById('btn-tour-cart')?.classList.add('hidden');
+    }
   }
 
   function closeDrawer() {
@@ -369,4 +386,48 @@
   
   // Call loadUserDiscounts immediately if we are on checkout page or already opened
   loadUserDiscounts();
+
+  // --- TOUR INTERACTIVO DEL CARRITO ---
+  function startCartTour() {
+    const cartDriverObj = driver({
+      showProgress: true,
+      animate: true,
+      doneBtnText: '¡Entendido!',
+      nextBtnText: 'Siguiente →',
+      prevBtnText: '← Anterior',
+      progressText: 'Paso {{current}} de {{total}}',
+      steps: [
+        {
+          element: '#cart-items-list',
+          popover: {
+            title: 'Tus Selecciones',
+            description: 'Aquí puedes revisar las prendas que has añadido, junto con tu talla, color, tipo de corte y, lo más importante, el número exclusivo reservado para ti.',
+            side: 'left',
+            align: 'start'
+          }
+        },
+        {
+          element: '#cart-discount-section',
+          popover: {
+            title: 'Descuentos Personales',
+            description: 'Si tienes un código promocional o si te hemos concedido descuentos en tu cuenta (ej. descuento por defecto), podrás activarlos o introducirlos aquí.',
+            side: 'left',
+            align: 'start'
+          }
+        },
+        {
+          element: '#cart-footer',
+          popover: {
+            title: 'Finalizar Pedido',
+            description: 'Revisa tus totales, descuentos aplicados y haz clic en "Ir al pago" cuando estés listo para completar la compra de forma segura.',
+            side: 'left',
+            align: 'center'
+          }
+        }
+      ]
+    });
+    cartDriverObj.drive();
+  }
+
+  document.getElementById('btn-tour-cart')?.addEventListener('click', startCartTour);
 </script>

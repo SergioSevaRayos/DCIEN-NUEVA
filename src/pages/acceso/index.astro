@@ -13,9 +13,16 @@ const seo = getSEO('acceso');
       <h1 class="font-brand text-6xl md:text-7xl text-center mb-4 tracking-wider text-black dark:text-white">
         DCIEN
       </h1>
-      <p class="text-xs text-center uppercase tracking-[0.3em] text-black/60 dark:text-white/60 mb-16">
+      <p class="text-xs text-center uppercase tracking-[0.3em] text-black/60 dark:text-white/60 mb-8">
         Acceso exclusivo mediante credenciales autorizadas
       </p>
+      
+      <div class="flex justify-center mb-12">
+        <button id="btn-tour" type="button" class="text-[10px] uppercase tracking-[0.2em] text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors flex items-center gap-2">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          Guía de acceso
+        </button>
+      </div>
 
       <!-- Form -->
       <form id="login-form" class="space-y-8" method="POST" onsubmit="event.preventDefault();">
@@ -66,9 +73,10 @@ const seo = getSEO('acceso');
       </form>
       <div class="text-center mt-6">
         <a
+          id="provisional-link"
           href="/registro/activar"
           class="text-xs uppercase tracking-[0.25em] text-black/50 dark:text-white/50
-                hover:text-black dark:hover:text-white transition-colors"
+                hover:text-black dark:hover:text-white transition-colors inline-block p-2"
         >
           Tengo credenciales provisionales
         </a>
@@ -105,8 +113,63 @@ const seo = getSEO('acceso');
 </BaseLayout>
 
 <script>
+  import { driver } from 'driver.js';
+  import 'driver.js/dist/driver.css';
+
   const loginForm = document.getElementById('login-form') as HTMLFormElement;
   const recoverBtn = document.getElementById('recover-btn');
+
+  // --- TOUR INTERACTIVO ---
+  function startAccesoTour() {
+    const driverObj = driver({
+      showProgress: true,
+      animate: true,
+      doneBtnText: '¡Entendido!',
+      nextBtnText: 'Siguiente →',
+      prevBtnText: '← Anterior',
+      progressText: 'Paso {{current}} de {{total}}',
+      steps: [
+        {
+          element: '#instagram-btn',
+          popover: {
+            title: '¿No tienes acceso?',
+            description: 'Si es tu primera vez aquí y no tienes credenciales, síguenos en Instagram y pídenos acceso por mensaje privado.',
+            side: 'bottom',
+            align: 'start'
+          }
+        },
+        {
+          element: '#provisional-link',
+          popover: {
+            title: 'Credenciales Provisionales',
+            description: 'Si ya te hemos dado una contraseña provisional por Instagram pero aún no te has registrado, pulsa aquí para activar tu cuenta.',
+            side: 'bottom',
+            align: 'start'
+          }
+        },
+        {
+          element: '#login-form',
+          popover: {
+            title: 'Acceso para Atletas',
+            description: 'Si ya activaste tu cuenta y creaste tu propia contraseña, utiliza este formulario con tu usuario o email para entrar a la tienda.',
+            side: 'top',
+            align: 'start'
+          }
+        }
+      ]
+    });
+    driverObj.drive();
+  }
+
+  const btnTour = document.getElementById('btn-tour');
+  if (btnTour) {
+    btnTour.addEventListener('click', startAccesoTour);
+  }
+
+  if (!localStorage.getItem('dcien_tour_acceso_visto')) {
+    localStorage.setItem('dcien_tour_acceso_visto', 'true');
+    setTimeout(startAccesoTour, 1000);
+  }
 
   const getSwalConfig = () => {
     const isDark = document.documentElement.classList.contains('dark');
