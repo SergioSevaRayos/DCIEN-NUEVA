@@ -21,6 +21,7 @@ export interface SeriesConfig {
     available: boolean;
   }>;
   isActive: boolean;
+  gender: 'male' | 'female' | 'unisex';
   releaseDate: string; // ISO format
   endDate?: string; // ISO format
   seo: {
@@ -55,6 +56,7 @@ export const seriesData: SeriesConfig[] = [
       { size: 'XXL', type: 'standard', available: true },
     ],
     isActive: true,
+    gender: 'unisex',
     releaseDate: '2026-02-15T00:00:00Z',
     seo: {
       title: 'SERIE 0 | DCIEN',
@@ -84,6 +86,7 @@ export const seriesData: SeriesConfig[] = [
       { size: 'XXL', type: 'standard', available: true },
     ],
     isActive: true,
+    gender: 'unisex',
     releaseDate: '2026-03-01T00:00:00Z',
     seo: {
       title: 'SERIE 01 | DCIEN',
@@ -111,6 +114,7 @@ export const seriesData: SeriesConfig[] = [
       { size: 'XXL', type: 'standard', available: true },
     ],
     isActive: false,
+    gender: 'unisex',
     releaseDate: '2026-03-01T00:00:00Z',
     seo: {
       title: 'SERIE 02 | DCIEN',
@@ -139,6 +143,7 @@ export const seriesData: SeriesConfig[] = [
       { size: 'XXL', type: 'standard', available: true },
     ],
     isActive: false,
+    gender: 'unisex',
     releaseDate: '2026-03-01T00:00:00Z',
     seo: {
       title: 'SERIE 03 | DCIEN',
@@ -167,6 +172,7 @@ export const seriesData: SeriesConfig[] = [
       { size: 'XXL', type: 'standard', available: true },
     ],
     isActive: false,
+    gender: 'unisex',
     releaseDate: '2026-03-01T00:00:00Z',
     seo: {
       title: 'SERIE 04 | DCIEN',
@@ -195,6 +201,7 @@ export const seriesData: SeriesConfig[] = [
       { size: 'XXL', type: 'standard', available: true },
     ],
     isActive: true,
+    gender: 'unisex',
     releaseDate: '2026-03-01T00:00:00Z',
     seo: {
       title: 'SERIE 05 | DCIEN',
@@ -223,6 +230,7 @@ export const seriesData: SeriesConfig[] = [
       { size: 'XXL', type: 'standard', available: true },
     ],
     isActive: true,
+    gender: 'unisex',
     releaseDate: '2026-03-01T00:00:00Z',
     seo: {
       title: 'SERIE 06 | DCIEN',
@@ -251,6 +259,7 @@ export const seriesData: SeriesConfig[] = [
       { size: 'XXL', type: 'standard', available: true },
     ],
     isActive: true,
+    gender: 'unisex',
     releaseDate: '2026-03-01T00:00:00Z',
     seo: {
       title: 'SERIE 07 | DCIEN',
@@ -279,6 +288,7 @@ export const seriesData: SeriesConfig[] = [
       { size: 'XXL', type: 'standard', available: true },
     ],
     isActive: true,
+    gender: 'unisex',
     releaseDate: '2026-03-01T00:00:00Z',
     seo: {
       title: 'SERIE 08 | DCIEN',
@@ -307,6 +317,7 @@ export const seriesData: SeriesConfig[] = [
       { size: 'XXL', type: 'standard', available: true },
     ],
     isActive: true,
+    gender: 'unisex',
     releaseDate: '2026-03-01T00:00:00Z',
     seo: {
       title: 'SERIE 09 | DCIEN',
@@ -335,6 +346,7 @@ export const seriesData: SeriesConfig[] = [
       { size: 'XXL', type: 'standard', available: true },
     ],
     isActive: true,
+    gender: 'unisex',
     releaseDate: '2026-03-01T00:00:00Z',
     seo: {
       title: 'SERIE 10 | DCIEN',
@@ -363,6 +375,7 @@ export const seriesData: SeriesConfig[] = [
       { size: 'XXL', type: 'standard', available: true },
     ],
     isActive: true,
+    gender: 'unisex',
     releaseDate: '2026-03-01T00:00:00Z',
     seo: {
       title: 'SERIE 11 | DCIEN',
@@ -391,6 +404,7 @@ export const seriesData: SeriesConfig[] = [
       { size: 'XXL', type: 'standard', available: true },
     ],
     isActive: true,
+    gender: 'unisex',
     releaseDate: '2026-03-01T00:00:00Z',
     seo: {
       title: 'SERIE 12 | DCIEN',

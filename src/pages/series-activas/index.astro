@@ -13,6 +13,7 @@ type ActiveSeriesCard = {
   price: number;
   images: string[] | string;
   release_date?: string;
+  gender?: 'male' | 'female' | 'unisex';
 };
 
 const activeSeries: ActiveSeriesCard[] = seriesData
@@ -25,6 +26,7 @@ const activeSeries: ActiveSeriesCard[] = seriesData
     price: series.price,
     images: series.images,
     release_date: series.releaseDate,
+    gender: series.gender,
   }));
 ---
 
@@ -76,8 +78,13 @@ const activeSeries: ActiveSeriesCard[] = seriesData
                   </div>
 
                   <div class="p-6 sm:p-8">
-                    <h2 class="font-brand text-2xl sm:text-3xl mb-2 sm:mb-3 text-black dark:text-white transition-colors uppercase tracking-wider">
-                      {series.name}
+                    <h2 class="font-brand text-2xl sm:text-3xl mb-2 sm:mb-3 text-black dark:text-white transition-colors uppercase tracking-wider flex justify-between items-center">
+                      <span>{series.name}</span>
+                      <span class="text-lg opacity-60 font-sans" title={series.gender === 'male' ? 'Hombre' : series.gender === 'female' ? 'Mujer' : 'Unisex'}>
+                        {series.gender === 'male' && '♂'}
+                        {series.gender === 'female' && '♀'}
+                        {series.gender === 'unisex' && '♂/♀'}
+                      </span>
                     </h2>
 
                     <p class="text-xs text-black/40 dark:text-white/40 uppercase tracking-wider mb-4 sm:mb-6 transition-colors">
