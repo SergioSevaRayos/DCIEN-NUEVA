@@ -38,7 +38,7 @@ const seo = getSEO('home');
             DCIEN
           </h1>
           
-          <div class="flex items-center justify-center gap-6 mt-6 animate-snap-fade">
+          <div class="flex items-center justify-center gap-6 mt-6 scroll-reveal scroll-delay-1">
             <span class="h-[1px] w-12 md:w-24 bg-black/50 dark:bg-white/50"></span>
             <p class="text-xs md:text-sm uppercase tracking-[0.5em] text-black dark:text-white font-bold glitch-text" data-text="CULTURA HÍBRIDA. RENDIMIENTO FÍSICO.">
               Cultura Híbrida. Rendimiento Físico.
@@ -48,7 +48,7 @@ const seo = getSEO('home');
         </div>
 
         <!-- Botón Hero Central -->
-        <div class="mt-8">
+        <div class="mt-8 scroll-reveal scroll-delay-2">
           <a href="/series-activas" class="btn-primary group relative overflow-hidden bg-white text-black hover:bg-black hover:text-white dark:bg-black dark:text-white dark:hover:bg-white dark:hover:text-black transition-colors duration-500 px-8 py-4 border border-black/10 dark:border-white/10">
             <span class="relative z-10 font-mono text-[10px] uppercase tracking-[0.4em] font-bold">Ver Series Activas</span>
             <div class="absolute inset-0 bg-black dark:bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
@@ -191,20 +191,6 @@ const seo = getSEO('home');
     border-color: rgba(150, 150, 150, 0.4);
   }
 
-  /* Scroll Reveal Base */
-  .scroll-reveal {
-    opacity: 0;
-    transform: translateY(60px);
-    transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .scroll-reveal.is-revealed {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  .scroll-delay-1 { transition-delay: 0.1s; }
-  .scroll-delay-2 { transition-delay: 0.2s; }
-  .scroll-delay-3 { transition-delay: 0.3s; }
-
   /* Hero Animations: Mecánico y Seco */
   .animate-stutter-in {
     animation: stutter-in 0.8s cubic-bezier(0.8, 0, 0.2, 1) both;
@@ -273,31 +259,6 @@ const seo = getSEO('home');
 </style>
 
 <script>
-  // Intersection Observer para Animaciones de Scroll a prueba de fallos
-  document.addEventListener('DOMContentLoaded', () => {
-    const revealObserver = new IntersectionObserver((entries, observer) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('is-revealed');
-          observer.unobserve(entry.target); 
-        }
-      });
-    }, { 
-      threshold: 0, 
-      rootMargin: "50px" // Margen positivo asegura que se active antes de que entre o aunque esté al borde inferior
-    });
-
-    document.querySelectorAll('.scroll-reveal').forEach(el => {
-      revealObserver.observe(el);
-      // Fallback estricto de seguridad: Si la API de IntersectionObserver está inactiva en el navegador
-      setTimeout(() => {
-        if (!el.classList.contains('is-revealed') && el.getBoundingClientRect().top < window.innerHeight) {
-          el.classList.add('is-revealed');
-        }
-      }, 500);
-    });
-  });
-
   // Animación del contador "100" al hacer scroll
   const counterEl = document.querySelector('.counter-animate');
   let started = false;
