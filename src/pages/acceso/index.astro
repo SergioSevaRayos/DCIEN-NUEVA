@@ -8,24 +8,32 @@ const seo = getSEO('acceso');
 <BaseLayout seo={seo}>
   <section class="min-h-[calc(100dvh-var(--header-height))] flex items-center justify-center pt-[var(--header-height)] pb-20">
 
-    <div class="container-custom max-w-md mx-auto px-6">
-      <!-- Logo -->
-      <h1 class="font-brand text-6xl md:text-7xl text-center mb-4 tracking-wider text-black dark:text-white">
-        DCIEN
-      </h1>
-      <p class="text-xs text-center uppercase tracking-[0.3em] text-black/60 dark:text-white/60 mb-8">
-        Acceso exclusivo mediante credenciales autorizadas
-      </p>
+    <div class="container-custom max-w-5xl mx-auto px-6 w-full">
       
-      <div class="flex justify-center mb-10">
-        <button id="btn-tour" type="button" class="text-[10px] uppercase tracking-[0.2em] text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors flex items-center gap-2">
-          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          Guía de acceso
-        </button>
+      <div class="max-w-md mx-auto mb-12">
+        <!-- Logo -->
+        <h1 class="font-brand text-6xl md:text-7xl text-center mb-4 tracking-wider text-black dark:text-white">
+          DCIEN
+        </h1>
+        <p class="text-xs text-center uppercase tracking-[0.3em] text-black/60 dark:text-white/60 mb-8">
+          Acceso exclusivo mediante credenciales autorizadas
+        </p>
+        
+        <div class="flex justify-center">
+          <button id="btn-tour" type="button" class="text-[10px] uppercase tracking-[0.2em] text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors flex items-center gap-2">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            Guía de acceso
+          </button>
+        </div>
       </div>
 
-      <!-- Protocolo de Acceso Informativo -->
-      <div class="mb-12 p-6 border border-black/10 dark:border-white/10 bg-zinc-50/50 dark:bg-zinc-900/30">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-start">
+        
+        <!-- Columna Izquierda -->
+        <div class="w-full">
+
+          <!-- Protocolo de Acceso Informativo -->
+          <div class="p-6 border border-black/10 dark:border-white/10 bg-zinc-50/50 dark:bg-zinc-900/30">
         <h2 class="text-xs font-bold uppercase tracking-[0.3em] text-black dark:text-white mb-6 text-center border-b border-black/5 dark:border-white/5 pb-4">
           Protocolo de Acceso
         </h2>
@@ -43,9 +51,12 @@ const seo = getSEO('acceso');
             <span><strong class="text-black dark:text-white font-medium">Registro:</strong> Configura tu contraseña e inicia sesión para acceder al catálogo cerrado.</span>
           </li>
         </ul>
-      </div>
+          </div>
+        </div>
 
-      <!-- Form -->
+        <!-- Columna Derecha -->
+        <div class="max-w-md mx-auto w-full">
+          <!-- Form -->
       <form id="login-form" class="space-y-8" method="POST" onsubmit="event.preventDefault();">
         <div>
           <label for="identifier" class="block text-xs uppercase tracking-[0.2em] mb-3 text-black/60 dark:text-white/60">
@@ -126,9 +137,11 @@ const seo = getSEO('acceso');
       >
         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
           <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-        </svg>
-        Seguir a DCIEN y solicitar acceso
-      </a>
+          </svg>
+          Seguir a DCIEN y solicitar acceso
+        </a>
+        </div>
+      </div>
     </div>
   </section>
 </BaseLayout>
