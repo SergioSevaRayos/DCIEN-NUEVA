@@ -58,9 +58,9 @@ const seo = getSEO('home');
       </div>
 
       <!-- Arrow Down Indicador -->
-      <div class="absolute bottom-12 left-1/2 -translate-x-1/2 z-20 opacity-50 animate-bounce-slow text-black dark:text-white">
+      <a href="#bento-grid" aria-label="Hacer scroll hacia abajo" class="absolute bottom-12 left-1/2 -translate-x-1/2 z-20 opacity-50 animate-bounce-slow text-black dark:text-white hover:opacity-100 cursor-pointer transition-opacity duration-300">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-width="1.5" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
-      </div>
+      </a>
     </section>
 
     <!-- 2. MARQUEE TICKER TAPE -->
@@ -77,7 +77,7 @@ const seo = getSEO('home');
 
     <!-- 3. BENTO BOX GRID BRUTALISTA -->
     <section id="bento-grid" class="py-24 md:py-32 px-4 md:px-8 max-w-7xl mx-auto">
-      <div class="mb-16">
+      <div class="mb-16 scroll-reveal">
         <h2 class="text-xs uppercase tracking-[0.4em] text-black/40 dark:text-white/40 mb-2">Manifiesto</h2>
         <p class="text-2xl md:text-4xl font-brand uppercase tracking-normal leading-tight text-black dark:text-white max-w-3xl">
           Trasladamos la cultura de las disciplinas híbridas a la calle. Un sistema de producción cerrada para quienes entienden el valor de lo irrepetible.
@@ -87,8 +87,8 @@ const seo = getSEO('home');
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 auto-rows-[250px] md:auto-rows-[300px]">
         
         <!-- Caja 1: 100 Unidades (Grande) -->
-        <div class="bento-card md:col-span-2 bg-zinc-100 dark:bg-zinc-900 flex flex-col justify-between p-8 group relative overflow-hidden">
-          <div class="absolute inset-0 bg-[url('/images/brand/identidad.png')] bg-cover bg-center opacity-30 group-hover:opacity-20 group-hover:scale-105 transition-all duration-700 grayscale mix-blend-multiply dark:mix-blend-screen"></div>
+        <div class="bento-card scroll-reveal scroll-delay-1 md:col-span-2 bg-zinc-100 dark:bg-zinc-900 flex flex-col justify-between p-8 group relative overflow-hidden">
+          <div class="absolute inset-0 bg-[url('/images/brand/identidad.png')] bg-cover bg-center opacity-40 group-hover:opacity-20 group-hover:scale-105 transition-all duration-700 grayscale mix-blend-multiply dark:mix-blend-screen"></div>
           <div class="relative z-10">
             <span class="text-[10px] uppercase tracking-[0.4em] font-mono text-black/50 dark:text-white/50 border border-black/10 dark:border-white/10 px-3 py-1 rounded-full">Límite Estricto</span>
           </div>
@@ -102,7 +102,7 @@ const seo = getSEO('home');
         </div>
 
         <!-- Caja 2: 00 Reediciones (Pequeña con acento) -->
-        <div class="bento-card bg-black text-white dark:bg-white dark:text-black flex flex-col justify-between p-8 relative overflow-hidden group">
+        <div class="bento-card scroll-reveal scroll-delay-2 bg-black text-white dark:bg-white dark:text-black flex flex-col justify-between p-8 relative overflow-hidden group">
           <div class="absolute inset-0 opacity-20 group-hover:opacity-40 transition-opacity duration-500 noise-bg"></div>
           <div class="relative z-10 flex justify-end">
             <svg class="w-8 h-8 text-white dark:text-black transform group-hover:rotate-90 transition-transform duration-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-width="1.5" d="M18 6L6 18M6 6l12 12"></path></svg>
@@ -114,7 +114,7 @@ const seo = getSEO('home');
         </div>
 
         <!-- Caja 3: Material Técnico -->
-        <div class="bento-card bg-zinc-100 dark:bg-zinc-900 flex flex-col justify-between p-8 relative overflow-hidden group hover:scale-[1.02] hover:-rotate-1">
+        <div class="bento-card scroll-reveal scroll-delay-1 bg-zinc-100 dark:bg-zinc-900 flex flex-col justify-between p-8 relative overflow-hidden group hover:scale-[1.02] hover:-rotate-1">
           <div class="relative z-10">
             <svg class="w-6 h-6 text-black/40 dark:text-white/40 group-hover:text-black dark:group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
           </div>
@@ -125,7 +125,7 @@ const seo = getSEO('home');
         </div>
 
         <!-- Caja 4: Acceso (Larga) -->
-        <div class="bento-card md:col-span-2 relative group overflow-hidden border border-black/10 dark:border-white/10 flex items-center justify-center p-8 bg-white dark:bg-black hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors duration-500 hover:shadow-[0_0_40px_rgba(0,0,0,0.2)] dark:hover:shadow-[0_0_40px_rgba(255,255,255,0.2)]">
+        <div class="bento-card scroll-reveal scroll-delay-2 md:col-span-2 relative group overflow-hidden border border-black/10 dark:border-white/10 flex items-center justify-center p-8 bg-white dark:bg-black hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors duration-500 hover:shadow-[0_0_40px_rgba(0,0,0,0.2)] dark:hover:shadow-[0_0_40px_rgba(255,255,255,0.2)]">
           <a href="/acceso" class="absolute inset-0 z-20"></a>
           <div class="text-center z-10">
             <span class="text-[10px] uppercase tracking-[0.6em] font-bold block mb-4 opacity-50 group-hover:opacity-100 transition-opacity">Protocolo de Privacidad</span>
@@ -141,7 +141,7 @@ const seo = getSEO('home');
 
     <!-- 4. CTA FINAL MASSIVE -->
     <section class="py-32 px-6 border-t border-black/5 dark:border-white/5 bg-zinc-50/30 dark:bg-zinc-900/10 text-center">
-      <div class="max-w-2xl mx-auto flex flex-col items-center gap-12">
+      <div class="max-w-2xl mx-auto flex flex-col items-center gap-12 scroll-reveal">
         <h2 class="font-brand text-5xl md:text-7xl text-black dark:text-white uppercase tracking-tighter leading-none hover:tracking-[0.1em] hover:scale-105 transition-all duration-700 cursor-default">
           EL CATÁLOGO
         </h2>
@@ -153,6 +153,12 @@ const seo = getSEO('home');
 
   </div>
 </BaseLayout>
+
+<style is:global>
+  html {
+    scroll-behavior: smooth;
+  }
+</style>
 
 <style>
   /* Ruido visual estilo película analógica */
@@ -184,6 +190,20 @@ const seo = getSEO('home');
   .bento-card:hover {
     border-color: rgba(150, 150, 150, 0.4);
   }
+
+  /* Scroll Reveal Base */
+  .scroll-reveal {
+    opacity: 0;
+    transform: translateY(60px);
+    transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .scroll-reveal.is-revealed {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .scroll-delay-1 { transition-delay: 0.1s; }
+  .scroll-delay-2 { transition-delay: 0.2s; }
+  .scroll-delay-3 { transition-delay: 0.3s; }
 
   /* Hero Animations: Mecánico y Seco */
   .animate-stutter-in {
@@ -253,6 +273,31 @@ const seo = getSEO('home');
 </style>
 
 <script>
+  // Intersection Observer para Animaciones de Scroll a prueba de fallos
+  document.addEventListener('DOMContentLoaded', () => {
+    const revealObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-revealed');
+          observer.unobserve(entry.target); 
+        }
+      });
+    }, { 
+      threshold: 0, 
+      rootMargin: "50px" // Margen positivo asegura que se active antes de que entre o aunque esté al borde inferior
+    });
+
+    document.querySelectorAll('.scroll-reveal').forEach(el => {
+      revealObserver.observe(el);
+      // Fallback estricto de seguridad: Si la API de IntersectionObserver está inactiva en el navegador
+      setTimeout(() => {
+        if (!el.classList.contains('is-revealed') && el.getBoundingClientRect().top < window.innerHeight) {
+          el.classList.add('is-revealed');
+        }
+      }, 500);
+    });
+  });
+
   // Animación del contador "100" al hacer scroll
   const counterEl = document.querySelector('.counter-animate');
   let started = false;
