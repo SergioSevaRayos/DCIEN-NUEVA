@@ -14,13 +14,14 @@ const seo = getSEO('home');
     <!-- 1. HERO SECTION INMERSIVO -->
     <section class="relative min-h-[100dvh] flex flex-col items-center justify-center px-6 overflow-hidden pt-[var(--header-height)]">
       <!-- Video de fondo inmersivo -->
-      <div class="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
+      <div class="absolute inset-0 min-h-[100dvh] overflow-hidden pointer-events-none z-0">
         <video 
           autoplay 
           loop 
           muted 
           playsinline 
-          class="absolute inset-0 w-full h-full object-cover opacity-80 dark:opacity-60"
+          class="absolute inset-0 object-cover object-center opacity-80 dark:opacity-60"
+          style="width: 100vw; height: 100%; min-height: 110dvh;"
         >
           <!-- Para usar tu propio video, guárdalo en la carpeta public/videos/ con el nombre hero.mp4 -->
           <source src="/videos/hero.mp4" type="video/mp4" />
@@ -58,7 +59,7 @@ const seo = getSEO('home');
       </div>
 
       <!-- Arrow Down Indicador -->
-      <a href="#bento-grid" aria-label="Hacer scroll hacia abajo" class="absolute bottom-12 left-1/2 -translate-x-1/2 z-20 opacity-50 animate-bounce-slow text-black dark:text-white hover:opacity-100 cursor-pointer transition-opacity duration-300">
+      <a href="#bento-grid" aria-label="Hacer scroll hacia abajo" class="absolute bottom-2 md:bottom-8 left-1/2 -translate-x-1/2 z-20 opacity-50 animate-bounce-slow text-black dark:text-white hover:opacity-100 cursor-pointer transition-opacity duration-300">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-width="1.5" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
       </a>
     </section>
