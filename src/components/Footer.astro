@@ -3,22 +3,114 @@ const currentYear = new Date().getFullYear();
 ---
 
 <footer class="bg-white dark:bg-black border-t border-black/5 dark:border-white/10 py-16 mt-32 transition-colors duration-300">
-  <div class="container-custom">
-    <div class="text-center mb-12">
-      <h3 class="font-brand text-3xl mb-3 tracking-wider text-black dark:text-white">DCIEN</h3>
-      <p class="text-xs text-black/40 dark:text-white/40 uppercase tracking-[0.3em]">Unique & Exclusive</p>
-    </div>
+  <div class="container-custom max-w-7xl mx-auto px-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-24">
+      
+      <!-- COLUMNA IZQUIERDA: Marca y Enlaces Legales -->
+      <div class="flex flex-col justify-between">
+        <!-- Brand Info -->
+        <div class="mb-12">
+          <h3 class="font-brand text-5xl md:text-6xl mb-4 tracking-tight text-black dark:text-white">DCIEN</h3>
+          <p class="text-xs text-black/40 dark:text-white/40 uppercase tracking-[0.3em] mb-6">Premium Streetwear &copy; {currentYear}</p>
+          <p class="text-sm text-black/60 dark:text-white/60 leading-relaxed max-w-md">
+            Unidades físicas limitadas bajo protocolo estricto. La exclusividad real no admite reediciones.
+          </p>
+        </div>
 
-    <div class="flex flex-wrap justify-center gap-x-8 gap-y-4 text-xs uppercase tracking-[0.2em] mb-12">
-      <a href="/aviso-legal" class="text-black/50 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors">Aviso Legal</a>
-      <a href="/privacidad" class="text-black/50 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors">Privacidad</a>
-      <a href="/cookies" class="text-black/50 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors">Cookies</a>
-      <a href="/condiciones" class="text-black/50 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors">Condiciones</a>
-      <a href="/devoluciones" class="text-black/50 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors">Devoluciones</a>
-    </div>
+        <!-- Links -->
+        <div class="flex flex-col gap-4 text-xs uppercase tracking-[0.2em]">
+          <a href="/aviso-legal" class="text-black/50 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors w-fit">Aviso Legal</a>
+          <a href="/privacidad" class="text-black/50 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors w-fit">Política de Privacidad</a>
+          <a href="/cookies" class="text-black/50 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors w-fit">Política de Cookies</a>
+          <a href="/condiciones" class="text-black/50 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors w-fit">Condiciones de Venta</a>
+          <a href="/devoluciones" class="text-black/50 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors w-fit">Cambios y Devoluciones</a>
+        </div>
+      </div>
 
-    <div class="text-center text-xs text-black/30 dark:text-white/30">
-      <p>© {currentYear} DCIEN. Todos los derechos reservados.</p>
+      <!-- COLUMNA DERECHA: Soporte y Formulario -->
+      <div class="border border-black/10 dark:border-white/10 p-8 md:p-12 bg-zinc-50 dark:bg-zinc-950 flex flex-col justify-center">
+         <h4 class="font-brand text-3xl uppercase mb-4 text-black dark:text-white">Soporte</h4>
+         <p class="text-[10px] uppercase tracking-widest text-black/60 dark:text-white/60 mb-8 leading-relaxed">
+           ¿Problemas con el acceso? Escríbenos directamente desde aquí o envíanos un DM a nuestro perfil de <a href="https://www.instagram.com/dcien.esp/" target="_blank" class="underline hover:text-black dark:hover:text-white transition-colors font-bold">Instagram</a>.
+         </p>
+         
+         <form id="support-form" class="space-y-6">
+           <div>
+             <label for="support-name" class="sr-only">Nombre o IG</label>
+             <input type="text" id="support-name" required placeholder="Nombre o Usuario de IG" class="w-full bg-transparent border-b border-black/20 dark:border-white/20 px-0 py-3 text-sm text-black dark:text-white focus:outline-none focus:border-black dark:focus:border-white placeholder-black/30 dark:placeholder-white/30 transition-colors" />
+           </div>
+           <div>
+             <label for="support-email" class="sr-only">Email</label>
+             <input type="email" id="support-email" required placeholder="Tu Email de Contacto" class="w-full bg-transparent border-b border-black/20 dark:border-white/20 px-0 py-3 text-sm text-black dark:text-white focus:outline-none focus:border-black dark:focus:border-white placeholder-black/30 dark:placeholder-white/30 transition-colors" />
+           </div>
+           <div>
+             <label for="support-message" class="sr-only">Mensaje</label>
+             <textarea id="support-message" required placeholder="Explica tu incidencia con el acceso..." rows="3" class="w-full bg-transparent border-b border-black/20 dark:border-white/20 px-0 py-3 text-sm text-black dark:text-white focus:outline-none focus:border-black dark:focus:border-white placeholder-black/30 dark:placeholder-white/30 transition-colors resize-none"></textarea>
+           </div>
+           <button type="submit" class="w-full mt-4 border border-black dark:border-white bg-black text-white dark:bg-white dark:text-black uppercase tracking-[0.3em] text-[10px] font-bold py-4 hover:bg-transparent hover:text-black dark:hover:bg-transparent dark:hover:text-white transition-all duration-300">
+             Solicitar Soporte
+           </button>
+         </form>
+      </div>
+
     </div>
   </div>
 </footer>
+
+<script>
+  // Manejador del formulario de soporte (Envío al backend)
+  const supportForm = document.getElementById('support-form') as HTMLFormElement;
+  
+  if (supportForm) {
+    supportForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const submitBtn = supportForm.querySelector('button[type="submit"]') as HTMLButtonElement;
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = 'ENVIANDO...';
+      submitBtn.disabled = true;
+
+      const name = (document.getElementById('support-name') as HTMLInputElement).value;
+      const email = (document.getElementById('support-email') as HTMLInputElement).value;
+      const message = (document.getElementById('support-message') as HTMLTextAreaElement).value;
+
+      try {
+        // Enviar la petición a tu endpoint de Laravel/PHP
+        const response = await fetch('/api/soporte.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ name, email, message })
+        });
+
+        if (response.ok) {
+          if ((window as any).Toast) {
+            (window as any).Toast.fire({
+              icon: 'success',
+              title: 'Mensaje enviado correctamente. Revisaremos tu acceso.'
+            });
+          } else {
+            alert('Mensaje enviado correctamente. Revisaremos tu acceso.');
+          }
+          supportForm.reset();
+        } else {
+          throw new Error('Error en el servidor');
+        }
+      } catch (error) {
+        if ((window as any).Toast) {
+          (window as any).Toast.fire({
+            icon: 'error',
+            title: 'Hubo un error al enviar el mensaje. Por favor, contáctanos vía Instagram.'
+          });
+        } else {
+          alert('Hubo un error al enviar el mensaje. Por favor, contáctanos vía Instagram.');
+        }
+      } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+      }
+    });
+  }
+</script>

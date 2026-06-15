@@ -11,7 +11,7 @@ export const SITE_CONFIG = {
   name: 'DCIEN',
   slogan: 'Unique & Exclusive',
   url: 'https://d-cien.es',
-  description: 'Sistema de series limitadas. 100 unidades numeradas. Exclusividad real.',
+  description: 'Premium Streetwear de series limitadas. 100 unidades numeradas. Exclusividad real para atletas híbridos.',
   locale: 'es_ES',
   twitter: '@dcien',
   logo: '/images/brand/logo.png',
@@ -42,41 +42,41 @@ export interface SEOConfig {
 export function getSEO(page: string): SEOConfig {
   const pages: Record<string, SEOConfig> = {
     home: {
-      title: 'DCIEN | Registro de Equipación Técnica Limitada',
-      description: 'Equipación técnica de edición limitada para atletas de fuerza y alta intensidad. Series numeradas de 100 unidades sin reediciones. El registro oficial de exclusividad real.',
-      keywords: 'dcien, equipación técnica, ropa entrenamiento fuerza, halterofilia, crossfit, series numeradas, edición limitada, registro textil, 100 unidades',
+      title: 'DCIEN | Premium Streetwear de Edición Limitada',
+      description: 'Streetwear premium de edición limitada para atletas híbridos. Series numeradas de 100 unidades sin reediciones. El registro oficial de exclusividad urbana.',
+      keywords: 'dcien, premium streetwear, moda urbana exclusiva, streetwear para atletas, cultura híbrida, series numeradas, edición limitada, 100 unidades, ropa de lujo urbano',
       ogImage: SITE_CONFIG.ogImage,
       canonical: SITE_CONFIG.url,
     },
 
     'series-activas': {
-      title: 'Series Activas: Protocolo de Acceso | DCIEN',
-      description: 'Accede a la serie activa de equipación técnica numerada. Producción cerrada de 100 unidades para atletas de fuerza. Sin reediciones una vez agotado el registro.',
-      keywords: 'serie activa dcien, equipación técnica fuerza, ropa entrenamiento exclusiva, numeración física, registro atletas, 100 unidades, alta intensidad',
+      title: 'Series Activas: Colección Premium | DCIEN',
+      description: 'Accede a la serie activa de streetwear numerado. Producción cerrada de 100 unidades de moda urbana premium. Sin reediciones una vez agotado.',
+      keywords: 'serie activa dcien, colección streetwear premium, moda urbana exclusiva, numeración física, 100 unidades, ropa lifestyle atletas',
       ogImage: SITE_CONFIG.ogImage,
       canonical: `${SITE_CONFIG.url}/series-activas`,
     },
 
     archivo: {
       title: 'Registro Histórico de Series | DCIEN',
-      description: 'Consulta el archivo de activos numerados. Series técnicas agotadas que representan la historia y evolución del sistema DCIEN. Piezas de colección irrepetibles.',
-      keywords: 'archivo dcien, series agotadas, activos numerados, historial de lanzamientos, piezas de colección técnica',
+      description: 'Consulta el archivo de activos numerados. Series de streetwear premium agotadas que representan la historia de DCIEN. Piezas de colección urbana irrepetibles.',
+      keywords: 'archivo dcien, series streetwear agotadas, activos numerados, historial de moda urbana, piezas de colección exclusivas',
       ogImage: SITE_CONFIG.ogImage,
       canonical: `${SITE_CONFIG.url}/archivo`,
     },
 
     marca: {
       title: 'Filosofía y Protocolo | DCIEN',
-      description: 'DCIEN es un sistema de producción cerrada diseñado para quienes entienden que el entrenamiento es una disciplina de magnesio y esfuerzo. 100 unidades. Sin reposición.',
-      keywords: 'filosofía dcien, sobre dcien, entrenamiento de alta intensidad, disciplina de fuerza, protocolo de producción cerrada',
+      description: 'DCIEN es el código de vestimenta de quienes dominan la fuerza. Confeccionamos exclusividad urbana bajo un protocolo cerrado de 100 unidades. Sin reposición.',
+      keywords: 'filosofía dcien, sobre dcien, marca premium streetwear, cultura del esfuerzo, protocolo de producción cerrada, moda exclusiva',
       ogImage: SITE_CONFIG.ogImage,
       canonical: `${SITE_CONFIG.url}/marca`,
     },
 
     acceso: {
       title: 'Validación de Perfil y Acceso | DCIEN',
-      description: 'Portal de validación de identidad para atletas. Acceso restringido mediante credenciales autorizadas al sistema de series activas.',
-      keywords: 'acceso restringido, validación perfil, login dcien, mi cuenta dcien',
+      description: 'Portal de validación de identidad. Acceso restringido mediante credenciales al sistema de series activas de streetwear premium.',
+      keywords: 'acceso restringido, validación perfil, login dcien, mi cuenta dcien streetwear',
       ogImage: SITE_CONFIG.ogImage,
       canonical: `${SITE_CONFIG.url}/acceso`,
       noindex: true,
@@ -92,8 +92,8 @@ export function getSEO(page: string): SEOConfig {
 
     privacidad: {
       title: 'Política de Privacidad | DCIEN',
-      description: 'Protocolo de protección de datos y privacidad de los atletas registrados en el sistema DCIEN.',
-      keywords: 'privacidad dcien, protección de datos, rgpd atletas',
+      description: 'Protocolo de protección de datos y privacidad de los usuarios registrados en el sistema DCIEN.',
+      keywords: 'privacidad dcien, protección de datos, rgpd dcien',
       canonical: `${SITE_CONFIG.url}/privacidad`,
       noindex: true,
     },
@@ -108,16 +108,16 @@ export function getSEO(page: string): SEOConfig {
 
     condiciones: {
       title: 'Condiciones de Registro y Compra | DCIEN',
-      description: 'Términos y condiciones del protocolo de adquisición de activos numerados DCIEN.',
-      keywords: 'condiciones de compra, términos de venta, protocolo de adquisición',
+      description: 'Términos y condiciones del protocolo de adquisición de activos de moda urbana numerados DCIEN.',
+      keywords: 'condiciones de compra, términos de venta, protocolo de adquisición streetwear',
       canonical: `${SITE_CONFIG.url}/condiciones`,
       noindex: true,
     },
 
     devoluciones: {
       title: 'Protocolo de Devoluciones | DCIEN',
-      description: 'Garantía técnica y política de devoluciones para unidades de series limitadas.',
-      keywords: 'devoluciones dcien, reembolsos, garantía técnica',
+      description: 'Garantía y política de devoluciones para unidades de series limitadas DCIEN.',
+      keywords: 'devoluciones dcien, reembolsos, garantía premium',
       canonical: `${SITE_CONFIG.url}/devoluciones`,
       noindex: true,
     },
@@ -141,9 +141,9 @@ export function getSeriesSEO(
   const mainImage = images[0] ? (images[0].startsWith('http') ? images[0] : `${SITE_CONFIG.url}${images[0]}`) : SITE_CONFIG.ogImage;
 
   return {
-    title: `${name} | Equipación Técnica DCIEN`,
-    description: `${description} Activo numerado de edición limitada (100 unidades). Diseñado para atletas de alta intensidad.`,
-    keywords: `${name.toLowerCase()}, equipación técnica, dcien, serie limitada, ropa entrenamiento fuerza, halterofilia, crossfit`,
+    title: `${name} | Premium Streetwear DCIEN`,
+    description: `${description} Activo numerado de streetwear exclusivo (100 unidades). Diseñado para la cultura del esfuerzo.`,
+    keywords: `${name.toLowerCase()}, premium streetwear, dcien, moda urbana exclusiva, serie limitada, cultura híbrida, ropa lifestyle`,
     ogImage: mainImage,
     canonical: `${SITE_CONFIG.url}/series-activas/${slug}`,
   };
@@ -175,7 +175,7 @@ export function getOrganizationSchema() {
       availableLanguage: ['Spanish'],
     },
     sameAs: [
-      'https://instagram.com/dcien',
+      'https://instagram.com/dcien.esp',
     ],
   };
 }

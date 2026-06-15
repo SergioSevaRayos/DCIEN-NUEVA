@@ -97,6 +97,11 @@ const { seo, currentPath = Astro.url.pathname } = Astro.props;
           showConfirmButton: false,
           timer: 3000,
           timerProgressBar: true,
+          customClass: {
+            popup: 'dcien-toast',
+            title: 'dcien-toast-title',
+            icon: 'dcien-toast-icon'
+          }
         });
         (window as any).Toast = Toast;
       };
@@ -113,6 +118,37 @@ const { seo, currentPath = Astro.url.pathname } = Astro.props;
 <style is:global>
   html {
     scroll-behavior: smooth;
+  }
+
+  /* SweetAlert2 DCIEN Estética Brutalista */
+  .dcien-toast {
+    border-radius: 0 !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid rgba(0,0,0,0.1) !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+    padding: 1rem !important;
+  }
+  .dark .dcien-toast {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+  }
+  .dcien-toast-title {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+    font-size: 0.65rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.1em !important;
+    font-weight: 600 !important;
+    margin: 0 !important;
+  }
+  .dcien-toast-icon {
+    transform: scale(0.6) !important;
+    margin: 0 0.5rem 0 0 !important;
+  }
+  .swal2-timer-progress-bar {
+    background-color: currentColor !important;
+    opacity: 0.2 !important;
   }
   img {
     height: auto;

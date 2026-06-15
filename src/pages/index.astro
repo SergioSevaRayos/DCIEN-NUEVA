@@ -6,69 +6,280 @@ const seo = getSEO('home');
 ---
 
 <BaseLayout seo={seo}>
-  <main class="relative z-10">
+  <div class="pointer-events-none fixed inset-0 z-50 opacity-[0.03] mix-blend-overlay noise-bg"></div>
+
+  <!-- Contenedor principal sin anidar <main>. Compensamos el header height para que el video suba hasta el top -->
+  <div class="relative z-10 bg-white dark:bg-black transition-colors duration-500 overflow-x-hidden -mt-[var(--header-height)]">
     
-    <section class="min-h-screen flex flex-col items-center justify-center relative px-6">
-      <div class="text-center mb-16 animate-fade-in">
-        <h2 class="font-brand text-[6rem] md:text-[12rem] tracking-[0.05em] leading-none text-black dark:text-white">
-          DCIEN
-        </h2>
-        <p class="mt-4 text-xs md:text-sm uppercase tracking-[0.5em] text-black/50 dark:text-white/40">
-          100 Unidades. Numeración Física. Sin Reediciones.
-        </p>
+    <!-- 1. HERO SECTION INMERSIVO -->
+    <section class="relative min-h-[100dvh] flex flex-col items-center justify-center px-6 overflow-hidden pt-[var(--header-height)]">
+      <!-- Video de fondo inmersivo -->
+      <div class="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
+        <video 
+          autoplay 
+          loop 
+          muted 
+          playsinline 
+          class="absolute inset-0 w-full h-full object-cover opacity-80 dark:opacity-60"
+        >
+          <!-- Para usar tu propio video, guárdalo en la carpeta public/videos/ con el nombre hero.mp4 -->
+          <source src="/videos/hero.mp4" type="video/mp4" />
+        </video>
+        <!-- Overlay oscuro para asegurar legibilidad del texto -->
+        <div class="absolute inset-0 bg-white/20 dark:bg-black/60"></div>
       </div>
 
-      <div class="text-center space-y-6 mb-24 animate-slide-up" style="animation-delay: 0.2s;">
-        <h1 class="text-sm md:text-base uppercase tracking-[0.6em] text-black dark:text-white font-bold">
-          Equipación Técnica de Alta Intensidad
-        </h1>
-        <p class="max-w-md mx-auto text-[10px] md:text-xs uppercase tracking-[0.2em] text-black/60 dark:text-white/60 leading-relaxed">
-          Diseñamos activos textiles para disciplinas de fuerza. <br/>
-          Un sistema de producción cerrada para quienes entienden el valor de lo irrepetible.
-        </p>
-      </div>
-
-      <div class="text-center space-y-4 animate-slide-up" style="animation-delay: 0.4s;">
-        <div class="flex items-center justify-center gap-3">
-            <span class="relative flex h-2 w-2">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
-            </span>
-            <h2 class="text-[10px] md:text-xs uppercase tracking-[0.6em] text-black/40 dark:text-white/40">
-                Protocolo de Acceso
-            </h2>
+      <!-- Contenido del Hero Frontal -->
+      <div class="relative z-20 flex flex-col items-center justify-center h-full w-full max-w-7xl mx-auto space-y-12">
+        
+        <!-- Texto Principal Cinético -->
+        <div class="text-center z-10 w-full max-w-7xl mx-auto flex flex-col items-center justify-center">
+          <h1 class="font-brand text-[25vw] md:text-[18vw] leading-[0.8] tracking-tighter text-black dark:text-white select-none drop-shadow-2xl animate-stutter-in">
+            DCIEN
+          </h1>
+          
+          <div class="flex items-center justify-center gap-6 mt-6 animate-snap-fade">
+            <span class="h-[1px] w-12 md:w-24 bg-black/50 dark:bg-white/50"></span>
+            <p class="text-xs md:text-sm uppercase tracking-[0.5em] text-black dark:text-white font-bold glitch-text" data-text="CULTURA HÍBRIDA. RENDIMIENTO FÍSICO.">
+              Cultura Híbrida. Rendimiento Físico.
+            </p>
+            <span class="h-[1px] w-12 md:w-24 bg-black/50 dark:bg-white/50"></span>
+          </div>
         </div>
-        <a href="/series-activas" class="inline-block text-sm md:text-base uppercase tracking-[0.4em] text-black dark:text-white border-b border-black dark:border-white pb-1 hover:opacity-50 transition-all">
-          Ver Series Activa
+
+        <!-- Botón Hero Central -->
+        <div class="mt-8">
+          <a href="/series-activas" class="btn-primary group relative overflow-hidden bg-white text-black hover:bg-black hover:text-white dark:bg-black dark:text-white dark:hover:bg-white dark:hover:text-black transition-colors duration-500 px-8 py-4 border border-black/10 dark:border-white/10">
+            <span class="relative z-10 font-mono text-[10px] uppercase tracking-[0.4em] font-bold">Ver Series Activas</span>
+            <div class="absolute inset-0 bg-black dark:bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+          </a>
+        </div>
+
+      </div>
+
+      <!-- Arrow Down Indicador -->
+      <div class="absolute bottom-12 left-1/2 -translate-x-1/2 z-20 opacity-50 animate-bounce-slow text-black dark:text-white">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-width="1.5" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+      </div>
+    </section>
+
+    <!-- 2. MARQUEE TICKER TAPE -->
+    <div class="w-full bg-black text-white dark:bg-white dark:text-black py-4 overflow-hidden border-y border-black/10 dark:border-white/10 flex items-center">
+      <div class="marquee-container flex whitespace-nowrap uppercase text-[10px] font-bold tracking-[0.3em]">
+        <span class="marquee-content mx-4">
+          // 100 UNIDADES MUNDIALES // SIN REEDICIONES // PROTOCOLO CERRADO // NUMERACIÓN FÍSICA ÚNICA // ACCESO RESTRINGIDO // PREMIUM STREETWEAR // CULTURA HÍBRIDA //
+        </span>
+        <span class="marquee-content mx-4">
+          // 100 UNIDADES MUNDIALES // SIN REEDICIONES // PROTOCOLO CERRADO // NUMERACIÓN FÍSICA ÚNICA // ACCESO RESTRINGIDO // PREMIUM STREETWEAR // CULTURA HÍBRIDA //
+        </span>
+      </div>
+    </div>
+
+    <!-- 3. BENTO BOX GRID BRUTALISTA -->
+    <section id="bento-grid" class="py-24 md:py-32 px-4 md:px-8 max-w-7xl mx-auto">
+      <div class="mb-16">
+        <h2 class="text-xs uppercase tracking-[0.4em] text-black/40 dark:text-white/40 mb-2">Manifiesto</h2>
+        <p class="text-2xl md:text-4xl font-brand uppercase tracking-normal leading-tight text-black dark:text-white max-w-3xl">
+          Trasladamos la cultura de las disciplinas híbridas a la calle. Un sistema de producción cerrada para quienes entienden el valor de lo irrepetible.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 auto-rows-[250px] md:auto-rows-[300px]">
+        
+        <!-- Caja 1: 100 Unidades (Grande) -->
+        <div class="bento-card md:col-span-2 bg-zinc-100 dark:bg-zinc-900 flex flex-col justify-between p-8 group relative overflow-hidden">
+          <div class="absolute inset-0 bg-[url('/images/brand/identidad.png')] bg-cover bg-center opacity-30 group-hover:opacity-20 group-hover:scale-105 transition-all duration-700 grayscale mix-blend-multiply dark:mix-blend-screen"></div>
+          <div class="relative z-10">
+            <span class="text-[10px] uppercase tracking-[0.4em] font-mono text-black/50 dark:text-white/50 border border-black/10 dark:border-white/10 px-3 py-1 rounded-full">Límite Estricto</span>
+          </div>
+          <div class="relative z-10">
+            <div class="flex items-baseline gap-2">
+              <span class="text-7xl md:text-9xl font-brand tracking-tighter text-black dark:text-white counter-animate">100</span>
+              <span class="text-xs uppercase tracking-[0.2em] font-bold text-black/40 dark:text-white/40">Unidades</span>
+            </div>
+            <p class="text-[11px] uppercase tracking-widest text-black/60 dark:text-white/60 mt-2 max-w-sm">Cuando el contador llega a cero, la serie se destruye para siempre.</p>
+          </div>
+        </div>
+
+        <!-- Caja 2: 00 Reediciones (Pequeña con acento) -->
+        <div class="bento-card bg-black text-white dark:bg-white dark:text-black flex flex-col justify-between p-8 relative overflow-hidden group">
+          <div class="absolute inset-0 opacity-20 group-hover:opacity-40 transition-opacity duration-500 noise-bg"></div>
+          <div class="relative z-10 flex justify-end">
+            <svg class="w-8 h-8 text-white dark:text-black transform group-hover:rotate-90 transition-transform duration-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-width="1.5" d="M18 6L6 18M6 6l12 12"></path></svg>
+          </div>
+          <div class="relative z-10">
+            <span class="text-6xl md:text-7xl font-brand tracking-tighter group-hover:text-red-500 transition-colors duration-500">00</span>
+            <p class="text-[10px] uppercase tracking-[0.3em] font-bold mt-2">Reediciones Producidas</p>
+          </div>
+        </div>
+
+        <!-- Caja 3: Material Técnico -->
+        <div class="bento-card bg-zinc-100 dark:bg-zinc-900 flex flex-col justify-between p-8 relative overflow-hidden group hover:scale-[1.02] hover:-rotate-1">
+          <div class="relative z-10">
+            <svg class="w-6 h-6 text-black/40 dark:text-white/40 group-hover:text-black dark:group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+          </div>
+          <div class="relative z-10">
+            <h3 class="text-xl md:text-2xl font-brand uppercase tracking-wider text-black dark:text-white mb-2">Calidad Inquebrantable ∞</h3>
+            <p class="text-[10px] uppercase tracking-widest text-black/50 dark:text-white/50">Gramaje pesado y acabados premium diseñados para perdurar.</p>
+          </div>
+        </div>
+
+        <!-- Caja 4: Acceso (Larga) -->
+        <div class="bento-card md:col-span-2 relative group overflow-hidden border border-black/10 dark:border-white/10 flex items-center justify-center p-8 bg-white dark:bg-black hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors duration-500 hover:shadow-[0_0_40px_rgba(0,0,0,0.2)] dark:hover:shadow-[0_0_40px_rgba(255,255,255,0.2)]">
+          <a href="/acceso" class="absolute inset-0 z-20"></a>
+          <div class="text-center z-10">
+            <span class="text-[10px] uppercase tracking-[0.6em] font-bold block mb-4 opacity-50 group-hover:opacity-100 transition-opacity">Protocolo de Privacidad</span>
+            <h3 class="text-3xl md:text-5xl font-brand uppercase tracking-tighter flex items-center gap-4">
+              Solicitar Acceso
+              <svg class="w-8 h-8 md:w-10 md:h-10 transform group-hover:translate-x-6 transition-transform duration-500 cubic-bezier(0.16, 1, 0.3, 1)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-width="1.5" d="M5 12h14M12 5l7 7-7 7"></path></svg>
+            </h3>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 4. CTA FINAL MASSIVE -->
+    <section class="py-32 px-6 border-t border-black/5 dark:border-white/5 bg-zinc-50/30 dark:bg-zinc-900/10 text-center">
+      <div class="max-w-2xl mx-auto flex flex-col items-center gap-12">
+        <h2 class="font-brand text-5xl md:text-7xl text-black dark:text-white uppercase tracking-tighter leading-none hover:tracking-[0.1em] hover:scale-105 transition-all duration-700 cursor-default">
+          EL CATÁLOGO
+        </h2>
+        <a href="/series-activas" class="btn-primary inline-block px-12 py-5 text-sm">
+          EXPLORAR SERIES ACTIVAS
         </a>
       </div>
     </section>
 
-    <section class="py-32 px-6 border-t border-black/5 dark:border-white/5 bg-zinc-50/50 dark:bg-zinc-900/20">
-      <div class="max-w-4xl mx-auto text-center space-y-12">
-        <h2 class="font-brand text-4xl md:text-6xl text-black dark:text-white uppercase tracking-[0.02em] leading-[1.1]">
-          <span class="block">Protocolo de Producción Cerrada</span>
-          <span class="block text-black/60 dark:text-white/50">para Atletas de Fuerza</span>
-        </h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div class="space-y-2">
-            <span class="text-2xl font-bold text-black dark:text-white">100</span>
-            <p class="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">Unidades por serie</p>
-          </div>
-          <div class="space-y-2">
-            <span class="text-2xl font-bold text-black dark:text-white">00</span>
-            <p class="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">Reediciones producidas</p>
-          </div>
-          <div class="space-y-2">
-            <span class="text-2xl font-bold text-black dark:text-white">∞</span>
-            <p class="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">Durabilidad técnica</p>
-          </div>
-        </div>
-        <p class="text-sm md:text-base text-black/60 dark:text-white/60 max-w-xl mx-auto leading-relaxed italic">
-          "No es solo ropa de entrenamiento. Es el registro físico de tu disciplina. Cuando el contador llega a cero, la serie se destruye para siempre."
-        </p>
-      </div>
-    </section>
-
-  </main>
+  </div>
 </BaseLayout>
+
+<style>
+  /* Ruido visual estilo película analógica */
+  .noise-bg {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  }
+
+  /* Marquee infinito */
+  .marquee-container {
+    display: flex;
+    width: 200%;
+    animation: marquee 20s linear infinite;
+  }
+  .marquee-content {
+    flex: 0 0 50%;
+    display: flex;
+    justify-content: space-around;
+  }
+  @keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* Estilos Bento Box */
+  .bento-card {
+    border: 1px solid rgba(150, 150, 150, 0.1);
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.6s ease;
+  }
+  .bento-card:hover {
+    border-color: rgba(150, 150, 150, 0.4);
+  }
+
+  /* Hero Animations: Mecánico y Seco */
+  .animate-stutter-in {
+    animation: stutter-in 0.8s cubic-bezier(0.8, 0, 0.2, 1) both;
+  }
+  @keyframes stutter-in {
+    0% { opacity: 0; transform: scale(1.02); }
+    5% { opacity: 1; transform: scale(1.01); }
+    10% { opacity: 0; transform: scale(1.01); }
+    15% { opacity: 1; transform: scale(1); }
+    20% { opacity: 0; transform: scale(1); }
+    30% { opacity: 1; transform: scale(1); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  /* Fade seco sin deslizamiento para el subtitulo */
+  .animate-snap-fade {
+    animation: snap-fade 1.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes snap-fade {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
+  /* Glitch Text Effect */
+  .glitch-text::before,
+  .glitch-text::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .group:hover .glitch-text::before {
+    left: 2px;
+    text-shadow: -2px 0 #ff0000;
+    animation: glitch-anim-1 0.2s linear infinite alternate-reverse;
+    opacity: 0.8;
+  }
+  .group:hover .glitch-text::after {
+    left: -2px;
+    text-shadow: 2px 0 #0000ff;
+    animation: glitch-anim-2 0.3s linear infinite alternate-reverse;
+    opacity: 0.8;
+  }
+  @keyframes glitch-anim-1 {
+    0% { clip-path: inset(20% 0 80% 0); }
+    100% { clip-path: inset(50% 0 30% 0); }
+  }
+  @keyframes glitch-anim-2 {
+    0% { clip-path: inset(10% 0 60% 0); }
+    100% { clip-path: inset(70% 0 10% 0); }
+  }
+
+  /* Float Animation */
+  .animate-bounce-slow {
+    animation: bounce-slow 3s infinite;
+  }
+  @keyframes bounce-slow {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-25%); }
+  }
+</style>
+
+<script>
+  // Animación del contador "100" al hacer scroll
+  const counterEl = document.querySelector('.counter-animate');
+  let started = false;
+
+  const counterObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && !started && counterEl) {
+        started = true;
+        let count = 0;
+        const target = 100;
+        const speed = 20; // ms por incremento
+        
+        const updateCount = () => {
+          if (count < target) {
+            count += 2; // de 2 en 2 para que sea ágil
+            counterEl.textContent = count.toString();
+            setTimeout(updateCount, speed);
+          } else {
+            counterEl.textContent = target.toString();
+          }
+        };
+        updateCount();
+      }
+    });
+  }, { threshold: 0.5 });
+
+  if (counterEl) {
+    counterObserver.observe(counterEl);
+  }
+</script>
