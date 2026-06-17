@@ -30,28 +30,38 @@ const seo = getSEO('marca');
   </section>
   
 
-  <section class="py-24 border-t  reveal dark:border-white/10">
-    <div class="container-custom">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-        <div class="bg-zinc-50 dark:bg-zinc-950 p-6">
+  <section class="border-t border-black/10 dark:border-white/10 relative" style="clip-path: inset(0);">
+    <!-- Background Imagen Fija -->
+    <img 
+      src="/images/brand/identidad5.jpg" 
+      alt="Fondo Interrupción Masiva" 
+      class="fixed top-0 left-0 w-full h-[100vh] object-cover -z-20"
+    />
+    
+    <!-- Overlay oscuro para que el texto sea legible -->
+    <div class="fixed top-0 left-0 w-full h-[100vh] bg-black/80 dark:bg-black/80 -z-10"></div>
+
+    <div class="container-custom relative z-10 min-h-screen flex items-center py-24">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-16 items-center w-full">
+        <div class="bg-zinc-50/10 dark:bg-zinc-950/50 p-6 backdrop-blur-sm border border-white/10 reveal">
           <img
             src="/images/brand/identidad4.png"
             alt="Detalle textil DCIEN diseñado para alta intensidad"
             class="w-full h-auto object-contain shadow-2xl"
           />
         </div>
-        <div class="space-y-6">
-          <h1 class="text-xs uppercase tracking-[0.5em] text-black/40 dark:text-white/40">Filosofía</h1>
-          <h2 class="font-brand text-6xl text-black dark:text-white leading-none">INTERRUPCIÓN<br/>MASIVA</h2>
-          <div class="space-y-4 text-lg text-black/60 dark:text-white/60">
+        <div class="space-y-6 reveal reveal-delay-1">
+          <h1 class="text-xs uppercase tracking-[0.5em] text-white/50">Filosofía</h1>
+          <h2 class="font-brand text-6xl text-white leading-none">INTERRUPCIÓN<br/>MASIVA</h2>
+          <div class="space-y-4 text-lg text-white/70">
             <p>
               Diseñamos premium streetwear bajo un sistema de 
-              <strong>producción cerrada</strong> que elimina la reproducción comercial masiva.
+              <strong class="text-white">producción cerrada</strong> que elimina la reproducción comercial masiva.
             </p>
             <p>
               Operamos bajo un protocolo estricto: cada serie nace con un límite finito de 100 unidades. 
               Cuando el contador llega a cero, los archivos se destruyen. 
-              <span class="text-black dark:text-white font-bold italic">En DCIEN no existe la reedición.</span>
+              <span class="text-white font-bold italic">En DCIEN no existe la reedición.</span>
             </p>
           </div>
         </div>

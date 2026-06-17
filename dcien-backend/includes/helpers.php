@@ -51,7 +51,15 @@ function logError($message, $context = []) {
     if (!empty($context)) {
         $log .= ' | Context: ' . json_encode($context);
     }
-    error_log($log);
+    $log .= PHP_EOL;
+
+    $logDir = dirname(__DIR__) . '/logs';
+    if (!is_dir($logDir)) {
+        @mkdir($logDir, 0755, true);
+    }
+    
+    $logFile = $logDir . '/app.log';
+    error_log($log, 3, $logFile);
 }
 
 function generateToken($length = 32) {

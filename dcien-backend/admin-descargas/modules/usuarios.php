@@ -99,6 +99,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = show_message('success', "🚀 Campaña lanzada con éxito a <strong>$enviados atletas</strong>.");
         }
     }
+
+    if ($action === 'eliminar_usuario' && !empty($_POST['user_id'])) {
+        $uid_to_delete = (int)$_POST['user_id'];
+        if ($uid_to_delete > 0) {
+            try {
+                // Limpieza en cascada manual por seguridad (evitar constraints)
+                $pdo->prepare("DELETE FROM user_discounts WHERE user_id = ?")->execute([$uid_to_delete]);
+                $pdo->prepare("DELETE FROM orders WHERE user_id = ?")->execute([$uid_to_delete]);
+                
+                $stmt_del = $pdo->prepare("DELETE FROM users WHERE id = ?");
+                $stmt_del->execute([$uid_to_delete]);
+                
+                if ($stmt_del->rowCount() > 0) {
+                    $message = show_message('success', "✅ Atleta #$uid_to_delete eliminado correctamente y de forma permanente.");
+                } else {
+                    $message = show_message('error', "❌ No se pudo encontrar al atleta #$uid_to_delete.");
+                }
+            } catch (Exception $e) {
+                $message = show_message('error', "❌ Error crítico al eliminar atleta: " . $e->getMessage());
+            }
+        }
+    }
 }
 
 // LÓGICA DE FILTRADO AVANZADO
@@ -347,6 +369,11 @@ $total_mostrados = count($usuarios);
                                         <?php endif; ?>
                                     </td>
                                     <td style="text-align:right;">
+                                        <form method="POST" style="display:inline-block;" onsubmit="return confirm('⚠️ ¿Estás COMPLETAMENTE seguro de que deseas ELIMINAR PERMANENTEMENTE a este atleta? Se borrarán sus pedidos y códigos asignados. Esta acción no tiene vuelta atrás.');">
+                                            <input type="hidden" name="action" value="eliminar_usuario">
+                                            <input type="hidden" name="user_id" value="<?php echo $u['id']; ?>">
+                                            <button type="submit" class="btn" style="background:#ef4444; color:#fff; border:none; padding:8px 10px; border-radius:4px; margin-right:5px; cursor:pointer;" title="Eliminar Atleta permanentemente">🗑️</button>
+                                        </form>
                                         <a href="/admin-descargas/modules/perfil.php?id=<?php echo $u['id']; ?>" class="btn" style="background:#3b82f6; border:none; padding:8px 15px; border-radius:4px;">Ver Perfil 👉</a>
                                     </td>
                                 </tr>

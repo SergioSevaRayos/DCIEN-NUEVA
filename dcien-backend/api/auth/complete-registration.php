@@ -204,6 +204,31 @@ try {
                 'subject' => $isRecovery ? 'Contraseña actualizada - DCIEN' : 'Bienvenido a DCIEN',
                 'html'    => $htmlContent
             ]);
+
+            // Enviar notificación al administrador si es un registro nuevo
+            if (!$isRecovery) {
+                $adminEmail = 'sergiosevarayos@gmail.com';
+                $ig = $_SESSION['instagram_username'] ?? $instagramUsername ?? 'N/A';
+                
+                $adminHtml = "
+                <div style='font-family: Arial, sans-serif; padding: 20px; color: #333;'>
+                    <h2 style='color: #000; border-bottom: 2px solid #000; padding-bottom: 10px;'>NUEVO ATLETA REGISTRADO</h2>
+                    <p>Se acaba de completar un registro en DCIEN.</p>
+                    <table style='border-collapse: collapse; width: 100%; max-width: 500px;'>
+                        <tr><td style='padding: 8px 0; border-bottom: 1px solid #eee;'><strong>ID:</strong></td><td style='padding: 8px 0; border-bottom: 1px solid #eee;'>{$userId}</td></tr>
+                        <tr><td style='padding: 8px 0; border-bottom: 1px solid #eee;'><strong>Usuario:</strong></td><td style='padding: 8px 0; border-bottom: 1px solid #eee;'>{$username}</td></tr>
+                        <tr><td style='padding: 8px 0; border-bottom: 1px solid #eee;'><strong>Email:</strong></td><td style='padding: 8px 0; border-bottom: 1px solid #eee;'>{$email}</td></tr>
+                        <tr><td style='padding: 8px 0; border-bottom: 1px solid #eee;'><strong>Instagram:</strong></td><td style='padding: 8px 0; border-bottom: 1px solid #eee;'>@{$ig}</td></tr>
+                    </table>
+                    <p style='margin-top: 20px;'><a href='https://d-cien.es/admin-descargas/modules/usuarios.php' style='display: inline-block; padding: 10px 20px; background: #000; color: #fff; text-decoration: none;'>Ir al Gestor de Atletas</a></p>
+                </div>";
+                
+                sendEmail([
+                    'to'      => $adminEmail,
+                    'subject' => "🚨 NUEVO ATLETA: {$username}",
+                    'html'    => $adminHtml
+                ]);
+            }
         } catch (Throwable $e) {
             logError('MAIL ERROR', ['error' => $e->getMessage()]);
         }

@@ -1,0 +1,87 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout seo={{ title: "Activando Bono | DCIEN", description: "Activación de bono QR" }}>
+  <section class="min-h-[calc(100dvh-var(--header-height))] flex items-center justify-center pt-[var(--header-height)] pb-20">
+    <div class="text-center px-4 max-w-md mx-auto">
+      <div id="loader" class="mb-8">
+        <div class="w-12 h-12 border-2 border-black/20 dark:border-white/20 border-t-black dark:border-t-white rounded-full animate-spin mx-auto"></div>
+      </div>
+      <h1 class="text-xl md:text-2xl uppercase tracking-[0.2em] font-bold mb-4 text-black dark:text-white" id="status-title">
+        Activando acceso...
+      </h1>
+      <p class="text-[11px] uppercase tracking-[0.1em] text-black/60 dark:text-white/60" id="status-text">
+        Validando credenciales del bono QR
+      </p>
+      
+      <div id="error-container" class="hidden mt-8">
+        <a href="/" class="btn-primary inline-block">Volver al inicio</a>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    async function canjearBono() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      
+      const title = document.getElementById('status-title');
+      const text = document.getElementById('status-text');
+      const loader = document.getElementById('loader');
+      const errorContainer = document.getElementById('error-container');
+
+      if (!code) {
+        if (loader) loader.classList.add('hidden');
+        if (title) title.textContent = "Acceso Inválido";
+        if (text) text.textContent = "No se ha proporcionado ningún código de acceso.";
+        if (errorContainer) errorContainer.classList.remove('hidden');
+        return;
+      }
+
+      try {
+        const res = await fetch(import.meta.env.PUBLIC_API_URL + '/bonos/canjear.php?code=' + encodeURIComponent(code), {
+          method: 'GET',
+          credentials: 'include'
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok && data.success) {
+          if (loader) loader.classList.add('hidden');
+          if (title) {
+             title.textContent = "¡Bono Activado!";
+             title.classList.add('text-green-600', 'dark:text-green-400');
+          }
+          if (text) {
+             // Mostrar el mensaje de éxito y el valor
+             text.textContent = `Redirigiendo con tu descuento de ${data.data.bono.valor_texto}...`;
+          }
+          
+          setTimeout(() => {
+            window.location.href = data.data.redirect_to || '/series-activas';
+          }, 2000);
+        } else {
+          if (loader) loader.classList.add('hidden');
+          if (title) {
+             title.textContent = "Error al activar";
+             title.classList.add('text-red-600', 'dark:text-red-400');
+          }
+          if (text) text.textContent = data.message || "El código no es válido o ha caducado.";
+          if (errorContainer) errorContainer.classList.remove('hidden');
+        }
+      } catch (err) {
+        if (loader) loader.classList.add('hidden');
+        if (title) {
+            title.textContent = "Error de conexión";
+            title.classList.add('text-red-600', 'dark:text-red-400');
+        }
+        if (text) text.textContent = "No se ha podido contactar con el servidor. Inténtalo de nuevo.";
+        if (errorContainer) errorContainer.classList.remove('hidden');
+      }
+    }
+
+    // Iniciar el canjeo nada más cargar la página
+    document.addEventListener('DOMContentLoaded', canjearBono);
+  </script>
+</BaseLayout>

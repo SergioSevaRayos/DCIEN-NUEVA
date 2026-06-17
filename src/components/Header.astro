@@ -159,10 +159,14 @@ const navItems = [
   // Lógica de Cierre de Sesión Centralizada
   const logout = async () => {
     try {
+      localStorage.removeItem('dcien_cart_discounts');
+      localStorage.removeItem('dcien_cart_discount');
       await fetch(import.meta.env.PUBLIC_API_URL + '/auth/logout.php', {
         method: 'POST',
         credentials: 'include'
       });
+    } catch (e) {
+      console.error(e);
     } finally {
       window.location.href = '/acceso';
     }

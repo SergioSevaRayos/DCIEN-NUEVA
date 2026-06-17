@@ -55,9 +55,10 @@ function sendEmail(array $params): bool {
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         }
 
-        // Debug SOLO en desarrollo
+        // Debug SOLO en desarrollo (Redirigido a log para no romper el JSON)
         if (($_ENV['APP_ENV'] ?? 'production') === 'development') {
             $mail->SMTPDebug = 2;
+            $mail->Debugoutput = 'error_log';
         }
 
         // ════════════════════════════════════════════════════════════

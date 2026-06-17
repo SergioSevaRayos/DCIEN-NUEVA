@@ -28,6 +28,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
             </a>
         </li>
         <li>
+            <a href="/admin-descargas/modules/bonos.php" class="<?php echo $current_page == 'bonos.php' ? 'active' : ''; ?>">
+                <span class="icon">🎟️</span> Bonos QR
+            </a>
+        </li>
+        <li>
             <a href="/admin-descargas/modules/auditor.php" class="<?php echo $current_page == 'auditor.php' ? 'active' : ''; ?>">
                 <span class="icon">👁️</span> Auditor
             </a>
@@ -40,6 +45,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
         <li>
             <a href="/admin-descargas/modules/marketing.php" class="<?php echo $current_page == 'marketing.php' ? 'active' : ''; ?>">
                 <span class="icon">🎁</span> Marketing
+            </a>
+        </li>
+        <li>
+            <a href="/admin-descargas/modules/logs.php" class="<?php echo $current_page == 'logs.php' ? 'active' : ''; ?>">
+                <span class="icon">📋</span> Logs Sistema
             </a>
         </li>
         <li>

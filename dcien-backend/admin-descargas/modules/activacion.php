@@ -59,6 +59,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt->execute([$discount_id]);
                     $selectedDiscount = $stmt->fetch();
                 }
+
+                // Limpiar tokens obsoletos (usados o caducados) para evitar conflicto de clave única (Duplicate entry)
+                $pdo->prepare("DELETE FROM activation_tokens WHERE temp_username = ?")->execute([$instagram]);
                 
                 // 3. Generar credenciales temporales
                 $token = bin2hex(random_bytes(32));

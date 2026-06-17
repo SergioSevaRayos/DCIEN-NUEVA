@@ -202,7 +202,7 @@ $ultimos_scans = $pdo->query('SELECT u.canjeado_at, u.ip, u.bono_code, b.nombre,
     <link rel="stylesheet" href="/admin-descargas/assets/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        body{margin:0;font-family:inherit}
+        body{margin:0;}
         .split-layout{display:grid;grid-template-columns:380px 1fr;gap:20px;margin-top:20px;align-items:start}
         .split-layout>div{min-width:0}
         .card{background:var(--surface);border:1px solid var(--border);padding:20px;margin-bottom:20px;border-radius:var(--radius);box-shadow:var(--shadow)}
@@ -319,8 +319,10 @@ $ultimos_scans = $pdo->query('SELECT u.canjeado_at, u.ip, u.bono_code, b.nombre,
     </style>
 </head>
 <body>
-<div class="container">
-
+    <div class="app-layout">
+        <?php require_once dirname(__DIR__) . '/includes/nav.php'; ?>
+        <div class="main-content">
+            <div class="container">
     <header class="header">
         <div>
             <h1>BONOS QR</h1>
@@ -735,5 +737,7 @@ function showToast(msg) {
 }
 </script>
 
+        </div>
+    </div>
 </body>
 </html>
