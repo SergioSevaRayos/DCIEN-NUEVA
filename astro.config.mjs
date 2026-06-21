@@ -1,10 +1,19 @@
 import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 import sitemap from '@astrojs/sitemap';
+import partytown from '@astrojs/partytown';
 
 export default defineConfig({
   site: 'https://d-cien.es',
-  integrations: [tailwind(), sitemap()],
+  integrations: [
+    tailwind(), 
+    sitemap(),
+    partytown({
+      config: {
+        forward: ['dataLayer.push'],
+      },
+    })
+  ],
   output: 'static',
   vite: {
     // Proxy solo activo en dev: reenvía /api/* → dcien-backend.test

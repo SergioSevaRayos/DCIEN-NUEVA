@@ -17,10 +17,11 @@ const { seo, currentPath = Astro.url.pathname } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
     <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="preload" href="/fonts/bebas-neue/BebasNeue-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
     <meta name="generator" content={Astro.generator} />
 
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V3Q2Q6ETTF"></script>
-    <script is:inline>
+    <script type="text/partytown" src="https://www.googletagmanager.com/gtag/js?id=G-V3Q2Q6ETTF"></script>
+    <script type="text/partytown">
       window.dataLayer = window.dataLayer || [];
       function gtag() { window.dataLayer.push(arguments); }
       gtag("js", new Date());
