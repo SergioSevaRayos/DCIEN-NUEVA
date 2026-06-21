@@ -18,6 +18,11 @@ type ActiveSeriesCard = {
 
 const activeSeries: ActiveSeriesCard[] = seriesData
   .filter(s => s.isActive)
+  .sort((a, b) => {
+    const dateA = new Date(a.releaseDate || '1970-01-01').getTime();
+    const dateB = new Date(b.releaseDate || '1970-01-01').getTime();
+    return dateB - dateA;
+  })
   .map((series, index) => ({
     id: index + 1,
     name: series.name,
@@ -31,117 +36,181 @@ const activeSeries: ActiveSeriesCard[] = seriesData
 ---
 
 <BaseLayout seo={seo}>
-  <section class="pt-32 pb-20 transition-colors duration-500">
+  <section class="pt-32 pb-24 transition-colors duration-500">
     <div class="container-custom">
-      <div class="text-center mb-16 scroll-reveal">
-        <h1 class="section-title text-black dark:text-white transition-colors">
+      <div class="text-center mb-24 scroll-reveal">
+        <h1 class="font-brand text-6xl sm:text-7xl md:text-[9rem] tracking-[0.05em] md:tracking-[0.1em] leading-none text-black dark:text-white transition-colors">
           SERIES ACTIVAS
         </h1>
-        <p class="text-sm text-black/40 dark:text-white/40 uppercase tracking-wider">
-          {activeSeries.length} {activeSeries.length === 1 ? 'SERIE' : 'SERIES'} EN SISTEMA
+        <p class="text-[10px] md:text-xs uppercase tracking-[0.3em] md:tracking-[0.4em] text-black/50 dark:text-white/40 mt-6 font-bold">
+          {activeSeries.length} {activeSeries.length === 1 ? 'LÍNEA ABIERTA' : 'LÍNEAS ABIERTAS'} · ACCESO RESTRINGIDO
         </p>
       </div>
 
       {activeSeries.length === 0 ? (
-        <div class="text-center py-20 scroll-reveal scroll-delay-1">
-          <p class="text-xl text-black/60 dark:text-white/60 mb-4 transition-colors">
-            NO HAY SERIES ACTIVAS
+        <div class="text-center py-20 scroll-reveal scroll-delay-1 max-w-xl mx-auto border border-black/10 dark:border-white/10 p-12 bg-zinc-50 dark:bg-zinc-900">
+          <p class="text-2xl font-brand text-black dark:text-white mb-4 transition-colors tracking-widest">
+            SISTEMA CERRADO
           </p>
-          <p class="text-sm text-black/40 dark:text-white/40 mb-8 transition-colors">
-            Vuelve pronto para nuevas ediciones
+          <p class="text-xs text-black/50 dark:text-white/50 mb-8 transition-colors uppercase tracking-[0.2em] leading-relaxed">
+            Actualmente no hay ningún protocolo activo. Toda la producción técnica anterior ha sido finalizada y archivada de forma permanente.
           </p>
-          <a href="/archivo" class="btn-secondary">
-            Ver Archivo
+          <a href="/archivo" class="btn-secondary w-full justify-center">
+            Acceder al Archivo Histórico
           </a>
         </div>
       ) : (
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 max-w-7xl mx-auto">
           {activeSeries.map((series, index) => {
             const images = typeof series.images === 'string'
               ? JSON.parse(series.images)
               : series.images;
 
             const mainImage = images?.[0] ?? '/images/placeholder.jpg';
+            const isFeatured = index === 0;
             const delayClass = `scroll-delay-${(index % 3) + 1}`;
 
-            return (
-              <article
-                class={`card-minimal overflow-hidden group transition-colors series-card scroll-reveal ${delayClass}`}
-                data-series-slug={series.slug}
-              >
-                <a href={`/series-activas/${series.slug}`} class="block">
-                  <div class="relative aspect-square bg-zinc-100 dark:bg-zinc-900 overflow-hidden border-b border-black/5 dark:border-white/10">
+            // FEATURED CARD (Opción A)
+            if (isFeatured) {
+              return (
+                <article
+                  class={`col-span-1 md:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-0 bg-zinc-50 dark:bg-zinc-900/50 overflow-hidden group series-card scroll-reveal ${delayClass} border border-black/5 dark:border-white/5`}
+                  data-series-slug={series.slug}
+                >
+                  <div class="relative aspect-square lg:aspect-auto lg:h-[700px] overflow-hidden bg-white dark:bg-[#0a0a0a]">
                     <img
                       src={mainImage}
                       alt={series.name}
-                      class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110"
+                      class="w-full h-full object-contain p-8 md:p-16 transition-transform duration-[1.5s] ease-out group-hover:scale-105"
                     />
+                    <!-- Overlay de acciones en hover -->
+                    <div class="absolute inset-0 bg-black/40 dark:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-12 z-20">
+                       <div class="transform translate-y-8 group-hover:translate-y-0 transition-transform duration-500 flex flex-col sm:flex-row gap-4">
+                         <a href={`/series-activas/${series.slug}`} class="btn-secondary flex-1 text-center !bg-black/50 !text-white !border-white/20 backdrop-blur-md hover:!bg-white hover:!text-black transition-colors duration-300">
+                           Ver Ficha Técnica
+                         </a>
+                         <a href="/acceso" class="btn-primary flex-1 text-center">
+                           Procesar Acceso
+                         </a>
+                       </div>
+                    </div>
                   </div>
 
-                  <div class="p-6 sm:p-8">
-                    <h2 class="font-brand text-2xl sm:text-3xl mb-2 sm:mb-3 text-black dark:text-white transition-colors uppercase tracking-wider flex justify-between items-center">
-                      <span>{series.name}</span>
-                      <span class="text-lg opacity-60 font-sans" title={series.gender === 'male' ? 'Hombre' : series.gender === 'female' ? 'Mujer' : 'Unisex'}>
-                        {series.gender === 'male' && '♂'}
-                        {series.gender === 'female' && '♀'}
-                        {series.gender === 'unisex' && '♂/♀'}
-                      </span>
+                  <div class="p-8 md:p-16 flex flex-col justify-center relative">
+                    <div class="flex items-center gap-4 mb-8">
+                       <span class="bg-black text-white dark:bg-white dark:text-black text-[9px] font-bold tracking-[0.2em] px-3 py-1.5 uppercase">Último lanzamiento</span>
+                       <span class="text-xs opacity-50 font-sans" title={series.gender === 'male' ? 'Hombre' : series.gender === 'female' ? 'Mujer' : 'Unisex'}>
+                         {series.gender === 'male' && '♂ HOMBRE'}
+                         {series.gender === 'female' && '♀ MUJER'}
+                         {series.gender === 'unisex' && '♂/♀ UNISEX'}
+                       </span>
+                    </div>
+                    
+                    <h2 class="font-brand text-5xl md:text-7xl mb-4 text-black dark:text-white uppercase tracking-wider leading-none">
+                      {series.name}
                     </h2>
-
-                    <p class="text-xs text-black/40 dark:text-white/40 uppercase tracking-wider mb-4 sm:mb-6 transition-colors">
+                    <p class="text-[11px] md:text-xs text-black/60 dark:text-white/60 uppercase tracking-[0.2em] mb-12 leading-relaxed">
                       {series.description}
                     </p>
-
-                    <div class="grid grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6 text-center">
+                    
+                    <div class="grid grid-cols-3 gap-6 mb-10 text-center border-t border-b border-black/5 dark:border-white/5 py-8">
                       <div>
-                        <p class="text-xl sm:text-2xl font-bold text-black dark:text-white transition-colors" data-total>
-                          —
-                        </p>
-                        <p class="text-[9px] sm:text-[10px] text-black/40 dark:text-white/40 uppercase tracking-wider transition-colors">
-                          Unidades
-                        </p>
+                        <p class="text-3xl md:text-4xl font-brand text-black dark:text-white" data-total>—</p>
+                        <p class="text-[9px] text-black/40 dark:text-white/40 uppercase tracking-widest mt-2">Unidades</p>
                       </div>
                       <div>
-                        <p class="text-xl sm:text-2xl font-bold text-black dark:text-white transition-colors" data-available>
-                          —
-                        </p>
-                        <p class="text-[9px] sm:text-[10px] text-black/40 dark:text-white/40 uppercase tracking-wider transition-colors">
-                          Disponibles
-                        </p>
+                        <p class="text-3xl md:text-4xl font-brand text-black dark:text-white" data-available>—</p>
+                        <p class="text-[9px] text-black/40 dark:text-white/40 uppercase tracking-widest mt-2">Libres</p>
                       </div>
                       <div>
-                        <p class="text-xl sm:text-2xl font-bold text-black dark:text-white transition-colors" data-sold>
-                          —
-                        </p>
-                        <p class="text-[9px] sm:text-[10px] text-black/40 dark:text-white/40 uppercase tracking-wider transition-colors">
-                          Vendidas
-                        </p>
+                        <p class="text-3xl md:text-4xl font-brand text-black dark:text-white" data-sold>—</p>
+                        <p class="text-[9px] text-black/40 dark:text-white/40 uppercase tracking-widest mt-2">Cerradas</p>
                       </div>
                     </div>
 
-                    <div class="mb-4 sm:mb-6">
-                      <div class="flex justify-between text-[10px] sm:text-xs text-black/40 dark:text-white/40 mb-2 transition-colors">
-                        <span data-percent>—</span>
+                    <div>
+                      <div class="flex justify-between items-end text-[10px] font-bold text-black dark:text-white mb-3 uppercase tracking-widest">
+                        <span class="text-black/40 dark:text-white/40">Estado del Protocolo</span>
+                        <span data-percent class="text-xs">—</span>
                       </div>
-                      <div class="w-full h-px bg-black/10 dark:bg-white/10 transition-colors">
-                        <div
-                          class="h-full bg-black dark:bg-white transition-all duration-500"
-                          data-bar
-                          style="width: 0%"
-                        />
-                      </div>
-                    </div>
-
-                    <div class="flex flex-col sm:flex-row gap-3">
-                      <div class="btn-secondary flex-1 text-center py-3">
-                        VER DETALLES
-                      </div>
-                      <div class="btn-primary flex-1 text-center py-3">
-                        COMPRAR
+                      <div class="w-full h-1 bg-black/10 dark:bg-white/10 overflow-hidden">
+                        <div class="h-full bg-black dark:bg-white transition-all duration-1000 ease-out" data-bar style="width: 0%" />
                       </div>
                     </div>
                   </div>
-                </a>
+                </article>
+              );
+            }
+
+            // STANDARD CARD (Column layout)
+            return (
+              <article
+                class={`bg-zinc-50 dark:bg-zinc-900/50 overflow-hidden group series-card scroll-reveal ${delayClass} flex flex-col border border-black/5 dark:border-white/5`}
+                data-series-slug={series.slug}
+              >
+                <div class="relative aspect-[4/5] bg-white dark:bg-[#0a0a0a] overflow-hidden">
+                  <img
+                    src={mainImage}
+                    alt={series.name}
+                    class="w-full h-full object-contain p-8 transition-transform duration-[1.5s] ease-out group-hover:scale-105"
+                  />
+                  <!-- Overlay de acciones en hover -->
+                  <div class="absolute inset-0 bg-black/30 dark:bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 z-20">
+                     <div class="transform translate-y-6 group-hover:translate-y-0 transition-transform duration-500 flex flex-col gap-3">
+                       <a href="/acceso" class="btn-primary w-full text-center">
+                         Procesar Acceso
+                       </a>
+                       <a href={`/series-activas/${series.slug}`} class="text-[9px] text-white/70 text-center tracking-[0.2em] uppercase hover:text-white transition-colors py-2">
+                         Inspeccionar Datos Técnicos
+                       </a>
+                     </div>
+                  </div>
+                </div>
+
+                <div class="p-8 md:p-10 flex-grow flex flex-col justify-between border-t border-black/5 dark:border-white/5">
+                  <div class="mb-8">
+                    <div class="flex justify-between items-start mb-2">
+                       <h2 class="font-brand text-3xl text-black dark:text-white uppercase tracking-wider leading-none">
+                         {series.name}
+                       </h2>
+                       <span class="text-xs opacity-40 font-sans mt-1" title={series.gender === 'male' ? 'Hombre' : series.gender === 'female' ? 'Mujer' : 'Unisex'}>
+                         {series.gender === 'male' && '♂'}
+                         {series.gender === 'female' && '♀'}
+                         {series.gender === 'unisex' && '♂/♀'}
+                       </span>
+                    </div>
+                    <p class="text-[9px] text-black/50 dark:text-white/40 uppercase tracking-[0.2em] leading-relaxed">
+                      {series.description}
+                    </p>
+                  </div>
+
+                  <div class="mt-auto">
+                    <div class="grid grid-cols-3 gap-2 mb-6 text-center">
+                      <div class="bg-black/5 dark:bg-white/5 py-3 rounded-sm">
+                        <p class="text-xl font-brand text-black dark:text-white" data-total>—</p>
+                        <p class="text-[8px] text-black/40 dark:text-white/40 uppercase tracking-widest mt-1">Units</p>
+                      </div>
+                      <div class="bg-black/5 dark:bg-white/5 py-3 rounded-sm">
+                        <p class="text-xl font-brand text-black dark:text-white" data-available>—</p>
+                        <p class="text-[8px] text-black/40 dark:text-white/40 uppercase tracking-widest mt-1">Libres</p>
+                      </div>
+                      <div class="bg-black/5 dark:bg-white/5 py-3 rounded-sm">
+                        <p class="text-xl font-brand text-black dark:text-white" data-sold>—</p>
+                        <p class="text-[8px] text-black/40 dark:text-white/40 uppercase tracking-widest mt-1">Out</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div class="flex justify-between items-end text-[9px] font-bold text-black/60 dark:text-white/60 mb-2 uppercase tracking-widest">
+                        <span>Progreso</span>
+                        <span data-percent class="text-black dark:text-white">—</span>
+                      </div>
+                      <div class="w-full h-[2px] bg-black/10 dark:bg-white/10 overflow-hidden">
+                        <div class="h-full bg-black dark:bg-white transition-all duration-1000 ease-out" data-bar style="width: 0%" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </article>
             );
           })}
@@ -198,7 +267,7 @@ const activeSeries: ActiveSeriesCard[] = seriesData
         }
 
         if (elPercent instanceof HTMLElement) {
-          elPercent.textContent = `${percent}% Agotado`;
+          elPercent.textContent = `${percent}% Completado`;
         }
 
         if (elBar instanceof HTMLElement) {
@@ -211,6 +280,7 @@ const activeSeries: ActiveSeriesCard[] = seriesData
     });
   }
 
+  // Ejecutar inmediatamente y luego cada 10 segundos
   loadSeriesStock();
   setInterval(loadSeriesStock, 10000);
 </script>

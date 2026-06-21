@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $discount_id = (int)$_POST['id'];
 
         $stmt = $pdo->prepare("
-            SELECT u.email, u.username, d.code, d.description, d.type, d.value, d.series_slug 
+            SELECT ud.id as ud_id, u.email, u.username, d.code, d.description, d.type, d.value, d.series_slug 
             FROM user_discounts ud
             JOIN users u ON ud.user_id = u.id
             JOIN discounts d ON ud.discount_id = d.id
@@ -96,50 +96,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errores = 0;
 
             foreach ($usuarios_asignados as $u) {
-                $valor_texto = $u['type'] === 'percent' ? number_format($u['value'], 0) . '%' : '€' . number_format($u['value'], 2);
-                $nombre = strtoupper($u['username'] ?: 'Atleta');
-
-                $subject = "DCIEN | Validación de Esfuerzo Completada: {$u['code']}";
-                $message_html = "
-                <html><head><style>
-                    body { font-family:'Helvetica Neue',Arial,sans-serif; background:#f4f4f4; margin:0; padding:0; }
-                    .container { max-width:600px; margin:40px auto; background:#ffffff; border-radius:8px; overflow:hidden; }
-                    .header { background:#000000; color:#ffffff; padding:40px 20px; text-align:center; }
-                    .header h1 { font-size:24px; letter-spacing:4px; margin:0; }
-                    .content { padding:40px 30px; text-align:center; color:#333; line-height:1.6; }
-                    .code-box { background:#000; color:#d4af37; padding:20px; font-size:28px; font-weight:bold; letter-spacing:4px; margin:20px 0; font-family:monospace; word-break:break-all; }
-                    .btn { display:inline-block; padding:14px 30px; background:#000; color:#fff; text-decoration:none; text-transform:uppercase; letter-spacing:2px; font-weight:bold; margin-top:20px; border-radius:4px; }
-                    .footer { background:#fafafa; padding:20px; text-align:center; font-size:12px; color:#888; border-top:1px solid #eee; }
-                </style></head><body>
-                    <div class='container'>
-                        <div class='header'>
-                            <h1>DCIEN</h1>
-                        </div>
-                        <div class='content'>
-                            <h2 style='margin-top:0;'>NUEVA VALIDACIÓN: {$nombre}</h2>
-                            <p>Se ha verificado tu perfil técnico y hemos emitido un crédito de desempeño a tu favor.</p>
-                            
-                            <div class='code-box'>{$u['code']}</div>
-                            
-                            <div style='background: #f9f9f9; border-left: 4px solid #000; padding: 15px; margin: 25px 0; text-align: left;'>
-                                <strong>Recompensa:</strong> {$valor_texto}<br>
-                                <strong>Detalle:</strong> {$u['description']}
-                                " . ($u['series_slug'] ? "<br><strong>Válido para:</strong> " . strtoupper($u['series_slug']) : "") . "
-                            </div>
-                            
-                            <p>Tu crédito ha sido vinculado a tu perfil. Cuando vayas a tu carrito de la compra, podrás activarlo seleccionando la casilla correspondiente o guardarlo para utilizarlo en el futuro.</p>
-                            <a href='https://d-cien.es' class='btn'>Acceder a DCIEN</a>
-                        </div>
-                        <div class='footer'>
-                            <p>DCIEN · Protocolo de Acceso Restringido</p>
-                        </div>
-                    </div>
-                </body></html>";
-
-                $headers = "MIME-Version: 1.0\r\nContent-type:text/html;charset=UTF-8\r\nFrom: DCIEN Protocolos <acceso@d-cien.es>\r\n";
+                require_once 'email_protocolo.php';
                 
-                if (mail($u['email'], $subject, $message_html, $headers)) {
+                if (enviar_email_protocolo($u['email'], $u['username'], $u['code'], $u['description'], $u['type'], $u['value'], $u['series_slug'])) {
                     $exitosos++;
+                    
+                    // Registrar el envío en base de datos
+                    $stmt_up = $pdo->prepare("UPDATE user_discounts SET reminders_sent = reminders_sent + 1, last_reminder_at = NOW() WHERE id = ?");
+                    $stmt_up->execute([$u['ud_id']]);
                 } else {
                     $errores++;
                 }
@@ -149,6 +113,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $message = show_message('warning', "⚠️ No hay usuarios con este protocolo asignado y pendiente de uso.");
         }
+    }
+
+    // ACCIÓN 5: ELIMINAR PROTOCOLO
+    if ($action === 'eliminar_descuento' && isset($_POST['id'])) {
+        $id = (int)$_POST['id'];
+        try {
+            // Eliminar asignaciones primero
+            $pdo->prepare("DELETE FROM user_discounts WHERE discount_id = ?")->execute([$id]);
+            // Eliminar protocolo
+            $pdo->prepare("DELETE FROM discounts WHERE id = ?")->execute([$id]);
+            $message = show_message('success', "✅ Protocolo eliminado permanentemente.");
+        } catch (Exception $e) {
+            $message = show_message('error', "❌ Error al eliminar: " . $e->getMessage());
+        }
+    }
+}
+
+// Cargar vista de atletas de un protocolo si se ha solicitado
+$view_users_id = isset($_GET['view_users']) ? (int)$_GET['view_users'] : null;
+$view_users_data = null;
+$view_discount = null;
+
+if ($view_users_id) {
+    $stmt_d = $pdo->prepare("SELECT code FROM discounts WHERE id = ?");
+    $stmt_d->execute([$view_users_id]);
+    $view_discount = $stmt_d->fetch();
+    
+    if ($view_discount) {
+        $stmt_u = $pdo->prepare("
+            SELECT u.username, u.email, ud.assigned_at, ud.reminders_sent, ud.last_reminder_at, ud.used_at
+            FROM user_discounts ud
+            JOIN users u ON ud.user_id = u.id
+            WHERE ud.discount_id = ?
+            ORDER BY ud.assigned_at DESC
+        ");
+        $stmt_u->execute([$view_users_id]);
+        $view_users_data = $stmt_u->fetchAll();
     }
 }
 
@@ -161,6 +162,7 @@ $stmt = $pdo->query("
         d.*,
         (SELECT COUNT(*) FROM user_discounts ud WHERE ud.discount_id = d.id AND ud.used_at IS NULL) as pendientes_notificar
     FROM discounts d 
+    WHERE d.code NOT LIKE 'BONO_%'
     ORDER BY d.is_active DESC, d.created_at DESC
 ");
 $descuentos = $stmt->fetchAll();
@@ -216,8 +218,15 @@ function format_date_for_input($datetime) {
         .brand-rule { background:var(--surface-2); border-left:4px solid var(--border-2); padding:15px; font-size:11px; color:var(--text-2); margin-top:20px; border-radius:var(--radius); line-height:1.5; }
 
         /* Modales */
-        #create-modal, #bulk-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center; padding:15px; }
+        #create-modal, #edit-modal, #bulk-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center; padding:15px; }
         .modal-content { background:var(--surface); border:1px solid var(--border); padding:25px; width:100%; max-width:500px; border-radius:var(--radius); box-shadow:var(--shadow-md); max-height:90vh; overflow-y:auto; }
+
+        /* Stats */
+        .stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; margin-bottom:28px; }
+        .stat-box { background:var(--surface); border:1px solid var(--border); padding:20px 24px; border-radius:var(--radius); box-shadow:var(--shadow); }
+        .stat-num { font-size:32px; font-weight:700; color:var(--text); line-height:1; margin-bottom:4px; }
+        .stat-lbl { font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--text-2); }
+        .btn-sm { padding:5px 9px; font-size:11px; }
 
         /* Responsive */
         @media (max-width:1100px) { .split-layout { grid-template-columns:1fr; } }
@@ -301,210 +310,262 @@ function format_date_for_input($datetime) {
             </div>
         </div>
 
-        <div class="split-layout">
-            <div>
-                <div class="card">
-                    <?php if ($descuento_editar): ?>
-                        <h3 style="border-bottom: 2px solid #00ff00; padding-bottom: 10px; margin-bottom: 20px; font-size:14px;">✏️ Editando: <?php echo htmlspecialchars($descuento_editar['code']); ?></h3>
-                        
-                        <form method="POST" action="descuentos.php?edit=<?php echo $descuento_editar['id']; ?>">
-                            <input type="hidden" name="action" value="editar_descuento">
-                            <input type="hidden" name="id" value="<?php echo $descuento_editar['id']; ?>">
-                            
-                            <div class="form-group">
-                                <label>Código (Texto que ingresa el usuario)</label>
-                                <input type="text" name="code" value="<?php echo htmlspecialchars($descuento_editar['code']); ?>" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Descripción de Validación</label>
-                                <textarea name="description" rows="3" required><?php echo htmlspecialchars($descuento_editar['description']); ?></textarea>
-                            </div>
-
-                            <div class="grid-2">
-                                <div class="form-group">
-                                    <label>Tipo de Crédito</label>
-                                    <select name="type" required>
-                                        <option value="percent" <?php echo $descuento_editar['type'] === 'percent' ? 'selected' : ''; ?>>Porcentaje (%)</option>
-                                        <option value="fixed" <?php echo $descuento_editar['type'] === 'fixed' ? 'selected' : ''; ?>>Monto Fijo (€)</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>Valor</label>
-                                    <input type="number" name="value" step="0.01" value="<?php echo htmlspecialchars($descuento_editar['value']); ?>" required>
-                                </div>
-                            </div>
-
-                            <div class="grid-2">
-                                <div class="form-group">
-                                    <label>Aplica a</label>
-                                    <select name="applies_to" required>
-                                        <option value="total" <?php echo $descuento_editar['applies_to'] === 'total' ? 'selected' : ''; ?>>Total del Pedido</option>
-                                        <option value="series" <?php echo $descuento_editar['applies_to'] === 'series' ? 'selected' : ''; ?>>Serie Específica</option>
-                                        <option value="shipping" <?php echo $descuento_editar['applies_to'] === 'shipping' ? 'selected' : ''; ?>>Envío Gratis</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>Restringir a Serie</label>
-                                    <select name="series_slug">
-                                        <option value="">Cualquiera...</option>
-                                        <?php foreach ($series as $s): ?>
-                                            <option value="<?php echo htmlspecialchars($s['slug']); ?>" <?php echo $descuento_editar['series_slug'] === $s['slug'] ? 'selected' : ''; ?>>
-                                                <?php echo htmlspecialchars($s['name']); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; text-transform:none; letter-spacing:0; font-size:13px; color:var(--text);">
-                                    <input type="checkbox" name="is_stackable" value="1" style="width:16px;height:16px;" <?php echo !empty($descuento_editar['is_stackable']) ? 'checked' : ''; ?>>
-                                    <span><strong>Acumulable</strong> — se combina con otros descuentos acumulables del usuario</span>
-                                </label>
-                            </div>
-
-                            <div class="section-title">Límites y Fechas</div>
-                            
-                            <div class="form-group">
-                                <label>Límite de Usos (Vacío = Infinito)</label>
-                                <input type="number" name="max_uses" value="<?php echo htmlspecialchars($descuento_editar['max_uses']); ?>">
-                            </div>
-
-                            <div class="grid-2">
-                                <div class="form-group">
-                                    <label>Válido Desde</label>
-                                    <input type="date" name="valid_from" value="<?php echo format_date_for_input($descuento_editar['valid_from']); ?>">
-                                </div>
-                                <div class="form-group">
-                                    <label>Válido Hasta</label>
-                                    <input type="date" name="valid_until" value="<?php echo format_date_for_input($descuento_editar['valid_until']); ?>">
-                                </div>
-                            </div>
-
-                            <div class="form-group" style="background: #222; padding: 12px; border: 1px solid #444; border-radius: 4px;">
-                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 0;">
-                                    <input type="checkbox" name="is_active" value="1" <?php echo $descuento_editar['is_active'] ? 'checked' : ''; ?> style="width: 18px; height: 18px;">
-                                    <span style="font-size: 13px; color: #fff; text-transform:none;">Protocolo Activo</span>
-                                </label>
-                            </div>
-
-                            <div style="display: flex; gap: 10px; margin-top: 20px;">
-                                <button type="submit" class="btn" style="flex: 1;">💾 Guardar</button>
-                                <a href="descuentos.php" class="btn btn-secondary" style="text-align: center;">Cancelar</a>
-                            </div>
-                        </form>
-                    <?php else: ?>
-                        <div style="text-align: center; color:var(--text-2); padding: 80px 0;">
-                            <div style="font-size: 50px; margin-bottom: 20px;">👈</div>
-                            <p style="font-size: 14px;">Selecciona un protocolo de la tabla<br>para auditar su configuración.</p>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <div>
-                <div class="card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 15px;">
-                        <h3 style="margin:0; font-size:14px;">📋 Protocolos Existentes</h3>
-                    </div>
-                    
-                    <div class="table-container" style="max-height: 70vh; overflow-y: auto;">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Código / Info</th>
-                                    <th>Crédito</th>
-                                    <th>Usos</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php if (empty($descuentos)): ?>
-                                    <tr><td colspan="5" style="text-align: center; padding: 40px; color:var(--text-2);">No hay validaciones configuradas</td></tr>
-                                <?php else: ?>
-                                    <?php foreach ($descuentos as $d): ?>
-                                        <tr style="<?php echo (isset($descuento_editar) && $descuento_editar['id'] === $d['id']) ? 'background-color: rgba(0,255,0,0.1);' : ''; ?>">
-                                            <td>
-                                                <strong style="color:var(--sent);"><?php echo htmlspecialchars($d['code']); ?></strong><br>
-                                                <span style="font-size: 9px; color:var(--text-2); display:block; max-width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="<?php echo htmlspecialchars($d['description']); ?>">
-                                                    <?php echo htmlspecialchars($d['description'] ?? '-'); ?>
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <strong><?php echo number_format($d['value'], 2); ?><?php echo $d['type'] === 'percent' ? '%' : '€'; ?></strong>
-                                                <?php if ($d['series_slug']): ?>
-                                                    <br><span style="font-size: 9px; color:#3498db; text-transform:uppercase;"><?php echo htmlspecialchars($d['series_slug']); ?></span>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td>
-                                                <?php $usado = $d['used_count'] ?? 0; $maximo = $d['max_uses'] ?? null; ?>
-                                                <?php if ($maximo): ?>
-                                                    <strong><?php echo $usado; ?></strong>/<?php echo $maximo; ?>
-                                                <?php else: ?>
-                                                    <strong><?php echo $usado; ?></strong>/∞
-                                                <?php endif; ?>
-                                            </td>
-                                            <td>
-                                                <?php 
-                                                $activo = $d['is_active'];
-                                                $expirado = $d['valid_until'] && strtotime($d['valid_until']) < time();
-                                                $agotado = $d['max_uses'] && $d['used_count'] >= $d['max_uses'];
-                                                
-                                                if ($expirado) echo '<span class="badge-status bg-danger">EXPIRADO</span>';
-                                                elseif ($agotado) echo '<span class="badge-status bg-danger">AGOTADO</span>';
-                                                elseif ($activo) echo '<span class="badge-status bg-success">ACTIVO</span>';
-                                                else echo '<span class="badge-status" style="background:#666;">INACTIVO</span>';
-                                                ?>
-                                            </td>
-                                            <td>
-                                                <div style="display:flex; gap:4px; flex-wrap:wrap;">
-                                                    <a href="descuentos.php?edit=<?php echo $d['id']; ?>" class="btn btn-small" title="Editar">✏️</a>
-                                                    
-                                                    <?php if (!$expirado && !$agotado): ?>
-                                                        <form method="POST" style="display: inline;">
-                                                            <input type="hidden" name="action" value="toggle">
-                                                            <input type="hidden" name="id" value="<?php echo $d['id']; ?>">
-                                                            <button type="submit" class="btn btn-small btn-secondary" title="<?php echo $activo ? 'Pausar' : 'Activar'; ?>">
-                                                                <?php echo $activo ? '⏸️' : '▶️'; ?>
-                                                            </button>
-                                                        </form>
-                                                    <?php endif; ?>
-
-                                                    <?php if ($d['pendientes_notificar'] > 0): ?>
-                                                        <form method="POST" style="display: inline;" onsubmit="return confirm('¿Enviar notificación por email a <?php echo $d['pendientes_notificar']; ?> atletas?');">
-                                                            <input type="hidden" name="action" value="notificar_usuarios">
-                                                            <input type="hidden" name="id" value="<?php echo $d['id']; ?>">
-                                                            <button type="submit" class="btn btn-small" style="background:#3b82f6; border-color:#2563eb; color:#fff;" title="Notificar a <?php echo $d['pendientes_notificar']; ?> atletas">
-                                                                📧 <span style="font-size:9px; font-weight:bold;"><?php echo $d['pendientes_notificar']; ?></span>
-                                                            </button>
-                                                        </form>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card" style="margin-top: 20px;">
+        <div class="stats-row">
             <?php 
             $total = count($descuentos);
             $activos = count(array_filter($descuentos, function($d) { return $d['is_active'] == 1; }));
             $total_usos = array_sum(array_column($descuentos, 'used_count'));
             ?>
-            <div class="summary-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
-                <div><div style="font-size: 24px; font-weight: 900; color:var(--sent);"><?php echo $total; ?></div><div style="font-size: 11px; color:var(--text-2); text-transform:uppercase;">Protocolos Creados</div></div>
-                <div><div style="font-size: 24px; font-weight: 900; color: #22c55e;"><?php echo $activos; ?></div><div style="font-size: 11px; color:var(--text-2); text-transform:uppercase;">Protocolos Activos</div></div>
-                <div><div style="font-size: 24px; font-weight: 900; color: #f39c12;"><?php echo $total_usos; ?></div><div style="font-size: 11px; color:var(--text-2); text-transform:uppercase;">Validaciones Efectuadas</div></div>
+            <div class="stat-box"><div class="stat-num" style="color:var(--sent);"><?php echo $total; ?></div><div class="stat-lbl">Protocolos Creados</div></div>
+            <div class="stat-box"><div class="stat-num" style="color:#22c55e;"><?php echo $activos; ?></div><div class="stat-lbl">Protocolos Activos</div></div>
+            <div class="stat-box"><div class="stat-num" style="color:#f39c12;"><?php echo $total_usos; ?></div><div class="stat-lbl">Validaciones Efectuadas</div></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));gap:16px;">
+            <?php if (empty($descuentos)): ?>
+                <p style="color:var(--text-3);font-size:12px;text-align:center;grid-column:1/-1;padding:40px;">No hay protocolos configurados.</p>
+            <?php else: ?>
+                <?php foreach ($descuentos as $d): 
+                    $activo = $d['is_active'];
+                    $expirado = $d['valid_until'] && strtotime($d['valid_until']) < time();
+                    $agotado = $d['max_uses'] && $d['used_count'] >= $d['max_uses'];
+                ?>
+                    <div class="card" style="margin-bottom:0; display:flex; flex-direction:column; justify-content:space-between;">
+                        <div>
+                            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+                                <h4 style="margin:0;font-size:18px;color:var(--sent);font-family:monospace;letter-spacing:1px;"><?php echo htmlspecialchars($d['code']); ?></h4>
+                                <div>
+                                    <?php 
+                                    if ($expirado) echo '<span class="badge-status bg-danger">EXPIRADO</span>';
+                                    elseif ($agotado) echo '<span class="badge-status bg-danger">AGOTADO</span>';
+                                    elseif ($activo) echo '<span class="badge-status bg-success">ACTIVO</span>';
+                                    else echo '<span class="badge-status" style="background:#666;">INACTIVO</span>';
+                                    ?>
+                                </div>
+                            </div>
+                            
+                            <p style="font-size:12px;color:var(--text);margin:0 0 16px 0;line-height:1.4;"><?php echo htmlspecialchars($d['description']); ?></p>
+                            
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;background:var(--surface-2);padding:10px;border-radius:4px;">
+                                <div>
+                                    <div style="font-size:10px;color:var(--text-2);text-transform:uppercase;">Valor</div>
+                                    <strong style="font-size:14px;color:var(--text);"><?php echo number_format($d['value'], 2); ?><?php echo $d['type'] === 'percent' ? '%' : '€'; ?></strong>
+                                </div>
+                                <div>
+                                    <div style="font-size:10px;color:var(--text-2);text-transform:uppercase;">Usos</div>
+                                    <strong style="font-size:14px;color:var(--text);"><?php echo (int)$d['used_count']; ?></strong><span style="font-size:12px;color:var(--text-3);">/<?php echo $d['max_uses'] ?: '∞'; ?></span>
+                                </div>
+                                <?php if ($d['series_slug']): ?>
+                                <div style="grid-column:1/-1;">
+                                    <div style="font-size:10px;color:var(--text-2);text-transform:uppercase;">Serie Exclusiva</div>
+                                    <div style="font-size:12px;color:#3498db;text-transform:uppercase;font-weight:600;"><?php echo htmlspecialchars($d['series_slug']); ?></div>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px solid var(--border);padding-top:12px;">
+                            <a href="descuentos.php?edit=<?php echo $d['id']; ?>" class="btn btn-sm btn-secondary" style="text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;">✏️ Editar</a>
+                            
+                            <a href="descuentos.php?view_users=<?php echo $d['id']; ?>" class="btn btn-sm" style="text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;background:#222;color:#fff;border:1px solid #444;">👥 Atletas</a>
+                            
+                            <?php if (!$expirado && !$agotado): ?>
+                                <form method="POST" style="display:flex;">
+                                    <input type="hidden" name="action" value="toggle">
+                                    <input type="hidden" name="id" value="<?php echo $d['id']; ?>">
+                                    <button type="submit" class="btn btn-sm btn-secondary" style="width:100%;"><?php echo $activo ? '⏸️ Pausar' : '▶️ Activar'; ?></button>
+                                </form>
+                            <?php endif; ?>
+
+                            <form method="POST" style="display:flex;" onsubmit="return confirm('⚠️ ¿Estás COMPLETAMENTE seguro de que deseas ELIMINAR este protocolo? Se borrarán sus asignaciones a atletas. Esta acción no tiene vuelta atrás.');">
+                                <input type="hidden" name="action" value="eliminar_descuento">
+                                <input type="hidden" name="id" value="<?php echo $d['id']; ?>">
+                                <button type="submit" class="btn btn-sm" style="width:100%;background:#ef4444;color:#fff;border:none;">🗑️ Eliminar</button>
+                            </form>
+
+                            <?php if ($d['pendientes_notificar'] > 0): ?>
+                                <form method="POST" style="display:flex; <?php if($expirado || $agotado) echo 'grid-column: 1 / -1;'; ?>" onsubmit="return confirm('¿Enviar email a <?php echo $d['pendientes_notificar']; ?> atletas?');">
+                                    <input type="hidden" name="action" value="notificar_usuarios">
+                                    <input type="hidden" name="id" value="<?php echo $d['id']; ?>">
+                                    <button type="submit" class="btn btn-sm" style="width:100%;background:#3b82f6;border-color:#2563eb;color:#fff;">
+                                        📧 Notif (<?php echo $d['pendientes_notificar']; ?>)
+                                    </button>
+                                </form>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+
+        <?php if ($descuento_editar): ?>
+        <div id="edit-modal">
+            <div class="modal-content">
+                <h3 style="border-bottom: 2px solid #00ff00; padding-bottom: 10px; margin-bottom: 20px; font-size:14px;">✏️ Editando: <?php echo htmlspecialchars($descuento_editar['code']); ?></h3>
+                
+                <form method="POST" action="descuentos.php">
+                    <input type="hidden" name="action" value="editar_descuento">
+                    <input type="hidden" name="id" value="<?php echo $descuento_editar['id']; ?>">
+                    
+                    <div class="form-group">
+                        <label>Código (Texto que ingresa el usuario)</label>
+                        <input type="text" name="code" value="<?php echo htmlspecialchars($descuento_editar['code']); ?>" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Descripción de Validación</label>
+                        <textarea name="description" rows="3" required><?php echo htmlspecialchars($descuento_editar['description']); ?></textarea>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Tipo de Crédito</label>
+                            <select name="type" required>
+                                <option value="percent" <?php echo $descuento_editar['type'] === 'percent' ? 'selected' : ''; ?>>Porcentaje (%)</option>
+                                <option value="fixed" <?php echo $descuento_editar['type'] === 'fixed' ? 'selected' : ''; ?>>Monto Fijo (€)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Valor</label>
+                            <input type="number" name="value" step="0.01" value="<?php echo htmlspecialchars($descuento_editar['value']); ?>" required>
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Aplica a</label>
+                            <select name="applies_to" required>
+                                <option value="total" <?php echo $descuento_editar['applies_to'] === 'total' ? 'selected' : ''; ?>>Total del Pedido</option>
+                                <option value="series" <?php echo $descuento_editar['applies_to'] === 'series' ? 'selected' : ''; ?>>Serie Específica</option>
+                                <option value="shipping" <?php echo $descuento_editar['applies_to'] === 'shipping' ? 'selected' : ''; ?>>Envío Gratis</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Restringir a Serie</label>
+                            <select name="series_slug">
+                                <option value="">Cualquiera...</option>
+                                <?php foreach ($series as $s): ?>
+                                    <option value="<?php echo htmlspecialchars($s['slug']); ?>" <?php echo $descuento_editar['series_slug'] === $s['slug'] ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($s['name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; text-transform:none; letter-spacing:0; font-size:13px; color:var(--text);">
+                            <input type="checkbox" name="is_stackable" value="1" style="width:16px;height:16px;" <?php echo !empty($descuento_editar['is_stackable']) ? 'checked' : ''; ?>>
+                            <span><strong>Acumulable</strong> — se combina con otros descuentos acumulables del usuario</span>
+                        </label>
+                    </div>
+
+                    <div class="section-title">Límites y Fechas</div>
+                    
+                    <div class="form-group">
+                        <label>Límite de Usos (Vacío = Infinito)</label>
+                        <input type="number" name="max_uses" value="<?php echo htmlspecialchars($descuento_editar['max_uses']); ?>">
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Válido Desde</label>
+                            <input type="date" name="valid_from" value="<?php echo format_date_for_input($descuento_editar['valid_from']); ?>">
+                        </div>
+                        <div class="form-group">
+                            <label>Válido Hasta</label>
+                            <input type="date" name="valid_until" value="<?php echo format_date_for_input($descuento_editar['valid_until']); ?>">
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="background: #222; padding: 12px; border: 1px solid #444; border-radius: 4px;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 0;">
+                            <input type="checkbox" name="is_active" value="1" <?php echo $descuento_editar['is_active'] ? 'checked' : ''; ?> style="width: 18px; height: 18px;">
+                            <span style="font-size: 13px; color: #fff; text-transform:none;">Protocolo Activo</span>
+                        </label>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button type="submit" class="btn" style="flex: 1;">💾 Guardar Cambios</button>
+                        <a href="descuentos.php" class="btn btn-secondary" style="text-align: center;">Cancelar</a>
+                    </div>
+                </form>
             </div>
         </div>
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                document.getElementById('edit-modal').style.display = 'flex';
+            });
+        </script>
+        <?php endif; ?>
+
+        <?php if ($view_users_id && $view_discount): ?>
+        <div id="users-modal" style="display:flex; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center; padding:15px;">
+            <div class="modal-content" style="max-width:800px; width:100%;">
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
+                    <h3 style="margin:0; font-size:16px;">👥 Atletas con Protocolo: <span style="color:var(--sent);font-family:monospace;"><?php echo htmlspecialchars($view_discount['code']); ?></span></h3>
+                    <a href="descuentos.php" style="color:#aaa; text-decoration:none; font-size:20px; line-height:1;">&times;</a>
+                </div>
+                
+                <div class="table-container" style="max-height: 60vh; overflow-y: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Atleta</th>
+                                <th>Asignado el</th>
+                                <th>Avisos Enviados</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($view_users_data)): ?>
+                                <tr><td colspan="4" style="text-align:center; padding:40px; color:var(--text-2);">Nadie tiene asignado este protocolo todavía.</td></tr>
+                            <?php else: ?>
+                                <?php foreach ($view_users_data as $vu): ?>
+                                    <tr style="border-bottom: 1px solid #222;">
+                                        <td>
+                                            <strong><?php echo htmlspecialchars($vu['username'] ?: 'Sin nombre'); ?></strong><br>
+                                            <span style="font-size:11px; color:var(--text-2);"><?php echo htmlspecialchars($vu['email']); ?></span>
+                                        </td>
+                                        <td>
+                                            <span style="font-size:13px;"><?php echo date('d/m/Y H:i', strtotime($vu['assigned_at'])); ?></span>
+                                        </td>
+                                        <td>
+                                            <?php if ($vu['reminders_sent'] > 0): ?>
+                                                <strong style="color:#3b82f6; font-size:13px;"><?php echo $vu['reminders_sent']; ?> emails</strong><br>
+                                                <span style="font-size:10px; color:var(--text-2);">Últ: <?php echo date('d/m/y H:i', strtotime($vu['last_reminder_at'])); ?></span>
+                                            <?php else: ?>
+                                                <span style="color:var(--text-3); font-size:12px;">0 (No avisado)</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php if ($vu['used_at']): ?>
+                                                <span class="badge-status bg-success" style="color:#fff;">USADO (<?php echo date('d/m/y', strtotime($vu['used_at'])); ?>)</span>
+                                            <?php else: ?>
+                                                <span class="badge-status" style="background:#444; color:#fff;">PENDIENTE</span>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div style="margin-top: 20px; text-align:right;">
+                    <a href="descuentos.php" class="btn btn-secondary">Cerrar Historial</a>
+                </div>
+            </div>
+        </div>
+        <script>
+            // Cerrar el modal al hacer click fuera del contenido (en el overlay oscuro)
+            document.getElementById('users-modal').addEventListener('click', function(e) {
+                if(e.target === this) {
+                    window.location.href = 'descuentos.php';
+                }
+            });
+        </script>
+        <?php endif; ?>
 
         <footer style="margin-top: 40px; padding-bottom:20px; text-align:center; font-size:11px; color:var(--text-2);">
             <p>DCIEN · Sistema de Gestión de Validaciones</p>

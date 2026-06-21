@@ -15,4 +15,4 @@ Disallow: /*&*
 Allow: /
 
 # Ubicación del Sitemap
-Sitemap: https://d-cien.es/sitemap.xml
+Sitemap: https://d-cien.es/sitemap-index.xml

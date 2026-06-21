@@ -9,6 +9,35 @@ const schema = getWebPageSchema(seo.title, seo.description, Astro.url.href);
 // Series archivadas = isActive: false
 const archivedSeries: SeriesConfig[] = seriesData.filter((s: SeriesConfig) => !s.isActive);
 
+const lifestyleImages = [
+  '/images/brand/filosofia.png',
+  '/images/brand/identidad5.jpg',
+  '/images/brand/identidad3.jpeg',
+  '/images/brand/identidad6.jpg',
+  '/images/brand/identidad4.png',
+  
+  
+];
+
+// Mezclar series y fotos lifestyle
+const galleryItems: any[] = [];
+let lifestyleIndex = 0;
+
+archivedSeries.forEach((serie, index) => {
+  galleryItems.push({ type: 'serie', data: serie });
+  // Intercalar una imagen lifestyle cada 1 o 2 series
+  if (index % 2 === 0 && lifestyleIndex < lifestyleImages.length) {
+    galleryItems.push({ type: 'lifestyle', src: lifestyleImages[lifestyleIndex] });
+    lifestyleIndex++;
+  }
+});
+
+// Añadir las sobrantes si las hay
+while(lifestyleIndex < lifestyleImages.length) {
+  galleryItems.push({ type: 'lifestyle', src: lifestyleImages[lifestyleIndex] });
+  lifestyleIndex++;
+}
+
 // Schema.org OutOfStock para cada serie archivada
 const productSchemas = archivedSeries.map((s: SeriesConfig) =>
   getProductSchema(s.name, s.description, s.slug, s.price, s.images, 'OutOfStock')
@@ -24,119 +53,101 @@ const productSchemas = archivedSeries.map((s: SeriesConfig) =>
   </Fragment>
 
   <main class="relative z-10">
-    <section class="pt-32 pb-20 px-6">
-      <div class="max-w-4xl mx-auto">
+    <section class="pt-32 pb-32 px-6 min-h-screen">
+      <div class="max-w-[1400px] mx-auto">
 
-        <!-- CABECERA -->
-        <div class="text-center mb-16 animate-fade-in">
-          <h1 class="font-brand text-5xl md:text-7xl tracking-[0.1em] text-black dark:text-white mb-6">
-            ARCHIVO
-          </h1>
-          <div class="space-y-2">
-            <p class="text-[10px] md:text-xs uppercase tracking-[0.5em] text-black/60 dark:text-white/60">
-              Registro Histórico de Activos
+        <!-- CABECERA DE LA GALERÍA -->
+        <div class="mb-24 animate-fade-in flex flex-col md:flex-row md:items-end justify-between border-b border-black/10 dark:border-white/10 pb-12">
+          <div>
+            <h1 class="font-brand text-6xl md:text-[8rem] tracking-[0.05em] text-black dark:text-white leading-none mb-4">
+              ARCHIVO
+            </h1>
+            <p class="text-[10px] md:text-xs uppercase tracking-[0.5em] text-black/40 dark:text-white/40">
+              Catálogo de Obras Finalizadas
             </p>
-            <p class="text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-black/40 dark:text-white/40 max-w-xs mx-auto leading-relaxed">
-              Series completadas. Protocolos de producción finalizados y fuera de circulación.
+          </div>
+          <div class="mt-8 md:mt-0 max-w-xs text-right">
+            <p class="text-[9px] uppercase tracking-[0.3em] text-black/40 dark:text-white/30 leading-relaxed font-mono">
+              Los protocolos mostrados aquí representan producciones únicas cerradas de manera permanente. Nunca volverán a estar disponibles.
             </p>
           </div>
         </div>
 
-        <!-- VACÍO: ninguna serie archivada aún -->
-        {archivedSeries.length === 0 && (
-          <div class="text-center py-20 border-y border-black/5 dark:border-white/5">
-            <p class="text-[11px] uppercase tracking-[0.4em] text-black/30 dark:text-white/30 italic">
-              — No hay registros históricos disponibles en este ciclo —
+        {galleryItems.length === 0 && (
+          <div class="text-center py-32">
+            <p class="text-[11px] uppercase tracking-[0.4em] text-black/30 dark:text-white/30 italic font-mono">
+              — EL ARCHIVO SE ENCUENTRA VACÍO EN ESTE CICLO —
             </p>
           </div>
         )}
 
-        <!-- GRID DE SERIES ARCHIVADAS -->
-        {archivedSeries.length > 0 && (
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-12 animate-slide-up">
-            {archivedSeries.map((serie: SeriesConfig) => {
+        <!-- GALERÍA MASONRY -->
+        {galleryItems.length > 0 && (
+          <div class="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8 animate-slide-up">
+            {galleryItems.map((item: any, index: number) => {
+              
+              const directions = ['from-left', 'from-right', 'from-bottom'];
+              const direction = directions[index % directions.length];
+
+              // RENDERIZAR FOTO LIFESTYLE PURA
+              if (item.type === 'lifestyle') {
+                return (
+                  <article class={`art-item ${direction} break-inside-avoid relative group overflow-hidden bg-white dark:bg-black border border-black/5 dark:border-white/5`} data-active="false" data-entered="false">
+                    <div class="relative overflow-hidden">
+                      <img
+                        src={item.src}
+                        alt="DCIEN Brand Identity"
+                        class="w-full h-auto object-cover grayscale opacity-40 transition-all duration-1000 group-hover:scale-105 group-hover:grayscale-0 group-hover:opacity-100 group-data-[active=true]:scale-105 group-data-[active=true]:grayscale-0 group-data-[active=true]:opacity-100"
+                        loading="lazy"
+                      />
+                    </div>
+                  </article>
+                );
+              }
+
+              // RENDERIZAR SERIE ARCHIVADA
+              const serie = item.data;
               const mainImage = serie.images?.[0] ?? '/images/brand/og-image.jpg';
-              const endYear = serie.endDate
-                ? new Date(serie.endDate).getFullYear()
+              // Usar releaseDate si existe, sino el año actual
+              const year = serie.releaseDate 
+                ? new Date(serie.releaseDate).getFullYear() 
                 : new Date().getFullYear();
-              const sizesLabel = serie.sizes.map((s: { size: string; type: string; available: boolean }) => s.size).join(' · ');
 
               return (
-                <article class="group relative border border-black/10 dark:border-white/10 overflow-hidden">
-
-                  <!-- IMAGEN -->
-                  <div class="relative aspect-[4/5] overflow-hidden bg-black/5 dark:bg-white/5">
+                <article class={`art-item ${direction} break-inside-avoid relative group cursor-crosshair overflow-hidden bg-white dark:bg-black border border-black/5 dark:border-white/5`} data-active="false" data-entered="false">
+                  <!-- IMAGEN MASONRY -->
+                  <div class="relative overflow-hidden">
                     <img
                       src={mainImage}
-                      alt={`${serie.name} — Serie Archivada DCIEN`}
-                      class="w-full h-full object-cover grayscale opacity-70 transition-all duration-700 group-hover:opacity-50"
+                      alt={`${serie.name} — Archivo DCIEN`}
+                      class="w-full h-auto object-cover grayscale opacity-60 transition-all duration-1000 group-hover:scale-105 group-hover:grayscale-0 group-hover:opacity-100 group-data-[active=true]:scale-105 group-data-[active=true]:grayscale-0 group-data-[active=true]:opacity-100"
                       loading="lazy"
                     />
-
-                    <!-- BADGE -->
-                    <div class="absolute top-4 left-4">
-                      <span class="text-[8px] uppercase tracking-[0.5em] px-3 py-1 border border-black/20 dark:border-white/20 bg-white/80 dark:bg-black/80 text-black/50 dark:text-white/50">
-                        Protocolo Cerrado
-                      </span>
-                    </div>
-
-                    <!-- AÑO DE CIERRE -->
-                    <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent">
-                      <p class="text-[9px] uppercase tracking-[0.4em] text-white/60">
-                        Producción finalizada · {endYear}
-                      </p>
-                    </div>
+                    <!-- Overlay oscuro que desaparece en hover o scroll -->
+                    <div class="absolute inset-0 bg-black/40 dark:bg-black/40 group-hover:bg-transparent group-data-[active=true]:bg-transparent transition-colors duration-1000 z-10 pointer-events-none"></div>
                   </div>
 
-                  <!-- INFO -->
-                  <div class="p-6 space-y-4">
-
-                    <!-- Nombre -->
-                    <div class="flex items-start justify-between gap-4">
-                      <h2 class="font-brand text-2xl tracking-[0.12em] text-black dark:text-white">
+                  <!-- PLACA DE ARTE (TEXTO) -->
+                  <div class="absolute bottom-0 left-0 right-0 p-6 md:p-8 bg-gradient-to-t from-white via-white/90 dark:from-black dark:via-black/80 to-transparent z-20 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 group-data-[active=true]:translate-y-0 group-data-[active=true]:opacity-100 transition-all duration-700 ease-out">
+                    <div class="flex justify-between items-end border-b border-black/10 dark:border-white/20 pb-4 mb-4">
+                      <h2 class="font-brand text-3xl md:text-4xl text-black dark:text-white uppercase tracking-wider">
                         {serie.name}
                       </h2>
-                      <div class="text-right shrink-0">
-                        <p class="text-[9px] uppercase tracking-[0.3em] text-black/40 dark:text-white/40">
-                          100 unidades
-                        </p>
-                        <p class="text-[9px] uppercase tracking-[0.3em] text-black/30 dark:text-white/30">
-                          100% registradas
-                        </p>
-                      </div>
+                      <span class="text-[10px] text-black/50 dark:text-white/50 font-mono tracking-widest">{year}</span>
                     </div>
-
-                    <!-- Descripción -->
-                    <p class="text-[11px] leading-relaxed text-black/50 dark:text-white/50 line-clamp-3">
+                    
+                    <p class="text-[9px] uppercase tracking-[0.2em] text-black/60 dark:text-white/60 leading-relaxed font-sans w-3/4">
                       {serie.description}
                     </p>
-
-                    <!-- Colores / Tallas -->
-                    <div class="flex items-center gap-6 pt-2 border-t border-black/5 dark:border-white/5">
-                      <div>
-                        <p class="text-[8px] uppercase tracking-[0.4em] text-black/30 dark:text-white/30 mb-1">Colores</p>
-                        <p class="text-[10px] uppercase tracking-[0.2em] text-black/50 dark:text-white/50">
-                          {serie.colors.join(' / ')}
-                        </p>
-                      </div>
-                      <div>
-                        <p class="text-[8px] uppercase tracking-[0.4em] text-black/30 dark:text-white/30 mb-1">Tallas</p>
-                        <p class="text-[10px] uppercase tracking-[0.2em] text-black/50 dark:text-white/50">
-                          {sizesLabel}
-                        </p>
-                      </div>
+                    
+                    <div class="mt-6 flex gap-4">
+                       <span class="text-[8px] uppercase tracking-[0.4em] text-black/40 dark:text-white/30 border border-black/10 dark:border-white/10 px-2 py-1">
+                         Status: Archivada
+                       </span>
+                       <span class="text-[8px] uppercase tracking-[0.4em] text-black/40 dark:text-white/30 border border-black/10 dark:border-white/10 px-2 py-1">
+                         Prod: 100 Uds.
+                       </span>
                     </div>
-
-                    <!-- Precio tachado -->
-                    <div class="flex items-center justify-between pt-2">
-                      <span class="text-[11px] uppercase tracking-[0.3em] text-black/30 dark:text-white/30 line-through">
-                        {serie.price.toFixed(2)} €
-                      </span>
-                      <span class="text-[9px] uppercase tracking-[0.4em] text-black/20 dark:text-white/20">
-                        Fuera de circulación
-                      </span>
-                    </div>
-
                   </div>
                 </article>
               );
@@ -144,25 +155,17 @@ const productSchemas = archivedSeries.map((s: SeriesConfig) =>
           </div>
         )}
 
-        <!-- CTA -->
-        <div class="mt-20 flex justify-center animate-slide-up" style="animation-delay: 0.4s;">
+        <!-- BOTÓN REGRESO -->
+        <div class="mt-32 flex justify-center animate-slide-up" style="animation-delay: 0.4s;">
           <a
             href="/series-activas"
-            class="group relative px-10 py-4 overflow-hidden rounded-full border border-black/10 dark:border-white/20 bg-transparent transition-all duration-500 hover:border-black dark:hover:border-white inline-block"
+            class="group relative px-10 py-5 overflow-hidden border border-black/20 dark:border-white/20 bg-transparent transition-all duration-500 hover:border-black dark:hover:border-white inline-block"
           >
             <span class="absolute inset-0 w-0 bg-black dark:bg-white transition-all duration-500 ease-out group-hover:w-full"></span>
-            <span class="relative flex items-center gap-3">
-              <span class="text-[11px] uppercase tracking-[0.4em] font-bold text-black dark:text-white group-hover:text-white dark:group-hover:text-black transition-colors duration-500">
-                Ver Protocolos Activos
+            <span class="relative flex items-center gap-4 text-center">
+              <span class="text-[10px] uppercase tracking-[0.5em] font-bold text-black dark:text-white group-hover:text-white dark:group-hover:text-black transition-colors duration-500">
+                Volver a Protocolos Activos
               </span>
-              <svg
-                class="w-4 h-4 text-black dark:text-white group-hover:text-white dark:group-hover:text-black transition-all duration-500 transform group-hover:translate-x-1"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
             </span>
           </a>
         </div>
@@ -174,24 +177,82 @@ const productSchemas = archivedSeries.map((s: SeriesConfig) =>
 
 <style>
   .animate-fade-in {
-    animation: fadeIn 1.2s ease-out forwards;
+    animation: fadeIn 1.5s ease-out forwards;
   }
   .animate-slide-up {
     opacity: 0;
-    animation: slideUp 1s ease-out forwards;
+    animation: slideUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-5px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; }
+    to   { opacity: 1; }
   }
   @keyframes slideUp {
-    from { opacity: 0; transform: translateY(15px); }
+    from { opacity: 0; transform: translateY(40px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-  .line-clamp-3 {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+
+  .art-item.from-left {
+    opacity: 0;
+    transform: translateX(-40px);
+    transition: opacity 1s ease-out, transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .art-item.from-right {
+    opacity: 0;
+    transform: translateX(40px);
+    transition: opacity 1s ease-out, transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .art-item.from-bottom {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 1s ease-out, transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .art-item[data-entered="true"] {
+    opacity: 1;
+    transform: translate(0, 0);
   }
 </style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // 1. Animación de Entrada (Aparecen desde los lados/abajo)
+    const entryObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.setAttribute('data-entered', 'true');
+          observer.unobserve(entry.target); // Solo animar una vez al entrar
+        }
+      });
+    }, {
+      root: null,
+      rootMargin: '0px 0px -10% 0px', // Iniciar poco antes de que toque el fondo
+      threshold: 0
+    });
+
+    const items = document.querySelectorAll('.art-item');
+    items.forEach(item => {
+      entryObserver.observe(item);
+    });
+
+    // 2. Lógica para iluminar las fotos en móvil al pasar por el centro
+    if (window.innerWidth <= 768) {
+      const activeObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.setAttribute('data-active', 'true');
+          } else {
+            entry.target.setAttribute('data-active', 'false');
+          }
+        });
+      }, {
+        root: null,
+        rootMargin: '-30% 0px -30% 0px',
+        threshold: 0
+      });
+
+      items.forEach(item => {
+        activeObserver.observe(item);
+      });
+    }
+  });
+</script>

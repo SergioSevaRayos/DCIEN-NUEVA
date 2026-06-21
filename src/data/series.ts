@@ -347,7 +347,7 @@ export const seriesData: SeriesConfig[] = [
     ],
     isActive: true,
     gender: 'unisex',
-    releaseDate: '2026-03-01T00:00:00Z',
+    releaseDate: '2026-04-01T00:00:00Z',
     seo: {
       title: 'SERIE 10 | DCIEN',
       description: 'Solo 100 piezas fabricadas. Prenda de alta durabilidad y diseño exclusivo. El estándar definitivo en moda de lujo deportivo.',
@@ -376,7 +376,7 @@ export const seriesData: SeriesConfig[] = [
     ],
     isActive: true,
     gender: 'unisex',
-    releaseDate: '2026-03-01T00:00:00Z',
+    releaseDate: '2026-04-15T00:00:00Z',
     seo: {
       title: 'SERIE 11 | DCIEN',
       description: 'Corte premium superior y diseño exclusivo. Colección cerrada de solo 100 prendas para fuera del box. Identidad visual intacta.',
@@ -405,7 +405,7 @@ export const seriesData: SeriesConfig[] = [
     ],
     isActive: true,
     gender: 'unisex',
-    releaseDate: '2026-03-01T00:00:00Z',
+    releaseDate: '2026-05-01T00:00:00Z',
     seo: {
       title: 'SERIE 12 | DCIEN',
       description: 'Streetwear premium de máxima calidad. Edición numerada de 100 unidades. Sofisticación y estética brutalista para uso diario.',

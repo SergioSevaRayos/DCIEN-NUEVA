@@ -80,8 +80,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $temp_pass_hash = password_hash($temp_password, PASSWORD_BCRYPT);
                     $token_str      = bin2hex(random_bytes(32));
 
-                    $stmt3 = $pdo->prepare('INSERT INTO activation_tokens (token, instagram_username, temp_username, temp_password_hash, expires_at, created_at) VALUES (?, ?, ?, ?, ?, NOW())');
-                    $stmt3->execute([$token_str, $instagram_placeholder, $temp_username, $temp_pass_hash, $expires_at]);
+                    $stmt3 = $pdo->prepare('INSERT INTO activation_tokens (token, instagram_username, temp_username, temp_password_hash, expires_at, created_at, discount_id) VALUES (?, ?, ?, ?, ?, NOW(), ?)');
+                    $stmt3->execute([$token_str, $instagram_placeholder, $temp_username, $temp_pass_hash, $expires_at, $discount_id]);
 
                     $pdo->prepare('UPDATE qr_bonos SET created_by = ?, temp_password = ? WHERE id = ?')->execute([
                         $created_by . ' | user:' . $temp_username . ' | discount_id:' . $discount_id,
@@ -136,7 +136,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 if (session_status() === PHP_SESSION_NONE) session_start();
                 $_SESSION['bonos_resultado'] = '<strong>' . $num . '</strong> bono(s) creados. Descuento: <strong>' . $discount_label . '</strong>. Validos hasta: <strong>' . $expires_at . '</strong>' . $err_txt . $tabla;
-                header('Location: bonos.php?created=1');
+                
+                $redirect_campaign = $campaign ? '?campaign=' . urlencode($campaign) : '?campaign=' . urlencode('Sin Campaña');
+                header('Location: bonos.php' . $redirect_campaign);
                 exit;
             } else {
                 $message = show_message('error', 'No se pudo crear ningun bono. ' . implode(', ', $errores));
@@ -177,8 +179,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$bonos = $pdo->query('SELECT b.*, (SELECT COUNT(*) FROM qr_bonos_usos u WHERE u.bono_id = b.id) as total_scans FROM qr_bonos b ORDER BY b.is_active DESC, b.created_at DESC')->fetchAll();
 $series = $pdo->query('SELECT slug, name FROM series ORDER BY name')->fetchAll();
+
+// Estadísticas globales (siempre presentes)
+$stmt_global = $pdo->query('SELECT COUNT(*) as total, SUM(is_active) as activos FROM qr_bonos')->fetch();
+$total_bonos = $stmt_global['total'] ?? 0;
+$activos = $stmt_global['activos'] ?? 0;
+$total_scans = $pdo->query('SELECT COUNT(*) FROM qr_bonos_usos')->fetchColumn() ?? 0;
 
 $bono_editar = null;
 if (isset($_GET['edit'])) {
@@ -187,11 +194,35 @@ if (isset($_GET['edit'])) {
     $bono_editar = $stmt->fetch();
 }
 
-$total_bonos = count($bonos);
-$activos     = count(array_filter($bonos, fn($b) => $b['is_active'] == 1));
-$total_scans = array_sum(array_column($bonos, 'total_scans'));
-
 $ultimos_scans = $pdo->query('SELECT u.canjeado_at, u.ip, u.bono_code, b.nombre, b.discount_value, b.discount_type FROM qr_bonos_usos u JOIN qr_bonos b ON b.id = u.bono_id ORDER BY u.canjeado_at DESC LIMIT 10')->fetchAll();
+
+$view_mode = 'dashboard';
+$current_campaign = $_GET['campaign'] ?? null;
+$bonos = [];
+$campaigns = [];
+
+if ($current_campaign !== null) {
+    $view_mode = 'table';
+    if ($current_campaign === 'Sin Campaña') {
+        $stmt = $pdo->prepare("SELECT b.*, (SELECT COUNT(*) FROM qr_bonos_usos u WHERE u.bono_id = b.id) as total_scans FROM qr_bonos b WHERE campaign IS NULL OR campaign = '' ORDER BY b.is_active DESC, b.created_at DESC");
+        $stmt->execute();
+    } else {
+        $stmt = $pdo->prepare("SELECT b.*, (SELECT COUNT(*) FROM qr_bonos_usos u WHERE u.bono_id = b.id) as total_scans FROM qr_bonos b WHERE campaign = ? ORDER BY b.is_active DESC, b.created_at DESC");
+        $stmt->execute([$current_campaign]);
+    }
+    $bonos = $stmt->fetchAll();
+} else {
+    $campaigns = $pdo->query("
+        SELECT 
+            COALESCE(NULLIF(campaign, ''), 'Sin Campaña') as campaign_name,
+            COUNT(id) as total_bonos,
+            SUM(is_active) as activos,
+            SUM((SELECT COUNT(*) FROM qr_bonos_usos u WHERE u.bono_id = qr_bonos.id)) as total_scans
+        FROM qr_bonos
+        GROUP BY 1
+        ORDER BY total_bonos DESC
+    ")->fetchAll();
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -349,7 +380,7 @@ $ultimos_scans = $pdo->query('SELECT u.canjeado_at, u.ip, u.bono_code, b.nombre,
                     <h3 style="font-size:13px;border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:18px;color:var(--text);font-weight:700;letter-spacing:1.5px">
                         EDITANDO BONO: <span style="font-family:monospace;color:var(--sent)"><?= e($bono_editar['code']) ?></span>
                     </h3>
-                    <form method="POST" action="bonos.php?edit=<?= $bono_editar['id'] ?>">
+                    <form method="POST" action="bonos.php?edit=<?= $bono_editar['id'] ?><?= isset($_GET['campaign']) ? '&campaign=' . urlencode($_GET['campaign']) : '' ?>">
                         <input type="hidden" name="action" value="editar_bono">
                         <input type="hidden" name="id" value="<?= $bono_editar['id'] ?>">
                         <div class="form-group"><label>Nombre interno</label><input type="text" name="nombre" value="<?= e($bono_editar['nombre']) ?>" required></div>
@@ -395,7 +426,7 @@ $ultimos_scans = $pdo->query('SELECT u.canjeado_at, u.ip, u.bono_code, b.nombre,
                         </div>
                         <div style="display:flex;gap:10px;margin-top:18px">
                             <button type="submit" class="btn btn-primary" style="flex:1">Guardar</button>
-                            <a href="bonos.php" class="btn btn-secondary" style="flex:1;text-align:center;justify-content:center">Cancelar</a>
+                            <a href="bonos.php<?= isset($_GET['campaign']) ? '?campaign=' . urlencode($_GET['campaign']) : '' ?>" class="btn btn-secondary" style="flex:1;text-align:center;justify-content:center">Cancelar</a>
                         </div>
                     </form>
                 <?php else: ?>
@@ -428,83 +459,118 @@ $ultimos_scans = $pdo->query('SELECT u.canjeado_at, u.ip, u.bono_code, b.nombre,
         </div>
 
         <div>
-            <div class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px">
-                    <h3 style="font-size:13px;margin:0">Bonos creados</h3>
-                    <span style="font-size:11px;color:var(--text-2)"><?= $total_bonos ?> bonos</span>
-                </div>
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr><th>Codigo / Nombre</th><th>Descuento</th><th>Usos</th><th>Vigencia</th><th>Estado</th><th>Acciones</th></tr>
-                        </thead>
-                        <tbody>
-                        <?php if (empty($bonos)): ?>
-                            <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-3)">No hay bonos creados.</td></tr>
+            <?php if ($view_mode === 'dashboard'): ?>
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px">
+                        <h3 style="font-size:13px;margin:0">Campañas / Tandas</h3>
+                        <span style="font-size:11px;color:var(--text-2)"><?= count($campaigns) ?> campañas</span>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(250px, 1fr));gap:16px;">
+                        <?php if (empty($campaigns)): ?>
+                            <p style="color:var(--text-3);font-size:12px;text-align:center;grid-column:1/-1;padding:20px;">No hay campañas creadas.</p>
                         <?php else: ?>
-                            <?php foreach ($bonos as $b):
-                                $now      = time();
-                                $expirado = $b['valid_until'] && strtotime($b['valid_until']) < $now;
-                                $agotado  = $b['max_uses'] && $b['used_count'] >= $b['max_uses'];
-                                $activo   = $b['is_active'] && !$expirado && !$agotado;
-                                $bono_url = 'https://d-cien.es/bono/?code=' . urlencode($b['code']);
-                                // Extraer username del campo created_by (formato: "Admin | user:BONO_XXXX | discount_id:X")
-                                $temp_user = '';
-                                if (preg_match('/user:([^\s|]+)/', $b['created_by'] ?? '', $m)) {
-                                    $temp_user = $m[1];
-                                }
-                                $temp_pass = $b['temp_password'] ?? '';
-                            ?>
-                            <tr>
-                                <td>
-                                    <div style="font-family:monospace;font-size:13px;font-weight:bold;color:var(--sent);letter-spacing:2px"><?= e($b['code']) ?></div>
-                                    <div style="font-size:11px;color:var(--text-2);margin-top:2px"><?= e($b['nombre']) ?></div>
-                                    <?php if ($b['campaign']): ?><div style="font-size:9px;color:#2563eb;margin-top:2px;text-transform:uppercase"><?= e($b['campaign']) ?></div><?php endif; ?>
-                                </td>
-                                <td>
-                                    <strong style="font-size:14px"><?= $b['discount_type']==='percent' ? number_format($b['discount_value'],0).'%' : 'EUR '.number_format($b['discount_value'],2) ?></strong>
-                                    <?php if ($b['series_slug']): ?><div style="font-size:9px;color:var(--text-3);text-transform:uppercase;margin-top:2px"><?= e($b['series_slug']) ?></div><?php endif; ?>
-                                </td>
-                                <td>
-                                    <strong><?= (int)$b['used_count'] ?></strong>
-                                    <span style="color:var(--text-3)">/ <?= $b['max_uses'] ?? 'inf' ?></span>
-                                    <div style="font-size:9px;color:var(--text-3);margin-top:2px"><?= (int)$b['total_scans'] ?> escaneos</div>
-                                </td>
-                                <td style="font-size:11px;color:var(--text-2)">
-                                    <?= $b['valid_until'] ? date('d/m/Y', strtotime($b['valid_until'])) : '<span style="color:var(--text-3)">Sin límite</span>' ?>
-                                </td>
-                                <td>
-                                    <?php if ($expirado): ?>      <span class="badge badge-red">EXPIRADO</span>
-                                    <?php elseif ($agotado): ?>   <span class="badge badge-yellow">AGOTADO</span>
-                                    <?php elseif ($activo): ?>    <span class="badge badge-green">ACTIVO</span>
-                                    <?php else: ?>                <span class="badge badge-gray">INACTIVO</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <div style="display:flex;gap:4px;flex-wrap:wrap">
-                                        <button class="btn btn-sm btn-qr" onclick="mostrarQR('<?= e($b['code']) ?>','<?= e(addslashes($b['nombre'])) ?>','<?= e($bono_url) ?>')">QR</button>
-                                        <button class="btn btn-sm" style="background:#f0fdf4;color:#16a34a;border-color:#bbf7d0" onclick="mostrarCredenciales('<?= e(addslashes($temp_user)) ?>','<?= e(addslashes($temp_pass)) ?>','<?= e($b['code']) ?>')">CREDS</button>
-                                        <a href="bonos.php?edit=<?= $b['id'] ?>" class="btn btn-sm">Edit</a>
-                                        <form method="POST" style="display:inline">
-                                            <input type="hidden" name="action" value="toggle">
-                                            <input type="hidden" name="id" value="<?= $b['id'] ?>">
-                                            <button type="submit" class="btn btn-sm"><?= $b['is_active'] ? 'Off' : 'On' ?></button>
-                                        </form>
-                                        <button class="btn btn-sm" onclick="copiarURL('<?= e($bono_url) ?>')">URL</button>
-                                        <form method="POST" style="display:inline" onsubmit="return confirm('Eliminar?')">
-                                            <input type="hidden" name="action" value="eliminar_bono">
-                                            <input type="hidden" name="id" value="<?= $b['id'] ?>">
-                                            <button type="submit" class="btn btn-sm btn-danger">Del</button>
-                                        </form>
+                            <?php foreach ($campaigns as $camp): ?>
+                                <a href="?campaign=<?= urlencode($camp['campaign_name']) ?>" style="display:block;text-decoration:none;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;transition:all 0.2s;">
+                                    <h4 style="margin:0 0 12px 0;font-size:14px;color:var(--text);"><?= e($camp['campaign_name']) ?></h4>
+                                    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-2);margin-bottom:8px;">
+                                        <span>Bonos generados:</span>
+                                        <strong style="color:var(--text);"><?= $camp['total_bonos'] ?></strong>
                                     </div>
-                                </td>
-                            </tr>
+                                    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-2);margin-bottom:8px;">
+                                        <span>Activos:</span>
+                                        <strong style="color:var(--text);"><?= $camp['activos'] ?></strong>
+                                    </div>
+                                    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-2);">
+                                        <span>Escaneos:</span>
+                                        <strong style="color:var(--sent);"><?= $camp['total_scans'] ?: 0 ?></strong>
+                                    </div>
+                                </a>
                             <?php endforeach; ?>
                         <?php endif; ?>
-                        </tbody>
-                    </table>
+                    </div>
                 </div>
-            </div>
+            <?php else: ?>
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px">
+                        <div style="display:flex;align-items:center;gap:15px;">
+                            <a href="bonos.php" class="btn btn-sm btn-secondary" style="text-decoration:none;background:var(--surface-2);border:1px solid var(--border);padding:4px 10px;border-radius:4px;color:var(--text);">← Volver</a>
+                            <h3 style="font-size:13px;margin:0">Campaña: <?= e($current_campaign) ?></h3>
+                        </div>
+                        <span style="font-size:11px;color:var(--text-2)"><?= count($bonos) ?> bonos</span>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr><th>Codigo / Nombre</th><th>Descuento</th><th>Usos</th><th>Vigencia</th><th>Estado</th><th>Acciones</th></tr>
+                            </thead>
+                            <tbody>
+                            <?php if (empty($bonos)): ?>
+                                <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-3)">No hay bonos creados.</td></tr>
+                            <?php else: ?>
+                                <?php foreach ($bonos as $b):
+                                    $now      = time();
+                                    $expirado = $b['valid_until'] && strtotime($b['valid_until']) < $now;
+                                    $agotado  = $b['max_uses'] && $b['used_count'] >= $b['max_uses'];
+                                    $activo   = $b['is_active'] && !$expirado && !$agotado;
+                                    $bono_url = 'https://d-cien.es/bono/?code=' . urlencode($b['code']);
+                                    // Extraer username del campo created_by (formato: "Admin | user:BONO_XXXX | discount_id:X")
+                                    $temp_user = '';
+                                    if (preg_match('/user:([^\s|]+)/', $b['created_by'] ?? '', $m)) {
+                                        $temp_user = $m[1];
+                                    }
+                                    $temp_pass = $b['temp_password'] ?? '';
+                                ?>
+                                <tr>
+                                    <td>
+                                        <div style="font-family:monospace;font-size:13px;font-weight:bold;color:var(--sent);letter-spacing:2px"><?= e($b['code']) ?></div>
+                                        <div style="font-size:11px;color:var(--text-2);margin-top:2px"><?= e($b['nombre']) ?></div>
+                                        <?php if ($b['campaign']): ?><div style="font-size:9px;color:#2563eb;margin-top:2px;text-transform:uppercase"><?= e($b['campaign']) ?></div><?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <strong style="font-size:14px"><?= $b['discount_type']==='percent' ? number_format($b['discount_value'],0).'%' : 'EUR '.number_format($b['discount_value'],2) ?></strong>
+                                        <?php if ($b['series_slug']): ?><div style="font-size:9px;color:var(--text-3);text-transform:uppercase;margin-top:2px"><?= e($b['series_slug']) ?></div><?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <strong><?= (int)$b['used_count'] ?></strong>
+                                        <span style="color:var(--text-3)">/ <?= $b['max_uses'] ?? 'inf' ?></span>
+                                        <div style="font-size:9px;color:var(--text-3);margin-top:2px"><?= (int)$b['total_scans'] ?> escaneos</div>
+                                    </td>
+                                    <td style="font-size:11px;color:var(--text-2)">
+                                        <?= $b['valid_until'] ? date('d/m/Y', strtotime($b['valid_until'])) : '<span style="color:var(--text-3)">Sin límite</span>' ?>
+                                    </td>
+                                    <td>
+                                        <?php if ($expirado): ?>      <span class="badge badge-red">EXPIRADO</span>
+                                        <?php elseif ($agotado): ?>   <span class="badge badge-yellow">AGOTADO</span>
+                                        <?php elseif ($activo): ?>    <span class="badge badge-green">ACTIVO</span>
+                                        <?php else: ?>                <span class="badge badge-gray">INACTIVO</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <div style="display:flex;gap:4px;flex-wrap:wrap">
+                                            <button class="btn btn-sm btn-qr" onclick="mostrarQR('<?= e($b['code']) ?>','<?= e(addslashes($b['nombre'])) ?>','<?= e($bono_url) ?>')">QR</button>
+                                            <button class="btn btn-sm" style="background:#f0fdf4;color:#16a34a;border-color:#bbf7d0" onclick="mostrarCredenciales('<?= e(addslashes($temp_user)) ?>','<?= e(addslashes($temp_pass)) ?>','<?= e($b['code']) ?>')">CREDS</button>
+                                            <a href="bonos.php?edit=<?= $b['id'] ?>&campaign=<?= urlencode($current_campaign) ?>" class="btn btn-sm">Edit</a>
+                                            <form method="POST" style="display:inline">
+                                                <input type="hidden" name="action" value="toggle">
+                                                <input type="hidden" name="id" value="<?= $b['id'] ?>">
+                                                <button type="submit" class="btn btn-sm"><?= $b['is_active'] ? 'Off' : 'On' ?></button>
+                                            </form>
+                                            <button class="btn btn-sm" onclick="copiarURL('<?= e($bono_url) ?>')">URL</button>
+                                            <form method="POST" style="display:inline" onsubmit="return confirm('Eliminar?')">
+                                                <input type="hidden" name="action" value="eliminar_bono">
+                                                <input type="hidden" name="id" value="<?= $b['id'] ?>">
+                                                <button type="submit" class="btn btn-sm btn-danger">Del</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>

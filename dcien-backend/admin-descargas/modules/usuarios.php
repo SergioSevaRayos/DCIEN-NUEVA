@@ -210,7 +210,7 @@ $total_mostrados = count($usuarios);
         <div id="bulk-modal">
             <div class="modal-content">
                 <h3 style="color:var(--sent); margin-bottom:10px; border-bottom:1px solid #333; padding-bottom:10px;">🎁 Asignación Masiva</h3>
-                <p style="color:var(--text-2); font-size:12px; margin-bottom:20px;">Aplicar protocolo a <strong id="bulk-count" style="color:#fff;">0</strong> atletas.</p>
+                <p style="color:var(--text-2); font-size:12px; margin-bottom:20px;">Aplicar protocolo a <strong id="bulk-count" style="color:var(--text);">0</strong> atletas.</p>
                 
                 <form method="POST">
                     <input type="hidden" name="action" value="asignar_masivo">
@@ -248,7 +248,7 @@ $total_mostrados = count($usuarios);
         <div id="comunicado-modal">
             <div class="modal-content" style="max-width:600px;">
                 <h3 style="color:#e3a008; margin-bottom:10px; border-bottom:1px solid #333; padding-bottom:10px;">📧 Redactar Comunicado</h3>
-                <p style="color:var(--text-2); font-size:12px; margin-bottom:20px;">Enviar email a <strong id="comunicado-count" style="color:#fff;">0</strong> atletas.</p>
+                <p style="color:var(--text-2); font-size:12px; margin-bottom:20px;">Enviar email a <strong id="comunicado-count" style="color:var(--text);">0</strong> atletas.</p>
                 
                 <form method="POST">
                     <input type="hidden" name="action" value="enviar_comunicado">
