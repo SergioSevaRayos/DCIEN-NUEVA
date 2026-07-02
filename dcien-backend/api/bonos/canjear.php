@@ -75,17 +75,15 @@ try {
         'canjeado_at'    => date('c'),
     ];
 
-    if (!isAuthenticated()) {
-        $_SESSION['guest_bono_access']  = true;
-        $_SESSION['guest_bono_code']    = $bono['code'];
-        $_SESSION['guest_expires_at']   = $now + 86400;
-    }
-
     $pdo->commit();
 
     $valor_texto = $bono['discount_type'] === 'percent'
         ? number_format($bono['discount_value'], 0) . '%'
         : '€' . number_format($bono['discount_value'], 2);
+
+    // Credenciales de activación asociadas a este bono (creadas junto al bono en el panel admin)
+    $temp_username = !isAuthenticated() ? 'BONO_' . $bono['code'] : null;
+    $temp_password = !isAuthenticated() ? ($bono['temp_password'] ?? null) : null;
 
     jsonSuccess('Bono canjeado correctamente', [
         'bono' => [
@@ -99,9 +97,13 @@ try {
             'valid_until'    => $bono['valid_until'],
         ],
         'acceso_temporal' => !isAuthenticated(),
-        'redirect_to'     => $bono['series_slug']
-            ? '/series-activas/' . $bono['series_slug'] . '/'
-            : '/series-activas/',
+        'temp_username'   => $temp_username,
+        'temp_password'   => $temp_password,
+        'redirect_to'     => ($temp_password)
+            ? '/registro/activar?from=bono'
+            : ($bono['series_slug']
+                ? '/series-activas/' . $bono['series_slug'] . '/'
+                : '/series-activas/'),
     ]);
 
 } catch (Exception $e) {

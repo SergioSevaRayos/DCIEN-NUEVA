@@ -26,11 +26,11 @@ const seo = getSEO('acceso'); // Reutilizamos el SEO de acceso
 
       <!-- Instrucciones -->
       <div id="tour-step-1" class="mb-8 p-6 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10">
-        <h2 class="text-sm font-bold uppercase tracking-wider mb-3 text-black dark:text-white">
+        <h2 id="instructions-title" class="text-sm font-bold uppercase tracking-wider mb-3 text-black dark:text-white">
           📧 Credenciales temporales
         </h2>
-        <p class="text-xs text-black/60 dark:text-white/60 leading-relaxed">
-          Introduce las credenciales temporales que recibiste por Instagram DM. 
+        <p id="instructions-text" class="text-xs text-black/60 dark:text-white/60 leading-relaxed">
+          Introduce las credenciales temporales que recibiste por Instagram DM.
           Estas credenciales son de un solo uso y expiran en 1 año.
         </p>
       </div>
@@ -89,6 +89,32 @@ const seo = getSEO('acceso'); // Reutilizamos el SEO de acceso
   import 'driver.js/dist/driver.css';
 
   const activationForm = document.getElementById('activation-form') as HTMLFormElement;
+
+  // --- Mensaje y datos distintos si el usuario llega desde un bono QR ---
+  const urlParams = new URLSearchParams(window.location.search);
+  const fromBono = urlParams.get('from') === 'bono';
+
+  if (fromBono) {
+    const instructionsTitle = document.getElementById('instructions-title');
+    const instructionsText = document.getElementById('instructions-text');
+    if (instructionsTitle) instructionsTitle.textContent = '🎟️ Credenciales de tu bono';
+    if (instructionsText) {
+      instructionsText.textContent = 'Introduce el usuario y la contraseña que aparecen en tu bono. Son de un solo uso: úsalas ahora para crear tu cuenta definitiva.';
+    }
+
+    const bonoUsername = sessionStorage.getItem('bono_temp_username');
+    const bonoPassword = sessionStorage.getItem('bono_temp_password');
+    if (bonoUsername) {
+      const usernameInput = document.getElementById('temp-username') as HTMLInputElement;
+      if (usernameInput) usernameInput.value = bonoUsername;
+    }
+    if (bonoPassword) {
+      const passwordInput = document.getElementById('temp-password') as HTMLInputElement;
+      if (passwordInput) passwordInput.value = bonoPassword;
+    }
+    sessionStorage.removeItem('bono_temp_username');
+    sessionStorage.removeItem('bono_temp_password');
+  }
 
   // Configuración SweetAlert2
   const getSwalConfig = () => {

@@ -55,11 +55,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           }
           if (text) {
              // Mostrar el mensaje de éxito y el valor
-             text.textContent = `Redirigiendo con tu descuento de ${data.data.bono.valor_texto}...`;
+             text.textContent = `Redirigiendo con tu descuento de ${data.bono.valor_texto}...`;
           }
-          
+
+          if (data.temp_username) sessionStorage.setItem('bono_temp_username', data.temp_username);
+          if (data.temp_password) sessionStorage.setItem('bono_temp_password', data.temp_password);
+
           setTimeout(() => {
-            window.location.href = data.data.redirect_to || '/series-activas';
+            window.location.href = data.redirect_to || '/series-activas';
           }, 2000);
         } else {
           if (loader) loader.classList.add('hidden');

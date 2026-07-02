@@ -90,7 +90,7 @@ const apiUrl      = import.meta.env.PUBLIC_API_URL;
             <div class="grid grid-cols-5 gap-2 mt-4">
               {seriesInfo.images.map((img, idx) => (
                 <button class={`thumbnail-btn aspect-square border transition-all ${idx === 0 ? 'border-black dark:border-white' : 'border-transparent'}`}>
-                  <img src={img} class="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity" />
+                  <img src={img} alt={`Miniatura de ${seriesInfo.name}`} class="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity" />
                 </button>
               ))}
             </div>
@@ -336,7 +336,7 @@ const apiUrl      = import.meta.env.PUBLIC_API_URL;
 
   <div id="image-overlay" class="fixed inset-0 z-[100] bg-white/95 dark:bg-black/95 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
     <button id="close-overlay" class="absolute top-8 right-8 text-black dark:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
-    <img id="overlay-img" src="" class="max-w-[90vw] max-h-[90vh] object-contain" />
+    <img id="overlay-img" src="" alt="Vista ampliada" class="max-w-[90vw] max-h-[90vh] object-contain" />
   </div>
 </BaseLayout>
 

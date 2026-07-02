@@ -42,10 +42,10 @@ export const seriesData: SeriesConfig[] = [
     description: 'El pilar fundamental del sistema DCIEN. Premium streetwear diseñado para el registro fundacional de la élite deportiva. 100 unidades numeradas que definen el inicio de nuestra historia.',
     price: 40.00,
     images: [
-      '/images/series/serie-0/main.png',
-      '/images/series/serie-0/detail-1.png',
-      '/images/series/serie-0/detail-2.png',
-      '/images/series/serie-0/detail-3.png',
+      '/images/series/serie-0/main.webp',
+      '/images/series/serie-0/detail-1.webp',
+      '/images/series/serie-0/detail-2.webp',
+      '/images/series/serie-0/detail-3.webp',
     ],
     colors: ['Negro'],
     sizes: [
@@ -72,10 +72,10 @@ export const seriesData: SeriesConfig[] = [
     description: 'Estética arquitectónica aplicada al lifestyle post-competición. La Serie 01 representa tu identidad fuera de pista. Producción cerrada de 100 unidades para el registro activo.',
     price: 50.00,
     images: [
-      '/images/series/serie-01/main.png',
-      '/images/series/serie-01/detail-1.png',
-      '/images/series/serie-01/detail-2.png',
-      '/images/series/serie-01/detail-3.png',
+      '/images/series/serie-01/main.webp',
+      '/images/series/serie-01/detail-1.webp',
+      '/images/series/serie-01/detail-2.webp',
+      '/images/series/serie-01/detail-3.webp',
     ],
     colors: ['Negro', 'Blanco'],
     sizes: [
@@ -101,9 +101,9 @@ export const seriesData: SeriesConfig[] = [
     description: 'No es moda. Es un protocolo de identidad. Tejido de alto gramaje para quienes operan al límite pero valoran la elegancia. Registro físico cerrado 001-100.',
     price: 40.00,
     images: [
-      '/images/series/serie-02/main.png',
-      '/images/series/serie-02/detail-1.png',
-      '/images/series/serie-02/detail-2.png',
+      '/images/series/serie-02/main.webp',
+      '/images/series/serie-02/detail-1.webp',
+      '/images/series/serie-02/detail-2.webp',
     ],
     colors: ['Negro', 'Blanco'],
     sizes: [
@@ -129,10 +129,10 @@ export const seriesData: SeriesConfig[] = [
     description: 'Diseño optimizado para destacar en entornos urbanos con la contundencia del powerlifting. Una pieza de lujo táctico con registro de exclusividad 001-100.',
     price: 40.00,
     images: [
-      '/images/series/serie-03/main.png',
-      '/images/series/serie-03/detail-1.png',
-      '/images/series/serie-03/detail-2.png',
-      '/images/series/serie-03/detail-3.png',
+      '/images/series/serie-03/main.webp',
+      '/images/series/serie-03/detail-1.webp',
+      '/images/series/serie-03/detail-2.webp',
+      '/images/series/serie-03/detail-3.webp',
     ],
     colors: ['Negro', 'Blanco'],
     sizes: [
@@ -158,10 +158,10 @@ export const seriesData: SeriesConfig[] = [
     description: 'Presencia sin concesiones. Cada detalle diseñado para transmitir jerarquía y pertenencia. Serie numerada 001-100 sin reedición.',
     price: 40.00,
     images: [
-      '/images/series/serie-04/main.png',
-      '/images/series/serie-04/detail-1.png',
-      '/images/series/serie-04/detail-2.png',
-      '/images/series/serie-04/detail-3.png',
+      '/images/series/serie-04/main.webp',
+      '/images/series/serie-04/detail-1.webp',
+      '/images/series/serie-04/detail-2.webp',
+      '/images/series/serie-04/detail-3.webp',
     ],
     colors: ['Negro', 'Blanco'],
     sizes: [
@@ -187,10 +187,10 @@ export const seriesData: SeriesConfig[] = [
     description: 'Construida para quienes entienden que la elegancia no está reñida con la cultura del esfuerzo. Confección de precisión. Registro físico único 001-100.',
     price: 40.00,
     images: [
-      '/images/series/serie-05/main.png',
-      '/images/series/serie-05/detail-1.png',
-      '/images/series/serie-05/detail-2.png',
-      '/images/series/serie-05/detail-3.png',
+      '/images/series/serie-05/main.webp',
+      '/images/series/serie-05/detail-1.webp',
+      '/images/series/serie-05/detail-2.webp',
+      '/images/series/serie-05/detail-3.webp',
     ],
     colors: ['Negro', 'Blanco'],
     sizes: [
@@ -216,10 +216,10 @@ export const seriesData: SeriesConfig[] = [
     description: 'El sistema no perdona la mediocridad, ni en el box ni en la calle. La Serie 06 es pura distinción. 100 activos numerados. Producción cerrada.',
     price: 40.00,
     images: [
-      '/images/series/serie-06/main.png',
-      '/images/series/serie-06/detail-1.png',
-      '/images/series/serie-06/detail-2.png',
-      '/images/series/serie-06/detail-3.png',
+      '/images/series/serie-06/main.webp',
+      '/images/series/serie-06/detail-1.webp',
+      '/images/series/serie-06/detail-2.webp',
+      '/images/series/serie-06/detail-3.webp',
     ],
     colors: ['Negro', 'Blanco'],
     sizes: [
@@ -245,10 +245,10 @@ export const seriesData: SeriesConfig[] = [
     description: 'La Serie 07 mantiene el estándar: tejido de alto gramaje, numeración física irrepetible y cero concesiones al diseño comercial genérico.',
     price: 40.00,
     images: [
-      '/images/series/serie-07/main.png',
-      '/images/series/serie-07/detail-1.png',
-      '/images/series/serie-07/detail-2.png',
-      '/images/series/serie-07/detail-3.png',
+      '/images/series/serie-07/main.webp',
+      '/images/series/serie-07/detail-1.webp',
+      '/images/series/serie-07/detail-2.webp',
+      '/images/series/serie-07/detail-3.webp',
     ],
     colors: ['Negro', 'Blanco'],
     sizes: [
@@ -274,10 +274,10 @@ export const seriesData: SeriesConfig[] = [
     description: 'Este activo está reservado para quienes tienen criterio: los que eligen moda por identidad y filosofía, no por tendencia masiva. 100 registros. Producción irrepetible.',
     price: 40.00,
     images: [
-      '/images/series/serie-08/main.png',
-      '/images/series/serie-08/detail-1.png',
-      '/images/series/serie-08/detail-2.png',
-      '/images/series/serie-08/detail-3.png',
+      '/images/series/serie-08/main.webp',
+      '/images/series/serie-08/detail-1.webp',
+      '/images/series/serie-08/detail-2.webp',
+      '/images/series/serie-08/detail-3.webp',
     ],
     colors: ['Negro', 'Blanco'],
     sizes: [
@@ -303,10 +303,10 @@ export const seriesData: SeriesConfig[] = [
     description: 'Minimalismo y brutalismo arquitectónico en una sola pieza. Gramaje superior para asegurar un fit impecable en cuerpos atléticos. Registro físico cerrado 001-100.',
     price: 40.00,
     images: [
-      '/images/series/serie-09/main.png',
-      '/images/series/serie-09/detail-1.png',
-      '/images/series/serie-09/detail-2.png',
-      '/images/series/serie-09/detail-3.png',
+      '/images/series/serie-09/main.webp',
+      '/images/series/serie-09/detail-1.webp',
+      '/images/series/serie-09/detail-2.webp',
+      '/images/series/serie-09/detail-3.webp',
     ],
     colors: ['Negro', 'Blanco'],
     sizes: [
@@ -332,10 +332,10 @@ export const seriesData: SeriesConfig[] = [
     description: 'Más que una prenda, es un estandarte. Ingeniería textil de lujo aplicada a la vida diaria. Inventario bloqueado en 100 piezas.',
     price: 40.00,
     images: [
-      '/images/series/serie-10/main.png',
-      '/images/series/serie-10/detail-1.png',
-      '/images/series/serie-10/detail-2.png',
-      '/images/series/serie-10/detail-3.png',
+      '/images/series/serie-10/main.webp',
+      '/images/series/serie-10/detail-1.webp',
+      '/images/series/serie-10/detail-2.webp',
+      '/images/series/serie-10/detail-3.webp',
     ],
     colors: ['Negro', 'Blanco'],
     sizes: [
@@ -361,10 +361,10 @@ export const seriesData: SeriesConfig[] = [
     description: 'Geometría y corte pensados para realzar la complexión híbrida. No hacemos restocks, hacemos historia. Colección cerrada de 100 unidades.',
     price: 40.00,
     images: [
-      '/images/series/serie-11/main.png',
-      '/images/series/serie-11/detail-1.png',
-      '/images/series/serie-11/detail-2.png',
-      '/images/series/serie-11/detail-3.png',
+      '/images/series/serie-11/main.webp',
+      '/images/series/serie-11/detail-1.webp',
+      '/images/series/serie-11/detail-2.webp',
+      '/images/series/serie-11/detail-3.webp',
     ],
     colors: ['Negro', 'Blanco'],
     sizes: [
@@ -390,10 +390,10 @@ export const seriesData: SeriesConfig[] = [
     description: 'Construida para captar miradas. Gramaje premium que define siluetas y acabados de sastrería industrial. Solo 100 elegidos llevarán este uniforme de calle.',
     price: 40.00,
     images: [
-      '/images/series/serie-12/main.png',
-      '/images/series/serie-12/detail-1.png',
-      '/images/series/serie-12/detail-2.png',
-      '/images/series/serie-12/detail-3.png',
+      '/images/series/serie-12/main.webp',
+      '/images/series/serie-12/detail-1.webp',
+      '/images/series/serie-12/detail-2.webp',
+      '/images/series/serie-12/detail-3.webp',
     ],
     colors: ['Negro', 'Blanco'],
     sizes: [

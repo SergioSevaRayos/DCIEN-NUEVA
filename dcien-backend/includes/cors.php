@@ -1,6 +1,7 @@
 <?php
 $allowedOrigins = [
     'https://d-cien.es',
+    'https://www.d-cien.es',
     'http://localhost:4321',
     'http://localhost:4322', // puerto alternativo de Astro
 ];
