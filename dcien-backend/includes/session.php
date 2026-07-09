@@ -23,6 +23,10 @@ function startSecureSession() {
 
         $isLocal = (getenv('APP_ENV') ?: 'production') === 'development';
 
+        if ($isLocal) {
+            session_save_path(sys_get_temp_dir());
+        }
+
         session_set_cookie_params([
             'lifetime' => 0,
             'path'     => '/',

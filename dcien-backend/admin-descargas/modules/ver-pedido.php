@@ -181,11 +181,63 @@ if (isset($shipping['shipping_address'])) {
         <?php endif; ?>
     </div>
 
+    <?php
+    $stmt_docs = $pdo->prepare("SELECT * FROM order_documents WHERE order_id = ? ORDER BY uploaded_at ASC");
+    $stmt_docs->execute([$order_id]);
+    $documentos = $stmt_docs->fetchAll();
+    ?>
+
+    <?php if (!empty($documentos)): ?>
+    <div class="detail-card" style="margin-bottom:20px">
+        <h3>📎 Documentos adjuntos</h3>
+        <?php foreach ($documentos as $doc): ?>
+        <div class="detail-row" style="align-items:center;">
+            <div class="detail-label" style="width:auto;flex:1;">
+                <a href="../ordenes/docs/<?= $order_id ?>/<?= e($doc['filename']) ?>" target="_blank"
+                   style="color:var(--accent);text-decoration:underline;font-size:13px;">
+                    <?= e($doc['original_name']) ?>
+                </a>
+                <span style="font-size:10px;color:var(--text-2);margin-left:8px;"><?= format_date($doc['uploaded_at']) ?> · <?= round($doc['size_bytes']/1024) ?> KB</span>
+            </div>
+            <form method="POST" action="../ordenes/index.php" style="margin:0;" onsubmit="return confirm('¿Eliminar este documento?');">
+                <input type="hidden" name="action" value="eliminar_documento">
+                <input type="hidden" name="order_id" value="<?= $order_id ?>">
+                <input type="hidden" name="doc_id" value="<?= $doc['id'] ?>">
+                <button type="submit" class="btn btn-small btn-danger" style="padding:2px 8px;font-size:11px;">✕</button>
+            </form>
+        </div>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+
+    <?php if (!empty($pedido['shipping_company']) || !empty($pedido['tracking_id'])): ?>
+    <div class="detail-card" style="margin-bottom:20px">
+        <h3>🚚 Información de envío</h3>
+        <?php if (!empty($pedido['shipping_company'])): ?>
+        <div class="detail-row"><div class="detail-label">Transportista:</div><div class="detail-value"><strong><?= e($pedido['shipping_company']) ?></strong></div></div>
+        <?php endif; ?>
+        <?php if (!empty($pedido['tracking_id'])): ?>
+        <div class="detail-row"><div class="detail-label">Nº seguimiento:</div><div class="detail-value"><strong style="font-family:monospace"><?= e($pedido['tracking_id']) ?></strong></div></div>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
     <div style="display:flex;gap:12px;margin-top:20px">
+        <?php if (!in_array($pedido['status'], ['enviado', 'cancelled'])): ?>
         <form method="POST" action="../ordenes/index.php">
             <input type="hidden" name="action" value="generar_orden">
             <input type="hidden" name="order_id" value="<?= $pedido['id'] ?>">
             <button type="submit" class="btn">📄 Generar Orden</button>
+        </form>
+        <?php endif; ?>
+        <form method="POST" action="../ordenes/index.php" enctype="multipart/form-data" id="form-subir-doc-vp">
+            <input type="hidden" name="action" value="subir_documento">
+            <input type="hidden" name="order_id" value="<?= $pedido['id'] ?>">
+            <label class="btn btn-secondary" style="cursor:pointer;margin:0;">
+                📎 Adjuntar documento
+                <input type="file" name="documento" accept=".pdf,.jpg,.jpeg,.png,.webp"
+                    style="display:none;" onchange="document.getElementById('form-subir-doc-vp').submit()">
+            </label>
         </form>
         <a href="/admin-descargas/ordenes/index.php" class="btn btn-secondary">← Volver</a>
     </div>

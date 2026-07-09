@@ -143,7 +143,7 @@ const seo = {
     if (!detailsContent) return;
 
     const grandTotal  = parseFloat(String(order.price || 0));
-    const shippingFee = parseFloat(String(order.shipping_fee ?? 5));
+    const shippingFee = parseFloat(String(order.shipping_fee ?? 10));
     const discountAmt = parseFloat(String(order.discount_amount || 0));
     const discountCode = order.discount_code || null;
 
@@ -203,7 +203,7 @@ const seo = {
     if (!detailsContent) return;
 
     const grandTotal  = parseFloat(String(order.price || 0));
-    const shippingFee = parseFloat(String(order.shipping_fee ?? 5));
+    const shippingFee = parseFloat(String(order.shipping_fee ?? 10));
     const discountAmt = parseFloat(String(order.discount_amount || 0));
     const discountCode = order.discount_code || null;
 

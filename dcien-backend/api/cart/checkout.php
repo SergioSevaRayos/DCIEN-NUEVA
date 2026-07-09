@@ -133,7 +133,7 @@ try {
     $discountCode = implode('+', array_filter($discountCodes));
 
     $discountAmount     = round($discountAmount, 2);
-    $shippingFee        = 5.00;
+    $shippingFee        = 10.00;
     $priceAfterDiscount = max(0, $subtotal - $discountAmount);
 
     if ($priceAfterDiscount <= 0.10) {

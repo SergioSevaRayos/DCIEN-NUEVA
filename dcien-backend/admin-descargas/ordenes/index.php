@@ -204,6 +204,11 @@ function generar_orden_trabajo(array $pedido, PDO $pdo): array {
     </div>
 </body></html>";
 
+    // Eliminar versiones anteriores del mismo pedido antes de crear la nueva
+    foreach (glob(__DIR__ . "/orden_{$pedido['id']}_*.html") ?: [] as $old) {
+        @unlink($old);
+    }
+
     $filename = "orden_{$pedido['id']}_" . date('Ymd_His') . ".html";
     $filepath = __DIR__ . "/$filename";
     file_put_contents($filepath, $html);
@@ -242,7 +247,7 @@ function email_produccion(array $pedido, array $result): bool {
     return sendAdminMail(ADMIN_EMAIL, $subject, $html);
 }
 
-function email_enviado_cliente(array $pedido, array $items, array $addr): bool {
+function email_enviado_cliente(array $pedido, array $items, array $addr, string $empresa = '', string $tracking = ''): bool {
     $num_pedido = $pedido['order_number'] ?? $pedido['id'];
     $to = $addr['email'] ?: ($pedido['email'] ?? '');
     if (empty($to)) return false;
@@ -258,6 +263,16 @@ function email_enviado_cliente(array $pedido, array $items, array $addr): bool {
         </div>";
     }
 
+    $tracking_html = '';
+    if (!empty($empresa) || !empty($tracking)) {
+        $tracking_html = "
+        <div style='background:#f0f0f0;border:1px solid #ddd;border-radius:4px;padding:16px;margin:20px 0;text-align:left;'>
+            <p style='margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#888;'>Información de envío</p>" .
+            (!empty($empresa) ? "<p style='margin:0 0 6px;font-size:14px;'>Transportista: <strong>" . htmlspecialchars($empresa) . "</strong></p>" : '') .
+            (!empty($tracking) ? "<p style='margin:0;font-size:14px;'>Nº seguimiento: <strong style='font-family:monospace;'>" . htmlspecialchars($tracking) . "</strong></p>" : '') . "
+        </div>";
+    }
+
     $subject = "Tu pedido DCIEN #{$num_pedido} va en camino";
     $html = "
     <div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;'>
@@ -269,6 +284,7 @@ function email_enviado_cliente(array $pedido, array $items, array $addr): bool {
             <h2 style='margin:0 0 12px;'>Hola, $nombre</h2>
             <p style='color:#555;margin:0 0 24px;'>Tu pedido <strong>#{$num_pedido}</strong> ya ha salido de nuestras instalaciones y está en manos del transportista.</p>
             $items_html
+            $tracking_html
             <p style='color:#777;font-size:13px;margin:24px 0;'>Si tienes alguna duda responde a este correo.</p>
             <a href='https://d-cien.es' style='display:inline-block;background:#000;color:#fff;padding:14px 32px;text-decoration:none;font-weight:bold;letter-spacing:2px;text-transform:uppercase;'>
                 Visitar Tienda
@@ -305,9 +321,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($pedido) {
             $result = generar_orden_trabajo($pedido, $pdo);
             if ($result['success']) {
-                $pdo->prepare("UPDATE orders SET status = 'produccion' WHERE id = ?")->execute([$order_id]);
+                $estados_avanzables = ['paid', 'pending', 'pendiente'];
+                if (in_array($pedido['status'], $estados_avanzables)) {
+                    $pdo->prepare("UPDATE orders SET status = 'produccion' WHERE id = ?")->execute([$order_id]);
+                }
                 $link = "<a href='{$result['url']}' target='_blank' style='color:#16a34a;text-decoration:underline;'>Abrir documento</a>";
-                $message = show_message('success', "✓ Orden #{$order_id} generada y movida a Producción. $link");
+                $message = show_message('success', "✓ Documento generado para orden #{$order_id}. $link");
             } else {
                 $message = show_message('error', "Error al generar orden #{$order_id}.");
             }
@@ -328,7 +347,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($pedido) {
                 $result = generar_orden_trabajo($pedido, $pdo);
                 if ($result['success']) {
-                    $pdo->prepare("UPDATE orders SET status = 'produccion' WHERE id = ?")->execute([$order_id]);
+                    $estados_avanzables = ['paid', 'pending', 'pendiente'];
+                    if (in_array($pedido['status'], $estados_avanzables)) {
+                        $pdo->prepare("UPDATE orders SET status = 'produccion' WHERE id = ?")->execute([$order_id]);
+                    }
                     $ok++;
                 } else { $ko++; }
             }
@@ -337,8 +359,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'marcar_enviado' && isset($_POST['order_id'])) {
-        $order_id = (int)$_POST['order_id'];
-        $pdo->prepare("UPDATE orders SET status = 'enviado' WHERE id = ?")->execute([$order_id]);
+        $order_id         = (int)$_POST['order_id'];
+        $shipping_company = trim($_POST['empresa_paqueteria'] ?? '');
+        $tracking_id      = trim($_POST['tracking_id'] ?? '');
+
+        $pdo->prepare("UPDATE orders SET status = 'enviado', shipping_company = ?, tracking_id = ? WHERE id = ?")
+            ->execute([$shipping_company, $tracking_id, $order_id]);
 
         $stmt = $pdo->prepare("
             SELECT o.*, u.username, u.email, u.instagram_username, s.name as series_name
@@ -352,30 +378,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $items   = get_order_items($pdo, $pedido);
             $ship    = json_decode($pedido['shipping_data'] ?? '{}', true) ?: [];
             $addr    = parse_shipping($ship);
-            $sent    = email_enviado_cliente($pedido, $items, $addr);
+            $sent    = email_enviado_cliente($pedido, $items, $addr, $shipping_company, $tracking_id);
             $message = show_message('success', "✓ Pedido #{$order_id} marcado como enviado." . ($sent ? ' Email enviado al cliente.' : ' (Email no enviado — revisa la dirección.)'));
         }
     }
 
-    if ($action === 'eliminar_pedido' && isset($_POST['order_id'])) {
-        $order_id = (int)$_POST['order_id'];
-        $stmt = $pdo->prepare("SELECT * FROM orders WHERE id = ?");
-        $stmt->execute([$order_id]);
-        $pedido_del = $stmt->fetch();
+    // Eliminación de pedidos deshabilitada en la interfaz.
+    // Usar sentencias SQL directas para eliminar pedidos de prueba.
 
-        if ($pedido_del) {
-            if ($pedido_del['is_cart_order']) {
-                $st = $pdo->prepare("SELECT series_slug, unit_number FROM order_items WHERE order_id = ?");
-                $st->execute([$order_id]);
-                foreach ($st->fetchAll() as $item) {
-                    $pdo->prepare("UPDATE series_units SET status = 'available' WHERE series_slug = ? AND unit_number = ?")->execute([$item['series_slug'], $item['unit_number']]);
-                }
+    if ($action === 'subir_documento' && isset($_POST['order_id']) && isset($_FILES['documento'])) {
+        $order_id = (int)$_POST['order_id'];
+        $file     = $_FILES['documento'];
+        $allowed_mime = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+        $max_size     = 10 * 1024 * 1024;
+
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            $message = show_message('error', 'Error al recibir el archivo (código ' . $file['error'] . ').');
+        } elseif (!in_array($file['type'], $allowed_mime, true)) {
+            $message = show_message('error', 'Tipo de archivo no permitido. Solo PDF, JPG, PNG o WEBP.');
+        } elseif ($file['size'] > $max_size) {
+            $message = show_message('error', 'El archivo supera el límite de 10 MB.');
+        } else {
+            $doc_dir = __DIR__ . '/docs/' . $order_id;
+            if (!is_dir($doc_dir)) mkdir($doc_dir, 0755, true);
+
+            $ext      = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $basename = preg_replace('/[^a-z0-9_-]/i', '_', pathinfo($file['name'], PATHINFO_FILENAME));
+            $filename = $basename . '_' . date('Ymd_His') . '.' . $ext;
+
+            if (move_uploaded_file($file['tmp_name'], $doc_dir . '/' . $filename)) {
+                $pdo->prepare("INSERT INTO order_documents (order_id, filename, original_name, mime_type, size_bytes) VALUES (?,?,?,?,?)")
+                    ->execute([$order_id, $filename, $file['name'], $file['type'], $file['size']]);
+                $message = show_message('success', "✓ Documento adjuntado al pedido #{$order_id}.");
             } else {
-                $pdo->prepare("UPDATE series_units SET status = 'available' WHERE series_slug = ? AND unit_number = ?")->execute([$pedido_del['series_slug'], $pedido_del['unit_number']]);
+                $message = show_message('error', 'No se pudo guardar el archivo en el servidor.');
             }
-            $pdo->prepare("DELETE FROM order_items WHERE order_id = ?")->execute([$order_id]);
-            $pdo->prepare("DELETE FROM orders WHERE id = ?")->execute([$order_id]);
-            $message = show_message('success', "✓ Pedido #{$order_id} eliminado y unidades liberadas.");
+        }
+    }
+
+    if ($action === 'eliminar_documento' && isset($_POST['order_id']) && isset($_POST['doc_id'])) {
+        $order_id = (int)$_POST['order_id'];
+        $doc_id   = (int)$_POST['doc_id'];
+        $stmt     = $pdo->prepare("SELECT filename FROM order_documents WHERE id = ? AND order_id = ?");
+        $stmt->execute([$doc_id, $order_id]);
+        $doc = $stmt->fetch();
+        if ($doc) {
+            $filepath = __DIR__ . '/docs/' . $order_id . '/' . $doc['filename'];
+            if (file_exists($filepath)) unlink($filepath);
+            $pdo->prepare("DELETE FROM order_documents WHERE id = ?")->execute([$doc_id]);
+            $message = show_message('success', "✓ Documento eliminado.");
         }
     }
 
@@ -503,26 +554,54 @@ $suma_total      = array_sum(array_column($pedidos, 'price'));
         .filters-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:16px; }
         .filter-actions { display:flex; gap:10px; flex-wrap:wrap; justify-content:space-between; align-items:center; padding-top:16px; border-top:1px solid var(--border); }
 
-        table { min-width:860px; }
-        .col-check { width:40px; text-align:center; }
-        .col-id { width:90px; }
-        .col-producto { min-width:200px; }
-        .col-cliente { min-width:140px; }
-        .col-precio { width:80px; text-align:right; }
-        .col-audit { width:90px; }
-        .col-docs { width:80px; }
-        .col-actions { width:140px; }
+        table { min-width:920px; }
+        .col-check   { width:36px; text-align:center; }
+        .col-id      { width:110px; }
+        .col-producto { min-width:190px; }
+        .col-cliente { min-width:150px; }
+        .col-precio  { width:76px; text-align:right; }
+        .col-audit   { width:82px; }
+        .col-docs    { min-width:170px; }
+        .col-actions { width:110px; }
 
+        /* Status pills */
         .pill { display:inline-block; padding:3px 8px; font-size:9px; font-weight:900; text-transform:uppercase; letter-spacing:1px; border-radius:2px; }
         .pill-ok   { background:var(--sent-bg); color:var(--sent); border:1px solid var(--sent-border); }
         .pill-warn { background:var(--new-bg);  color:var(--new);  border:1px solid var(--new-border); }
         .pill-cart { background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe; }
 
+        /* Producto */
         .item-row { font-size:10px; color:var(--text-2); line-height:1.7; }
         .item-row strong { color:var(--text); font-size:11px; }
 
-        .btn-group { display:flex; gap:6px; flex-wrap:wrap; }
+        /* Botones de acción */
+        .btn-group { display:flex; gap:5px; align-items:center; flex-wrap:nowrap; }
         .checkbox-col { text-align:center; }
+
+        /* Docs en tabla */
+        .doc-list { display:flex; flex-direction:column; gap:4px; }
+        .doc-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 7px; border-radius:3px; font-size:10px; font-weight:600; text-decoration:none; white-space:nowrap; max-width:160px; overflow:hidden; text-overflow:ellipsis; line-height:1.4; }
+        .doc-chip-orden { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
+        .doc-chip-orden:hover { background:#dbeafe; }
+        .doc-chip-adjunto { background:#f5f3ff; color:#6d28d9; border:1px solid #ddd6fe; }
+        .doc-chip-adjunto:hover { background:#ede9fe; }
+        .doc-add-btn { display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:3px; font-size:10px; font-weight:700; background:transparent; border:1px dashed var(--border); color:var(--text-2); cursor:pointer; margin-top:2px; }
+        .doc-add-btn:hover { border-color:var(--accent); color:var(--accent); background:transparent; }
+
+        /* Tracking badge en tabla */
+        .tracking-badge { display:inline-flex; align-items:center; gap:4px; font-size:10px; color:var(--text-2); margin-top:2px; }
+        .tracking-badge strong { color:var(--text); font-family:monospace; font-size:10px; }
+
+        /* Acciones — botones iguales */
+        .col-actions .btn-group { flex-wrap:wrap; }
+        .btn-action { display:inline-flex; align-items:center; justify-content:center; padding:5px 10px; font-size:11px; font-weight:700; border-radius:3px; border:1px solid var(--border); background:transparent; color:var(--text); cursor:pointer; text-decoration:none; white-space:nowrap; letter-spacing:.5px; transition:border-color .15s,color .15s; }
+        .btn-action:hover { border-color:var(--text); }
+        .btn-action-primary { border-color:var(--accent); color:var(--accent); }
+        .btn-action-primary:hover { background:var(--accent); color:var(--accent-text); }
+        .btn-action-sent { border-color:var(--sent); color:var(--sent); }
+        .btn-action-sent:hover { background:var(--sent); color:#fff; }
+        .btn-action-danger { border-color:#dc2626; color:#dc2626; }
+        .btn-action-danger:hover { background:#dc2626; color:#fff; }
 
         @media (max-width:768px) {
             .filters-row { grid-template-columns:1fr; }
@@ -531,6 +610,37 @@ $suma_total      = array_sum(array_column($pedidos, 'price'));
             .pipeline-tabs { gap:4px; }
             .tab-btn { padding:10px 12px; font-size:10px; }
         }
+
+        /* Modal de documentos */
+        #modal-doc { display:none; position:fixed; inset:0; z-index:1001; align-items:center; justify-content:center; background:rgba(0,0,0,.6); backdrop-filter:blur(2px); }
+        #modal-doc .modal-card { max-width:440px; }
+        .file-drop { border:2px dashed var(--border); border-radius:4px; padding:24px; text-align:center; cursor:pointer; color:var(--text-2); font-size:13px; transition:border-color .2s; }
+        .file-drop:hover, .file-drop.over { border-color:var(--accent); color:var(--text); }
+        .file-drop input[type=file] { display:none; }
+        .file-name { font-size:12px; color:var(--text-2); margin-top:8px; min-height:18px; }
+
+        /* Modal de envío */
+        #modal-envio {
+            display:none; position:fixed; inset:0; z-index:1000;
+            align-items:center; justify-content:center;
+            background:rgba(0,0,0,.6); backdrop-filter:blur(2px);
+        }
+        .modal-card {
+            background:var(--surface); border:1px solid var(--border);
+            border-radius:4px; padding:32px; width:100%; max-width:420px;
+            box-shadow:0 8px 32px rgba(0,0,0,.4);
+        }
+        .modal-card h3 {
+            margin:0 0 6px; font-size:14px; font-weight:900;
+            letter-spacing:2px; text-transform:uppercase;
+        }
+        .modal-card .modal-sub {
+            font-size:12px; color:var(--text-2); margin:0 0 24px;
+        }
+        .modal-card .form-group { margin:0 0 16px; }
+        .modal-card label { display:block; font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; color:var(--text-2); }
+        .modal-card input[type=text] { width:100%; }
+        .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:24px; }
     </style>
 </head>
 <body>
@@ -659,7 +769,10 @@ $suma_total      = array_sum(array_column($pedidos, 'price'));
                     $cart_items = $st2->fetchAll();
                 }
 
-                $archivos = glob(__DIR__ . "/orden_{$p['id']}_*.html") ?: [];
+                $archivos   = glob(__DIR__ . "/orden_{$p['id']}_*.html") ?: [];
+                $stmt_docs  = $pdo->prepare("SELECT id, filename, original_name FROM order_documents WHERE order_id = ? ORDER BY uploaded_at ASC");
+                $stmt_docs->execute([$p['id']]);
+                $docs_subidos = $stmt_docs->fetchAll();
             ?>
                 <tr>
                     <td class="col-check checkbox-col">
@@ -701,38 +814,59 @@ $suma_total      = array_sum(array_column($pedidos, 'price'));
                         <?php endforeach; endif; ?>
                     </td>
                     <td class="col-docs">
-                        <?php if (!empty($archivos)): foreach ($archivos as $f): ?>
-                            <a href="<?= basename($f) ?>" target="_blank" style="font-size:10px;color:#2563eb;text-decoration:underline;">Ver doc</a><br>
-                        <?php endforeach; else: ?>
-                            <span style="font-size:10px;color:var(--text-2);">—</span>
+                        <div class="doc-list">
+                            <?php foreach ($archivos as $f): ?>
+                                <a href="<?= basename($f) ?>" target="_blank" class="doc-chip doc-chip-orden" title="Orden de trabajo HTML">
+                                    📄 Orden HTML
+                                </a>
+                            <?php endforeach; ?>
+                            <?php foreach ($docs_subidos as $doc): ?>
+                                <a href="docs/<?= $p['id'] ?>/<?= e($doc['filename']) ?>" target="_blank"
+                                   class="doc-chip doc-chip-adjunto"
+                                   title="<?= e($doc['original_name']) ?>">
+                                    📎 <?= e(mb_strimwidth($doc['original_name'], 0, 18, '…')) ?>
+                                </a>
+                            <?php endforeach; ?>
+                            <?php if (empty($archivos) && empty($docs_subidos)): ?>
+                                <span style="font-size:10px;color:var(--text-2);">Sin documentos</span>
+                            <?php endif; ?>
+                            <?php if ($estado_actual === 'enviado'): ?>
+                                <button type="button" class="doc-add-btn"
+                                    onclick="abrirModalDoc(<?= $p['id'] ?>, '<?= e($p['order_number'] ?? $p['id']) ?>')">
+                                    + Adjuntar
+                                </button>
+                            <?php endif; ?>
+                        </div>
+                        <?php if ($estado_actual === 'enviado' && !empty($p['shipping_company'])): ?>
+                            <div class="tracking-badge" title="Nº seguimiento: <?= e($p['tracking_id'] ?? '') ?>">
+                                🚚 <strong><?= e($p['shipping_company']) ?></strong>
+                                <?php if (!empty($p['tracking_id'])): ?>
+                                    · <strong><?= e($p['tracking_id']) ?></strong>
+                                <?php endif; ?>
+                            </div>
                         <?php endif; ?>
                     </td>
                     <td class="col-actions">
                         <div class="btn-group">
                             <?php if ($estado_actual === 'nuevos'): ?>
-                                <form method="POST" style="display:inline;">
+                                <form method="POST" style="display:contents;">
                                     <input type="hidden" name="action" value="generar_orden">
                                     <input type="hidden" name="order_id" value="<?= $p['id'] ?>">
-                                    <button type="submit" class="btn btn-small" title="Generar doc y mover a Producción">Imprimir</button>
+                                    <button type="submit" class="btn-action btn-action-primary" title="Generar documento y mover a Producción">Imprimir</button>
                                 </form>
                             <?php elseif ($estado_actual === 'produccion'): ?>
-                                <form method="POST" style="display:inline;">
-                                    <input type="hidden" name="action" value="marcar_enviado">
-                                    <input type="hidden" name="order_id" value="<?= $p['id'] ?>">
-                                    <button type="submit" class="btn btn-small" style="border-color:var(--sent);color:var(--sent);" title="Marcar enviado y notificar cliente">Enviado</button>
-                                </form>
-                                <form method="POST" style="display:inline;">
+                                <button type="button" class="btn-action btn-action-sent"
+                                    title="Marcar como enviado y notificar al cliente"
+                                    onclick="abrirModalEnvio(<?= $p['id'] ?>, '<?= e($p['order_number'] ?? $p['id']) ?>')">
+                                    ✓ Enviado
+                                </button>
+                                <form method="POST" style="display:contents;">
                                     <input type="hidden" name="action" value="generar_orden">
                                     <input type="hidden" name="order_id" value="<?= $p['id'] ?>">
-                                    <button type="submit" class="btn btn-small btn-secondary" title="Re-generar documento">Doc</button>
+                                    <button type="submit" class="btn-action" title="Re-generar documento">Doc</button>
                                 </form>
                             <?php endif; ?>
-                            <a href="/admin-descargas/modules/ver-pedido.php?id=<?= $p['id'] ?>" class="btn btn-small btn-secondary" title="Ver detalle">Ver</a>
-                            <form method="POST" style="display:inline;" onsubmit="return confirm('¿Eliminar pedido #<?= $p['order_number'] ?? $p['id'] ?> y liberar sus unidades? Esta acción no se puede deshacer.');">
-                                <input type="hidden" name="action" value="eliminar_pedido">
-                                <input type="hidden" name="order_id" value="<?= $p['id'] ?>">
-                                <button type="submit" class="btn btn-small btn-danger" title="Eliminar pedido">✕</button>
-                            </form>
+                            <a href="/admin-descargas/modules/ver-pedido.php?id=<?= $p['id'] ?>" class="btn-action" title="Ver detalle completo">Ver</a>
                         </div>
                     </td>
                 </tr>
@@ -745,6 +879,55 @@ $suma_total      = array_sum(array_column($pedidos, 'price'));
         <p>DCIEN Pipeline · Fase: <?= strtoupper($estado_actual) ?> · <?= $total_mostrados ?> pedidos</p>
     </footer>
         </div>
+    </div>
+</div>
+
+<!-- Modal: adjuntar documento -->
+<div id="modal-doc">
+    <div class="modal-card">
+        <h3>Adjuntar documento</h3>
+        <p class="modal-sub" id="modal-doc-titulo"></p>
+        <form method="POST" enctype="multipart/form-data" id="form-modal-doc">
+            <input type="hidden" name="action" value="subir_documento">
+            <input type="hidden" name="order_id" id="modal-doc-order-id">
+            <div class="form-group">
+                <label>Archivo</label>
+                <div class="file-drop" id="file-drop-zone" onclick="document.getElementById('modal-doc-file').click()">
+                    <input type="file" id="modal-doc-file" name="documento" accept=".pdf,.jpg,.jpeg,.png,.webp" required>
+                    <span id="file-drop-text">Haz clic o arrastra un archivo aquí</span>
+                    <div class="file-name" id="file-name-preview"></div>
+                </div>
+                <div style="font-size:10px;color:var(--text-2);margin-top:6px;">PDF, JPG, PNG o WEBP · máx. 10 MB</div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="cerrarModalDoc()">Cancelar</button>
+                <button type="submit" class="btn">Subir documento</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: datos de envío -->
+<div id="modal-envio">
+    <div class="modal-card">
+        <h3>Marcar como enviado</h3>
+        <p class="modal-sub" id="modal-envio-titulo"></p>
+        <form method="POST" id="form-modal-envio">
+            <input type="hidden" name="action" value="marcar_enviado">
+            <input type="hidden" name="order_id" id="modal-envio-order-id">
+            <div class="form-group">
+                <label for="modal-empresa">Empresa de paquetería</label>
+                <input type="text" id="modal-empresa" name="empresa_paqueteria" placeholder="Correos, MRW, SEUR, GLS..." required autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label for="modal-tracking">Nº de seguimiento</label>
+                <input type="text" id="modal-tracking" name="tracking_id" placeholder="Ej: ES123456789ES" autocomplete="off">
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="cerrarModalEnvio()">Cancelar</button>
+                <button type="submit" class="btn" style="border-color:var(--sent);color:var(--sent);">Confirmar envío</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -767,6 +950,53 @@ function generarMultiples() {
     document.body.appendChild(form);
     form.submit();
 }
+function abrirModalDoc(orderId, orderNum) {
+    document.getElementById('modal-doc-order-id').value = orderId;
+    document.getElementById('modal-doc-titulo').textContent = 'Pedido #' + orderNum;
+    document.getElementById('modal-doc-file').value = '';
+    document.getElementById('file-name-preview').textContent = '';
+    document.getElementById('modal-doc').style.display = 'flex';
+}
+function cerrarModalDoc() {
+    document.getElementById('modal-doc').style.display = 'none';
+}
+document.getElementById('modal-doc').addEventListener('click', function(e) {
+    if (e.target === this) cerrarModalDoc();
+});
+document.getElementById('modal-doc-file').addEventListener('change', function() {
+    document.getElementById('file-name-preview').textContent = this.files[0] ? this.files[0].name : '';
+});
+(function() {
+    const zone = document.getElementById('file-drop-zone');
+    const input = document.getElementById('modal-doc-file');
+    zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.classList.add('over'); });
+    zone.addEventListener('dragleave', function() { zone.classList.remove('over'); });
+    zone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        zone.classList.remove('over');
+        if (e.dataTransfer.files.length) {
+            input.files = e.dataTransfer.files;
+            document.getElementById('file-name-preview').textContent = e.dataTransfer.files[0].name;
+        }
+    });
+})();
+function abrirModalEnvio(orderId, orderNum) {
+    document.getElementById('modal-envio-order-id').value = orderId;
+    document.getElementById('modal-envio-titulo').textContent = 'Pedido #' + orderNum;
+    document.getElementById('modal-envio').style.display = 'flex';
+    document.getElementById('modal-empresa').focus();
+}
+function cerrarModalEnvio() {
+    document.getElementById('modal-envio').style.display = 'none';
+    document.getElementById('modal-empresa').value = '';
+    document.getElementById('modal-tracking').value = '';
+}
+document.getElementById('modal-envio').addEventListener('click', function(e) {
+    if (e.target === this) cerrarModalEnvio();
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') cerrarModalEnvio();
+});
 function exportarCSV() {
     const form = document.createElement('form');
     form.method = 'POST';

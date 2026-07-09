@@ -21,12 +21,12 @@ export default defineConfig({
     server: {
       proxy: {
         '/api': {
-          target: 'http://dcien-backend.test',
+          target: 'http://localhost:8080',
           changeOrigin: true,
           secure: false,
         },
         '/admin-descargas': {
-          target: 'http://dcien-backend.test',
+          target: 'http://localhost:8080',
           changeOrigin: true,
           secure: false,
         },
