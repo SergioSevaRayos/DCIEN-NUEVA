@@ -12,7 +12,7 @@ $pdo = get_db_connection();
 $message = '';
 
 // Obtener siempre los descuentos activos para asignación masiva
-$descuentos_activos = $pdo->query("SELECT id, code, description, type, value, series_slug FROM discounts WHERE is_active = 1")->fetchAll();
+$descuentos_activos = $pdo->query("SELECT id, code, description, type, value, series_slug FROM discounts WHERE is_active = 1 AND code NOT LIKE 'BONO_%'")->fetchAll();
 
 // PROCESAR FORMULARIOS POST (Solo masivo y eliminar)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

@@ -17,7 +17,7 @@ if (!isset($_GET['id'])) {
 $user_id = (int)$_GET['id'];
 
 // Obtener siempre los descuentos activos
-$descuentos_activos = $pdo->query("SELECT id, code, description, type, value, series_slug FROM discounts WHERE is_active = 1")->fetchAll();
+$descuentos_activos = $pdo->query("SELECT id, code, description, type, value, series_slug FROM discounts WHERE is_active = 1 AND code NOT LIKE 'BONO_%'")->fetchAll();
 
 // PROCESAR POST (ACTUALIZAR DATOS, ASIGNAR/RENOVAR PROTOCOLOS, APUNTES)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
