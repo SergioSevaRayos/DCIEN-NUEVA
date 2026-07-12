@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRUX — Perfil de Esfuerzo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #1a1a1a;
+    --fg: #ffffff;
+    --w05: rgba(255,255,255,0.05);
+    --w08: rgba(255,255,255,0.08);
+    --w10: rgba(255,255,255,0.10);
+    --w20: rgba(255,255,255,0.20);
+    --w30: rgba(255,255,255,0.30);
+    --w50: rgba(255,255,255,0.50);
+    --w70: rgba(255,255,255,0.70);
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'Inter', sans-serif;
+  }
+  *{ box-sizing: border-box; }
+  html, body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    min-height: 100vh;
+  }
+  .app{
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    min-height: 100vh;
+  }
+  @media (max-width: 900px){
+    .app{ grid-template-columns: 1fr; }
+  }
+
+  /* ---------- Sidebar / Builder ---------- */
+  .sidebar{
+    border-right: 1px solid var(--w10);
+    padding: 48px 40px 80px;
+    overflow-y: auto;
+    max-height: 100vh;
+  }
+  .brand{
+    font-family: var(--font-display);
+    font-size: 34px;
+    letter-spacing: 0.12em;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .brand-sub{
+    font-size: 9px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--w50);
+    margin-bottom: 56px;
+  }
+  .section-label{
+    display:block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    color: var(--w50);
+    margin-bottom: 14px;
+    font-weight: 500;
+  }
+  input[type="text"], input[type="number"], select{
+    width: 100%;
+    background: var(--w05);
+    border: 1px solid var(--w10);
+    color: var(--fg);
+    padding: 14px 12px;
+    border-radius: 0;
+    font-size: 12px;
+    font-family: var(--font-body);
+    text-align: center;
+    outline: none;
+    transition: border-color 0.5s ease-out, background-color 0.5s ease-out;
+  }
+  input[type="text"]:focus, input[type="number"]:focus, select:focus{
+    border-color: var(--w30);
+    background: var(--w08);
+  }
+  select{ text-align-last: center; }
+  .field{ margin-bottom: 24px; }
+  .row2{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .mode-toggle{
+    display:flex;
+    margin-bottom: 32px;
+    border: 1px solid var(--w10);
+  }
+  .mode-btn{
+    flex:1;
+    padding: 14px 6px;
+    text-align:center;
+    cursor:pointer;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--w50);
+    position: relative;
+    transition: color 0.5s ease-out;
+  }
+  .mode-btn + .mode-btn{ border-left: 1px solid var(--w10); }
+  .mode-btn::after{
+    content:'';
+    position:absolute;
+    left:0; right:0; bottom:-1px;
+    height: 1px;
+    background: var(--fg);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.5s ease-out;
+  }
+  .mode-btn.active{ color: var(--fg); }
+  .mode-btn.active::after{ transform: scaleX(1); }
+
+  .exercise-card{
+    border: 1px solid var(--w10);
+    padding: 24px 20px 18px;
+    margin-bottom: 16px;
+    position: relative;
+  }
+  .exercise-card .ex-index{
+    font-family: var(--font-display);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    color: var(--w50);
+    position:absolute;
+    top: 20px; right: 20px;
+  }
+  .exercise-card .ex-actions{
+    display:flex; gap: 0; margin-top: 16px;
+    border-top: 1px solid var(--w10);
+    padding-top: 14px;
+  }
+  .text-btn{
+    background: transparent;
+    border: none;
+    color: var(--w50);
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    padding: 6px 12px 6px 0;
+    transition: color 0.5s ease-out;
+  }
+  .text-btn:hover{ color: var(--fg); }
+
+  .effort-row{
+    display:flex; align-items:center; gap: 14px; margin-top: 18px;
+  }
+  input[type="range"]{
+    flex:1;
+    -webkit-appearance:none;
+    height: 3px;
+    background: linear-gradient(90deg, #2E86FF, #22C55E 35%, #EAB308 55%, #F97316 75%, #EF4444);
+    outline:none;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width: 14px; height:14px; border-radius:0;
+    background: var(--fg);
+    transform: rotate(45deg);
+    cursor:pointer;
+  }
+  input[type="range"]::-moz-range-thumb{
+    width: 14px; height:14px; border-radius:0;
+    background: var(--fg); border: none;
+    transform: rotate(45deg);
+    cursor:pointer;
+  }
+  .effort-chip{
+    min-width: 44px;
+    text-align:center;
+    padding: 6px 8px;
+    border: 1px solid var(--w30);
+    font-size: 11px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    flex-shrink:0;
+  }
+
+  .add-btn{
+    width:100%;
+    padding: 16px;
+    background: transparent;
+    border: 1px solid var(--w10);
+    color: var(--w50);
+    cursor:pointer;
+    font-family: var(--font-body);
+    font-size: 10px;
+    letter-spacing:0.25em;
+    text-transform: uppercase;
+    margin-bottom: 40px;
+    transition: color 0.5s ease-out, border-color 0.5s ease-out;
+  }
+  .add-btn:hover{ color: var(--fg); border-color: var(--w30); }
+
+  .btn-primary{
+    width:100%;
+    padding: 18px;
+    background: var(--fg);
+    border: 1px solid var(--fg);
+    color: var(--bg);
+    font-family: var(--font-body);
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    font-size: 11px;
+    cursor:pointer;
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+  }
+  .btn-primary:hover{ opacity: 0.8; }
+  .btn-primary:active{ transform: scale(0.98); }
+  .btn-primary:disabled{ opacity: 0.25; cursor:not-allowed; }
+
+  .btn-secondary{
+    padding: 16px 8px;
+    background: transparent;
+    border: 1px solid var(--w20);
+    color: var(--fg);
+    font-family: var(--font-body);
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    font-size: 10px;
+    cursor:pointer;
+    transition: background-color 0.5s ease-out, border-color 0.5s ease-out;
+  }
+  .btn-secondary:hover{ background: var(--w05); border-color: var(--w30); }
+  .btn-secondary:disabled{ opacity: 0.25; cursor:not-allowed; }
+
+  hr.sep{ border:none; border-top:1px solid var(--w10); margin: 48px 0; }
+
+  .controls-row{ display:flex; gap:0; margin-bottom: 24px; }
+  .controls-row .btn-secondary{ flex:1; }
+  .controls-row .btn-secondary + .btn-secondary{ border-left: none; }
+
+  .speed-group{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--w10);
+    border: 1px solid var(--w10);
+    margin-bottom:32px;
+  }
+  .speed-btn{
+    background: var(--bg);
+    padding: 12px; text-align:center;
+    cursor:pointer; font-size:11px;
+    font-weight: 700;
+    color: var(--w50);
+    transition: color 0.5s ease-out, background-color 0.5s ease-out;
+  }
+  .speed-btn.active{ color: var(--fg); background: var(--w05); }
+
+  .status-msg{
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--w50);
+    margin-top: 16px;
+    min-height: 14px;
+    line-height: 1.6;
+  }
+
+  /* ---------- Main / Visualizer ---------- */
+  .main{
+    display:flex; flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding: 40px 32px;
+  }
+  .stage{
+    width: 100%;
+    max-width: 380px;
+    position: relative;
+    transition: max-width 0.5s ease-out;
+  }
+  canvas#chart{
+    display:block;
+    width: 100%;
+    border: 1px solid var(--w10);
+  }
+  .empty-state{
+    padding: 140px 30px;
+    text-align:center;
+    color: var(--w50);
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    border: 1px solid var(--w10);
+  }
+  .empty-state strong{ color: var(--fg); font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ SIDEBAR: BUILDER ============ -->
+  <div class="sidebar">
+    <div class="brand">CRUX</div>
+    <div class="brand-sub">Perfil de esfuerzo — WOD builder</div>
+
+    <div class="field">
+      <span class="section-label">Nombre del entrenamiento</span>
+      <input type="text" id="wodName" value="WOD DEL DÍA">
+    </div>
+
+    <span class="section-label">Estructura</span>
+    <div class="mode-toggle">
+      <div class="mode-btn active" data-mode="simple">Lista simple</div>
+      <div class="mode-btn" data-mode="rounds">Rondas</div>
+    </div>
+
+    <div id="roundsFields" style="display:none;">
+      <div class="row2">
+        <div class="field">
+          <span class="section-label">Nº de rondas</span>
+          <input type="number" id="roundsCount" min="1" value="5">
+        </div>
+        <div class="field">
+          <span class="section-label">Descanso (seg)</span>
+          <input type="number" id="restBetween" min="0" value="20">
+        </div>
+      </div>
+    </div>
+
+    <span class="section-label">Ejercicios</span>
+    <div id="exerciseList"></div>
+    <button class="add-btn" id="addExerciseBtn">+ Añadir ejercicio</button>
+
+    <button class="btn-primary" id="generateBtn">Generar perfil de esfuerzo</button>
+
+    <hr class="sep">
+
+    <span class="section-label">Reproducción</span>
+    <div class="controls-row">
+      <button class="btn-secondary" id="playBtn" disabled>Play</button>
+      <button class="btn-secondary" id="resetBtn" disabled>Reiniciar</button>
+    </div>
+    <span class="section-label">Velocidad</span>
+    <div class="speed-group">
+      <div class="speed-btn active" data-speed="1">1×</div>
+      <div class="speed-btn" data-speed="2">2×</div>
+      <div class="speed-btn" data-speed="4">4×</div>
+      <div class="speed-btn" data-speed="6">6×</div>
+      <div class="speed-btn" data-speed="8">8×</div>
+      <div class="speed-btn" data-speed="10">10×</div>
+    </div>
+
+    <span class="section-label">Fondo (opcional, estilo Strava)</span>
+    <div class="field">
+      <input type="file" id="bgInput" accept="image/*" style="padding:12px; font-size:11px;">
+    </div>
+    <div class="controls-row" style="margin-bottom:24px;">
+      <button class="btn-secondary" id="bgRemoveBtn">Quitar foto de fondo</button>
+    </div>
+
+    <span class="section-label">Formato para Instagram</span>
+    <div class="mode-toggle" id="formatToggle">
+      <div class="mode-btn" data-format="reel">9:16</div>
+      <div class="mode-btn active" data-format="portrait">4:5</div>
+      <div class="mode-btn" data-format="square">1:1</div>
+    </div>
+
+    <button class="btn-primary" id="recordBtn" disabled>Grabar vídeo (Instagram HD)</button>
+    <div class="controls-row" style="margin-top:12px;">
+      <button class="btn-secondary" id="pngBtn" disabled>Descargar PNG (fondo transparente)</button>
+    </div>
+    <div class="status-msg" id="statusMsg"></div>
+  </div>
+
+  <!-- ============ MAIN: VISUALIZER (single canvas, title/timer/ticker drawn IN it) ============ -->
+  <div class="main">
+    <div class="stage" id="stage">
+      <div class="empty-state" id="emptyState">
+        Añade tus ejercicios en el panel izquierdo y pulsa<br><br>
+        <strong>Generar perfil de esfuerzo</strong><br><br>
+        para ver la simulación.
+      </div>
+      <canvas id="chart" style="display:none;"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ============================================================
+   DATA MODEL
+   ============================================================ */
+let exercises = [];
+let idCounter = 0;
+let mode = 'simple';
+
+function addExercise(prefill){
+  const ex = Object.assign({
+    id: idCounter++,
+    name: '',
+    type: 'time',
+    value: 30,
+    duration: 30,
+    effort: 5
+  }, prefill || {});
+  exercises.push(ex);
+  renderExerciseList();
+}
+
+function removeExercise(id){
+  exercises = exercises.filter(e => e.id !== id);
+  renderExerciseList();
+}
+
+function moveExercise(id, dir){
+  const i = exercises.findIndex(e => e.id === id);
+  const j = i + dir;
+  if(j < 0 || j >= exercises.length) return;
+  [exercises[i], exercises[j]] = [exercises[j], exercises[i]];
+  renderExerciseList();
+}
+
+/* effort -> color, blue (fácil) -> red (difícil), mountain-race style */
+const EFFORT_STOPS = [
+  {e:1,  c:[46,134,255]},   // azul
+  {e:4,  c:[34,197,94]},    // verde
+  {e:6,  c:[234,179,8]},    // amarillo
+  {e:8,  c:[249,115,22]},   // naranja
+  {e:10, c:[239,68,68]}     // rojo
+];
+function effortToColorArr(e){
+  e = Math.max(1, Math.min(10, e));
+  for(let i=0;i<EFFORT_STOPS.length-1;i++){
+    const a = EFFORT_STOPS[i], b = EFFORT_STOPS[i+1];
+    if(e >= a.e && e <= b.e){
+      const t = (e - a.e) / (b.e - a.e || 1);
+      return a.c.map((v,idx) => Math.round(v + (b.c[idx]-v)*t));
+    }
+  }
+  return EFFORT_STOPS[EFFORT_STOPS.length-1].c;
+}
+function effortToColor(e){
+  const c = effortToColorArr(e);
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+function effortToRGBA(e, alpha){
+  const c = effortToColorArr(e);
+  const a = (alpha == null ? 1 : alpha);
+  return `rgba(${c[0]},${c[1]},${c[2]},${a.toFixed(3)})`;
+}
+
+function renderExerciseList(){
+  const container = document.getElementById('exerciseList');
+  container.innerHTML = '';
+  exercises.forEach((ex, idx) => {
+    const card = document.createElement('div');
+    card.className = 'exercise-card';
+    card.innerHTML = `
+      <span class="ex-index">${String(idx+1).padStart(2,'0')} / ${String(exercises.length).padStart(2,'0')}</span>
+      <div class="field" style="margin-bottom:14px;">
+        <input type="text" placeholder="NOMBRE DEL EJERCICIO" value="${ex.name}" data-field="name" data-id="${ex.id}">
+      </div>
+      <div class="row2">
+        <div class="field" style="margin-bottom:14px;">
+          <select data-field="type" data-id="${ex.id}">
+            <option value="time" ${ex.type==='time'?'selected':''}>Por tiempo</option>
+            <option value="reps" ${ex.type==='reps'?'selected':''}>Por reps</option>
+          </select>
+        </div>
+        <div class="field" style="margin-bottom:14px;">
+          <input type="number" min="1" value="${ex.value}" data-field="value" data-id="${ex.id}" placeholder="${ex.type==='time'?'SEG':'REPS'}">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <span class="section-label" style="margin-bottom:6px;">Duración en el vídeo (seg)</span>
+        <input type="number" min="1" value="${ex.duration}" data-field="duration" data-id="${ex.id}">
+      </div>
+      <div class="effort-row">
+        <input type="range" min="1" max="10" step="1" value="${ex.effort}" data-field="effort" data-id="${ex.id}">
+        <div class="effort-chip" style="border-color:${effortToColor(ex.effort)}; color:${effortToColor(ex.effort)};">${String(ex.effort).padStart(2,'0')}</div>
+      </div>
+      <div class="ex-actions">
+        <button class="text-btn" data-act="up" data-id="${ex.id}">Subir</button>
+        <button class="text-btn" data-act="down" data-id="${ex.id}">Bajar</button>
+        <button class="text-btn" data-act="del" data-id="${ex.id}">Quitar</button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+
+  container.querySelectorAll('[data-field]').forEach(input => {
+    input.addEventListener('input', (e) => {
+      const id = Number(e.target.dataset.id);
+      const field = e.target.dataset.field;
+      const ex = exercises.find(x => x.id === id);
+      if(!ex) return;
+      if(field === 'name') ex.name = e.target.value;
+      else if(field === 'type'){ ex.type = e.target.value; }
+      else if(field === 'value'){
+        ex.value = Number(e.target.value) || 0;
+        if(ex.type === 'time'){
+          ex.duration = ex.value;
+          renderExerciseList();
+          return;
+        }
+      }
+      else if(field === 'duration') ex.duration = Number(e.target.value) || 1;
+      else if(field === 'effort'){
+        ex.effort = Number(e.target.value);
+        const chip = e.target.parentElement.querySelector('.effort-chip');
+        chip.textContent = String(ex.effort).padStart(2,'0');
+        chip.style.borderColor = effortToColor(ex.effort);
+        chip.style.color = effortToColor(ex.effort);
+        return;
+      }
+    });
+  });
+
+  container.querySelectorAll('[data-act]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = Number(e.currentTarget.dataset.id);
+      const act = e.currentTarget.dataset.act;
+      if(act === 'del') removeExercise(id);
+      else if(act === 'up') moveExercise(id, -1);
+      else if(act === 'down') moveExercise(id, 1);
+    });
+  });
+}
+
+/* ============================================================
+   MODE TOGGLE
+   ============================================================ */
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    mode = btn.dataset.mode;
+    document.getElementById('roundsFields').style.display = (mode === 'rounds') ? 'block' : 'none';
+  });
+});
+
+document.getElementById('addExerciseBtn').addEventListener('click', () => addExercise());
+
+addExercise({name:'BURPEES', type:'reps', value:15, duration:45, effort:8});
+addExercise({name:'PLANCHA', type:'time', value:30, duration:30, effort:4});
+addExercise({name:'SENTADILLAS CON SALTO', type:'reps', value:20, duration:40, effort:7});
+
+/* ============================================================
+   TIMELINE BUILDING
+   ============================================================ */
+function buildTimeline(){
+  let seq = [];
+  if(mode === 'simple'){
+    seq = exercises.map(e => ({...e}));
+  } else {
+    const rounds = Math.max(1, Number(document.getElementById('roundsCount').value) || 1);
+    const rest = Math.max(0, Number(document.getElementById('restBetween').value) || 0);
+    for(let r=0; r<rounds; r++){
+      exercises.forEach(e => seq.push({...e}));
+      if(rest > 0 && r < rounds - 1){
+        seq.push({id:`rest-${r}`, name:'DESCANSO', type:'time', value:rest, duration:rest, effort:1});
+      }
+    }
+  }
+  let t = 0;
+  seq.forEach(item => {
+    item.start = t;
+    item.end = t + item.duration;
+    t = item.end;
+  });
+  return {items: seq, total: t};
+}
+
+/* ============================================================
+   SAMPLING + SMOOTHING
+   ============================================================ */
+const DT = 0.2;
+
+function sampleSmoothProfile(timeline){
+  const total = timeline.total;
+  const n = Math.max(2, Math.ceil(total / DT) + 1);
+  const raw = new Array(n).fill(1);
+
+  for(let i=0;i<n;i++){
+    const t = i * DT;
+    const item = timeline.items.find(it => t >= it.start && t < it.end) ||
+                 timeline.items[timeline.items.length-1];
+    raw[i] = item ? item.effort : 1;
+  }
+
+  const windowSize = Math.max(2, Math.round(1.4 / DT));
+  let smooth = raw.slice();
+  for(let pass=0; pass<3; pass++){
+    const out = new Array(n);
+    for(let i=0;i<n;i++){
+      let sum=0, cnt=0;
+      for(let k=-windowSize;k<=windowSize;k++){
+        const idx = i+k;
+        if(idx>=0 && idx<n){ sum += smooth[idx]; cnt++; }
+      }
+      out[i] = sum/cnt;
+    }
+    smooth = out;
+  }
+  return {values: smooth, n, dt: DT, total};
+}
+
+/* ============================================================
+   CANVAS RENDERING — single canvas holds title, timer, chart and ticker
+   so the exported video is fully self-contained (WYSIWYG with preview)
+   ============================================================ */
+const canvas = document.getElementById('chart');
+let ctx = canvas.getContext('2d');
+let profile = null;
+let timeline = null;
+let bgImage = null; // optional user photo, composited behind the chart like Strava's share flow
+
+document.getElementById('bgInput').addEventListener('change', (e) => {
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      bgImage = img;
+      if(profile && !playing) renderScene(elapsed/timeline.total || 0, elapsed);
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+document.getElementById('bgRemoveBtn').addEventListener('click', () => {
+  bgImage = null;
+  document.getElementById('bgInput').value = '';
+  if(profile && !playing) renderScene(elapsed/timeline.total || 0, elapsed);
+});
+
+// draws `img` covering the w×h frame completely (like CSS background-size: cover),
+// then a dark veil on top so white text/graph stay legible over any photo
+function drawBackground(targetCtx, w, h){
+  if(!bgImage){
+    targetCtx.fillStyle = '#1a1a1a';
+    targetCtx.fillRect(0, 0, w, h);
+    return;
+  }
+  const imgRatio = bgImage.width / bgImage.height;
+  const frameRatio = w / h;
+  let sx, sy, sw, sh;
+  if(imgRatio > frameRatio){
+    sh = bgImage.height;
+    sw = sh * frameRatio;
+    sy = 0;
+    sx = (bgImage.width - sw) / 2;
+  } else {
+    sw = bgImage.width;
+    sh = sw / frameRatio;
+    sx = 0;
+    sy = (bgImage.height - sh) / 2;
+  }
+  targetCtx.drawImage(bgImage, sx, sy, sw, sh, 0, 0, w, h);
+  targetCtx.fillStyle = 'rgba(0,0,0,0.40)';
+  targetCtx.fillRect(0, 0, w, h);
+}
+
+// Real Instagram-recommended source resolutions (2026 specs: 1080px minimum edge)
+const FORMATS = {
+  reel:     {label:'Reel / Story · 9:16',  w:1080, h:1920, stagePreview: 380},
+  portrait: {label:'Feed · 4:5',            w:1080, h:1350, stagePreview: 380},
+  square:   {label:'Cuadrado · 1:1',        w:1080, h:1080, stagePreview: 460}
+};
+let exportFormat = 'portrait';
+let currentScale = 1;      // logical->device pixel scale currently applied to ctx
+let logicalW = 1000, logicalH = 1778; // current logical drawing size (CSS px during preview, real px during export)
+
+function updateStageWidth(){
+  document.getElementById('stage').style.maxWidth = FORMATS[exportFormat].stagePreview + 'px';
+}
+
+function fitCanvas(forExport){
+  const f = FORMATS[exportFormat];
+  if(forExport){
+    // lock backing resolution to Instagram's exact recommended source size
+    canvas.width = f.w;
+    canvas.height = f.h;
+    logicalW = f.w; logicalH = f.h;
+    currentScale = 1;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  } else {
+    const rect = canvas.getBoundingClientRect();
+    const cssWidth = rect.width || FORMATS[exportFormat].stagePreview;
+    const cssHeight = cssWidth * (f.h / f.w);
+    const dpr = window.devicePixelRatio || 1;
+    canvas.style.height = cssHeight + 'px';
+    canvas.width = cssWidth * dpr;
+    canvas.height = cssHeight * dpr;
+    currentScale = dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    logicalW = cssWidth; logicalH = cssHeight;
+  }
+}
+
+document.querySelectorAll('#formatToggle .mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#formatToggle .mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    exportFormat = btn.dataset.format;
+    updateStageWidth();
+    if(profile && !playing){
+      fitCanvas(false);
+      renderScene(elapsed/timeline.total || 0, elapsed);
+    }
+  });
+});
+updateStageWidth();
+
+function fmt(sec){
+  sec = Math.max(0, Math.round(sec));
+  const m = Math.floor(sec/60);
+  const s = sec % 60;
+  return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+
+const LAYOUT = { headerFrac: 0.17, tickerFrac: 0.20 };
+const PAD = {left: 8, right: 8};
+
+function currentItemAt(t){
+  if(!timeline) return null;
+  return timeline.items.find(it => t >= it.start && t < it.end) || timeline.items[timeline.items.length-1];
+}
+
+function peakIndex(){
+  let idx = 0;
+  for(let i=1;i<profile.n;i++) if(profile.values[i] > profile.values[idx]) idx = i;
+  return idx;
+}
+
+function drawHeader(w, h){
+  const wodName = (document.getElementById('wodName').value || 'WOD DEL DÍA').toUpperCase();
+
+  ctx.textBaseline = 'alphabetic';
+
+  // brand-scale workout title, top-left (offset down to clear IG's top UI safe zone)
+  ctx.font = `${Math.round(h*0.09)}px 'Bebas Neue'`;
+  ctx.fillStyle = 'rgba(255,255,255,1)';
+  ctx.textAlign = 'left';
+  ctx.fillText(wodName, PAD.left, h*0.135);
+
+  // sub label
+  ctx.font = `${Math.max(9, Math.round(h*0.015))}px 'Inter'`;
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fillText(
+    `${timeline.items.length} BLOQUES · ${mode === 'rounds' ? 'POR RONDAS' : 'LISTA SIMPLE'}`,
+    PAD.left, h*0.175
+  );
+
+  // separator line
+  ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, h*LAYOUT.headerFrac);
+  ctx.lineTo(w, h*LAYOUT.headerFrac);
+  ctx.stroke();
+
+  ctx.textAlign = 'left';
+}
+
+function chartRegion(w, h){
+  const top = h * LAYOUT.headerFrac;
+  const bottom = h * (1 - LAYOUT.tickerFrac);
+  return {
+    top, bottom,
+    left: PAD.left + 26,
+    right: w - PAD.right,
+    w: w - PAD.left - PAD.right - 26,
+    h: bottom - top
+  };
+}
+
+function valueToXY(i, region){
+  const x = region.left + (i / (profile.n - 1)) * region.w;
+  const eff = Math.max(0, Math.min(10, profile.values[i]));
+  const y = region.top + region.h - (eff/10) * region.h;
+  return {x, y};
+}
+
+function drawChart(w, h, revealFraction){
+  const region = chartRegion(w, h);
+
+  // horizontal grid + axis labels (0/2/4/6/8/10)
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  ctx.font = `${Math.max(9, Math.round(h*0.014))}px 'Inter'`;
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.textAlign = 'left';
+  for(let level=0; level<=10; level+=2){
+    const y = region.top + region.h - (level/10)*region.h;
+    ctx.beginPath();
+    ctx.moveTo(region.left, y);
+    ctx.lineTo(region.right, y);
+    ctx.stroke();
+    ctx.fillText(String(level), 0, y + h*0.005);
+  }
+
+  if(!profile) return;
+
+  const revealIndex = Math.max(1, Math.floor(revealFraction * (profile.n - 1)));
+
+  // filled area, colored strip by strip according to effort (opacity of white)
+  for(let i=0; i<revealIndex; i++){
+    const p1 = valueToXY(i, region);
+    const p2 = valueToXY(i+1, region);
+    const avgEffort = (profile.values[i] + profile.values[i+1]) / 2;
+    ctx.beginPath();
+    ctx.moveTo(p1.x, region.top + region.h);
+    ctx.lineTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.lineTo(p2.x, region.top + region.h);
+    ctx.closePath();
+    ctx.fillStyle = effortToRGBA(avgEffort, 0.22);
+    ctx.fill();
+  }
+
+  // the profile line itself
+  ctx.lineWidth = Math.max(1.5, h*0.004);
+  ctx.lineJoin = 'round';
+  for(let i=0; i<revealIndex; i++){
+    const p1 = valueToXY(i, region);
+    const p2 = valueToXY(i+1, region);
+    const avgEffort = (profile.values[i] + profile.values[i+1]) / 2;
+    ctx.strokeStyle = effortToRGBA(avgEffort);
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+  }
+
+  // moving marker: solid diamond, colored by current intensity
+  if(revealIndex > 0 && revealIndex < profile.n){
+    const p = valueToXY(revealIndex-1, region);
+    const size = Math.max(5, h*0.012);
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(Math.PI/4);
+    ctx.fillStyle = effortToColor(profile.values[revealIndex-1]);
+    ctx.fillRect(-size/2, -size/2, size, size);
+    ctx.restore();
+  }
+
+  // CRUX tag at hardest point of whole profile, rectangular bordered chip
+  const pk = peakIndex();
+  if(pk < revealIndex){
+    const p = valueToXY(pk, region);
+    ctx.font = `700 ${Math.max(9, Math.round(h*0.014))}px 'Inter'`;
+    const label = 'CRUX';
+    const tw = ctx.measureText(label).width;
+    const padX = h*0.012, padY = h*0.008;
+    const boxW = tw + padX*2, boxH = h*0.03;
+    let bx = p.x - boxW/2;
+    bx = Math.max(region.left, Math.min(region.right - boxW, bx));
+    const by = Math.max(region.top, p.y - boxH - h*0.02);
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(bx, by, boxW, boxH);
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, bx + boxW/2, by + boxH/2 + h*0.005);
+    ctx.textAlign = 'left';
+  }
+}
+
+function drawTicker(w, h, currentT){
+  const item = currentItemAt(currentT);
+  const top = h * (1 - LAYOUT.tickerFrac);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, top);
+  ctx.lineTo(w, top);
+  ctx.stroke();
+
+  const labelSize = Math.max(9, Math.round(h*0.016));
+  const nameSize = Math.max(14, Math.round(h*0.045));
+
+  ctx.textAlign = 'left';
+  ctx.font = `${labelSize}px 'Inter'`;
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fillText('AHORA', PAD.left, top + h*0.045);
+
+  ctx.font = `${nameSize}px 'Bebas Neue'`;
+  ctx.fillStyle = 'rgba(255,255,255,1)';
+  ctx.fillText((item ? item.name || 'SIN NOMBRE' : '—').toUpperCase(), PAD.left, top + h*0.095);
+
+  // effort chip, right aligned
+  if(item){
+    const val = String(item.effort).padStart(2,'0') + ' / 10';
+    const col = effortToColor(item.effort);
+    ctx.font = `700 ${Math.max(11, Math.round(h*0.02))}px 'Inter'`;
+    const tw = ctx.measureText(val).width;
+    const padX = h*0.014;
+    const boxW = tw + padX*2, boxH = h*0.045;
+    const bx = w - PAD.right - boxW, by = top + h*0.03;
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(bx, by, boxW, boxH);
+    ctx.fillStyle = col;
+    ctx.textAlign = 'center';
+    ctx.fillText(val, bx + boxW/2, by + boxH/2 + h*0.007);
+    ctx.textAlign = 'left';
+  }
+}
+
+const CONTENT_TOP_FRAC = 0.5; // top half stays empty for the user's own content
+
+function renderScene(revealFraction, currentT){
+  const w = logicalW, h = logicalH;
+
+  ctx.clearRect(0, 0, w, h);
+  drawBackground(ctx, w, h); // background/photo still fills the whole frame
+
+  if(!timeline){ return; }
+
+  const contentTop = h * CONTENT_TOP_FRAC;
+  const contentH = h - contentTop;
+  ctx.save();
+  ctx.translate(0, contentTop);
+  drawHeader(w, contentH);
+  drawChart(w, contentH, revealFraction);
+  drawTicker(w, contentH, currentT);
+  ctx.restore();
+}
+
+/* ============================================================
+   PLAYBACK
+   ============================================================ */
+let playing = false;
+let playStart = 0;
+let elapsed = 0;
+let speed = 1;
+let rafId = null;
+
+function frame(){
+  if(!playing) return;
+  const now = performance.now();
+  const dt = (now - playStart) / 1000 * speed;
+  const currentT = Math.min(elapsed + dt, timeline.total);
+  renderScene(currentT / timeline.total, currentT);
+
+  if(currentT >= timeline.total){
+    playing = false;
+    elapsed = timeline.total;
+    document.getElementById('playBtn').textContent = 'Play';
+    if(recording) stopRecording();
+    return;
+  }
+  rafId = requestAnimationFrame(frame);
+}
+
+function play(){
+  if(!timeline) return;
+  playing = true;
+  playStart = performance.now();
+  document.getElementById('playBtn').textContent = 'Pausa';
+  rafId = requestAnimationFrame(frame);
+}
+
+function pause(){
+  playing = false;
+  elapsed = Math.min(elapsed + (performance.now() - playStart)/1000*speed, timeline.total);
+  document.getElementById('playBtn').textContent = 'Play';
+  if(rafId) cancelAnimationFrame(rafId);
+}
+
+function resetPlayback(){
+  playing = false;
+  elapsed = 0;
+  if(rafId) cancelAnimationFrame(rafId);
+  renderScene(0, 0);
+  document.getElementById('playBtn').textContent = 'Play';
+}
+
+document.getElementById('playBtn').addEventListener('click', () => {
+  if(playing) pause(); else play();
+});
+document.getElementById('resetBtn').addEventListener('click', resetPlayback);
+
+document.querySelectorAll('.speed-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.speed-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    speed = Number(btn.dataset.speed);
+  });
+});
+
+/* ============================================================
+   GENERATE
+   ============================================================ */
+function loadFonts(){
+  if(!document.fonts) return Promise.resolve();
+  return Promise.all([
+    document.fonts.load("400 40px 'Bebas Neue'"),
+    document.fonts.load("700 40px 'Bebas Neue'"),
+    document.fonts.load("400 14px 'Inter'"),
+    document.fonts.load("700 14px 'Inter'")
+  ]).catch(()=>{});
+}
+
+document.getElementById('generateBtn').addEventListener('click', () => {
+  if(exercises.length === 0){
+    alert('Añade al menos un ejercicio.');
+    return;
+  }
+  timeline = buildTimeline();
+  profile = sampleSmoothProfile(timeline);
+
+  document.getElementById('emptyState').style.display = 'none';
+  canvas.style.display = 'block';
+
+  loadFonts().then(() => {
+    fitCanvas(false);
+    resetPlayback();
+  });
+
+  document.getElementById('playBtn').disabled = false;
+  document.getElementById('resetBtn').disabled = false;
+  document.getElementById('recordBtn').disabled = false;
+  document.getElementById('pngBtn').disabled = false;
+  document.getElementById('statusMsg').textContent = '';
+});
+
+window.addEventListener('resize', () => {
+  if(profile && !playing){
+    fitCanvas(false);
+    renderScene(elapsed/timeline.total || 0, elapsed);
+  }
+});
+
+/* ============================================================
+   VIDEO EXPORT — ultra-HD (1920 wide, 60fps, high bitrate)
+   ============================================================ */
+let recording = false;
+let mediaRecorder = null;
+let recordedChunks = [];
+
+function pickMimeType(){
+  const candidates = [
+    'video/mp4;codecs=avc1.640032',
+    'video/mp4',
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8',
+    'video/webm'
+  ];
+  for(const c of candidates){
+    if(window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(c)){
+      return c;
+    }
+  }
+  return '';
+}
+
+document.getElementById('recordBtn').addEventListener('click', () => {
+  if(!timeline || recording) return;
+  const mime = pickMimeType();
+  const statusEl = document.getElementById('statusMsg');
+
+  if(!window.MediaRecorder){
+    statusEl.textContent = 'Este navegador no soporta grabación de vídeo (MediaRecorder).';
+    return;
+  }
+
+  loadFonts().then(() => {
+    fitCanvas(true); // lock backing resolution to Instagram's recommended source size
+    const f = FORMATS[exportFormat];
+
+    const FPS = 30; // Instagram's recommended frame rate for Reels/Feed
+    const stream = canvas.captureStream(FPS);
+    recordedChunks = [];
+    const opts = { videoBitsPerSecond: 8000000 }; // 8 Mbps — top of Instagram's recommended range
+    if(mime) opts.mimeType = mime;
+
+    try{
+      mediaRecorder = new MediaRecorder(stream, opts);
+    }catch(err){
+      mediaRecorder = new MediaRecorder(stream);
+    }
+
+    mediaRecorder.ondataavailable = (e) => { if(e.data && e.data.size > 0) recordedChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      const isMp4 = (mediaRecorder.mimeType || '').includes('mp4');
+      const ext = isMp4 ? 'mp4' : 'webm';
+      const blob = new Blob(recordedChunks, {type: mediaRecorder.mimeType || 'video/webm'});
+      const url = URL.createObjectURL(blob);
+      const name = (document.getElementById('wodName').value || 'perfil-esfuerzo').trim().replace(/\s+/g,'_');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${name}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      if(isMp4){
+        const bgNote = bgImage ? ' Foto de fondo integrada.' : '';
+        statusEl.textContent = `Listo: ${f.w}×${f.h} · 30fps · MP4 (H.264) · 8 Mbps. Puedes subirlo a Instagram directamente.${bgNote}`;
+      } else {
+        statusEl.textContent = `Descargado en WebM (${f.w}×${f.h}, 30fps). Instagram no acepta WebM: conviértelo a MP4 (p. ej. con VLC, HandBrake o un conversor online) antes de subirlo. Probablemente esto ocurra porque tu navegador no soporta grabación MP4 nativa — prueba Safari si quieres MP4 directo.`;
+      }
+      document.getElementById('recordBtn').disabled = false;
+      document.getElementById('recordBtn').textContent = 'Grabar vídeo (Instagram HD)';
+      recording = false;
+
+      // revert canvas to normal responsive resolution
+      fitCanvas(false);
+      renderScene(elapsed/timeline.total || 0, elapsed);
+    };
+
+    recording = true;
+    document.getElementById('recordBtn').disabled = true;
+    document.getElementById('recordBtn').textContent = 'Grabando...';
+    statusEl.textContent = `Grabando en ${f.w}×${f.h} a 30fps — espera a que termine el entrenamiento...`;
+
+    resetPlayback();
+    mediaRecorder.start();
+    play();
+  });
+});
+
+function stopRecording(){
+  if(mediaRecorder && mediaRecorder.state !== 'inactive'){
+    mediaRecorder.stop();
+  }
+}
+
+/* ============================================================
+   PNG EXPORT — transparent background, for overlaying on photos
+   ============================================================ */
+document.getElementById('pngBtn').addEventListener('click', () => {
+  if(!timeline) return;
+  const statusEl = document.getElementById('statusMsg');
+
+  loadFonts().then(() => {
+    const f = FORMATS[exportFormat];
+    const off = document.createElement('canvas');
+    off.width = f.w;
+    off.height = f.h;
+    const offCtx = off.getContext('2d');
+
+    // temporarily point the shared drawing context at the offscreen canvas
+    const prevCtx = ctx, prevW = logicalW, prevH = logicalH;
+    ctx = offCtx;
+    logicalW = f.w;
+    logicalH = f.h;
+
+    ctx.clearRect(0, 0, f.w, f.h);
+    if(bgImage){ drawBackground(ctx, f.w, f.h); } // bake the photo in; otherwise stays transparent
+    const currentT = elapsed;
+    const revealFraction = elapsed === 0 ? 1 : (timeline.total ? currentT / timeline.total : 1);
+    const contentTop = f.h * CONTENT_TOP_FRAC;
+    const contentH = f.h - contentTop;
+    ctx.save();
+    ctx.translate(0, contentTop);
+    drawHeader(f.w, contentH);
+    drawChart(f.w, contentH, revealFraction);
+    if(revealFraction < 0.999){
+      drawTicker(f.w, contentH, currentT);
+    }
+    ctx.restore();
+
+    ctx = prevCtx;
+    logicalW = prevW;
+    logicalH = prevH;
+
+    off.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const name = (document.getElementById('wodName').value || 'perfil-esfuerzo').trim().replace(/\s+/g,'_');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${name}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      const bgNote = bgImage ? 'con tu foto de fondo integrada' : 'con fondo transparente';
+      statusEl.textContent = `PNG ${f.w}×${f.h} ${bgNote} descargado — usa "Play" y pausa en el momento que quieras capturar antes de pulsar este botón.`;
+    }, 'image/png');
+  });
+});
+</script>
+</body>
+</html>

@@ -62,6 +62,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 <span class="icon">📄</span> Órdenes HTML
             </a>
         </li>
+        <li>
+            <a href="/admin-descargas/perfil-esfuerzo.html" class="<?php echo $current_page == 'perfil-esfuerzo.html' ? 'active' : ''; ?>">
+                <span class="icon">🎬</span> IG Animaciones
+            </a>
+        </li>
     </ul>
 </nav>
 
