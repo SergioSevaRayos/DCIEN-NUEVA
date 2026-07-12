@@ -315,7 +315,7 @@ try {
         'line_items'           => $lineItems,
         'mode'                 => 'payment',
         'success_url'          => ($_ENV['STRIPE_SUCCESS_URL'] ?? getenv('STRIPE_SUCCESS_URL')) . '?session_id={CHECKOUT_SESSION_ID}',
-        'cancel_url'           => $_ENV['STRIPE_CANCEL_URL'] ?? getenv('STRIPE_CANCEL_URL'),
+        'cancel_url'           => rtrim($_ENV['APP_URL'] ?? getenv('APP_URL') ?? 'https://d-cien.es', '/') . '/api/stripe/cancel-checkout.php?session_id={CHECKOUT_SESSION_ID}',
         'metadata'             => [
             'order_id'        => (string)$orderId,
             'user_id'         => (string)$userId,

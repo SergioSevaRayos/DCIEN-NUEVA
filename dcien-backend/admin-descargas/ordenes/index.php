@@ -4,7 +4,10 @@
  */
 
 require_once '../modules/config.php';
-require_once __DIR__ . '/../../vendor/autoload.php';
+// vendor: produccion primero (dcien-backend/vendor/), fallback local (dcien-backend/vendor/ via relative)
+$_autoload_prod  = __DIR__ . '/../../../dcien-backend/vendor/autoload.php';
+$_autoload_local = __DIR__ . '/../../vendor/autoload.php';
+require_once (file_exists($_autoload_prod) ? $_autoload_prod : $_autoload_local);
 $pdo = get_db_connection();
 
 $message        = '';
@@ -86,7 +89,12 @@ function get_order_items(PDO $pdo, array $pedido): array {
 }
 
 function img_b64(string $serie_slug, string $filename, int $maxW = 320): string {
-    $base = realpath(__DIR__ . '/../../../public') . "/images/series/{$serie_slug}/";
+    // local: dcien-backend/admin-descargas/ordenes/ → public/images/
+    // prod:  public_html/admin-descargas/ordenes/ → public_html/images/
+    $base_local = realpath(__DIR__ . '/../../../public');
+    $base_prod  = realpath(__DIR__ . '/../../');
+    $base_dir   = ($base_local && is_dir($base_local . "/images")) ? $base_local : $base_prod;
+    $base = $base_dir . "/images/series/{$serie_slug}/";
     $path = '';
     foreach ([$filename, str_replace('.png', '.webp', $filename), str_replace('.png', '.jpg', $filename)] as $f) {
         if (file_exists($base . $f)) { $path = $base . $f; break; }
