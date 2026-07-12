@@ -165,6 +165,82 @@ Archivos físicos en `admin-descargas/ordenes/docs/{order_id}/`. Formatos permit
 ### Regla importante: `generar_orden` no revierte estados
 El action `generar_orden` solo avanza el estado a `produccion` si el pedido está en `paid/pending/pendiente`. Si ya está en `enviado` o `cancelled`, genera el documento HTML pero **no toca el status**. Esto evita el bug de revertir accidentalmente un pedido enviado a producción.
 
+## Tablas adicionales en BD (no están en el dump original)
+
+```sql
+-- Acceso prioritario por serie
+CREATE TABLE series_priority (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  series_slug VARCHAR(100) NOT NULL UNIQUE,
+  priority_until DATETIME NOT NULL,
+  notes VARCHAR(255) DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE series_priority_users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  series_slug VARCHAR(100) NOT NULL,
+  user_id INT NOT NULL,
+  granted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY (series_slug, user_id)
+);
+
+-- Columna gender en series (necesaria para list.php)
+ALTER TABLE series ADD COLUMN gender ENUM('male','female','unisex') DEFAULT 'unisex';
+```
+
+## Generación de PDFs (Dompdf)
+
+- Dompdf v3.1 está en `dcien-backend/vendor/` (añadido vía composer)
+- **No usar `display:flex` ni `display:grid`** en HTML para Dompdf — solo tablas
+- **Márgenes**: `@page { margin: 0 }` + `body { padding: 14mm 17mm }` — Dompdf ignora `@page margin` con reset CSS
+- **Imágenes**: incrustar como base64 con GD redimensionado. `object-fit` no funciona en Dompdf
+- Los PDFs se generan en `admin-descargas/ordenes/` con nombre `orden_{order_number}_{timestamp}.pdf`
+
+## Rutas de vendor y public_html — reglas críticas
+
+**NUNCA debe haber `vendor/` en `public_html/`**. Si existe, eliminarlo:
+```bash
+ssh -p 65002 u755459505@147.79.103.7 "rm -rf /home/u755459505/domains/d-cien.es/public_html/vendor/"
+```
+El único vendor válido es `dcien-backend/vendor/`. Tenerlo duplicado provoca `Cannot declare class ComposerAutoloader...` al cargar el admin de pedidos.
+
+**Path a vendor desde `admin-descargas/ordenes/index.php`** varía entre entornos:
+- Local: `__DIR__ . '/../../vendor/autoload.php'` → `dcien-backend/vendor/`
+- Producción (servido desde `public_html/`): `__DIR__ . '/../../../dcien-backend/vendor/autoload.php'`
+
+El código carga el de producción primero y hace fallback al local.
+
+**Path a imágenes** también varía:
+- Local: `public/images/series/`
+- Producción: `public_html/images/series/`
+
+`img_b64()` en `ordenes/index.php` detecta cuál existe comprobando si `../../../public/images/` es un directorio válido.
+
+## API — añadir nuevos endpoints
+
+El router en `public_html/api/index.php` (solo en servidor) tiene una lista cerrada de rutas. Para añadir un endpoint accesible directamente desde el navegador sin pasar por el router:
+
+1. Crear la lógica real en `dcien-backend/api/{grupo}/{nombre}.php`
+2. Crear un proxy en `server-extras/api/{grupo}/{nombre}.php` con este patrón:
+```php
+<?php
+$backend_root = dirname(dirname(dirname(__DIR__)));
+require_once $backend_root . '/dcien-backend/api/{grupo}/{nombre}.php';
+```
+3. Referenciar la URL con extensión `.php`: `https://d-cien.es/api/{grupo}/{nombre}.php`
+
+Ejemplo real: `server-extras/api/stripe/cancel-checkout.php` → accesible en `d-cien.es/api/stripe/cancel-checkout.php`
+
+## Cancelación de pago Stripe
+
+Al crear una sesión de Stripe, la `cancel_url` apunta a `cancel-checkout.php` que:
+1. Busca el pedido por `stripe_session_id` con status `pending/pendiente`
+2. Libera las `series_units` a `available`
+3. Elimina `order_items` y el pedido
+4. Redirige a `/series-activas`
+
+**No usar `STRIPE_CANCEL_URL` del .env como cancel_url directa** — el pedido quedaría huérfano en BD con la unidad bloqueada en estado `checkout`.
+
 ## Deploy (producción — Hostinger)
 
 Ver [DEPLOY.md](DEPLOY.md). En resumen:
