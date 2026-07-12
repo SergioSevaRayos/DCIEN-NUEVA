@@ -36,7 +36,22 @@ if ($unit_number < 1 || $unit_number > 100) {
 
 try {
     $pdo = getDatabaseConnection();
-    
+
+    // Verificar acceso prioritario antes de cualquier operación
+    $priority = queryOne(
+        "SELECT priority_until FROM series_priority WHERE series_slug = :slug AND priority_until > NOW()",
+        ['slug' => $series_slug]
+    );
+    if ($priority) {
+        $hasAccess = queryOne(
+            "SELECT id FROM series_priority_users WHERE series_slug = :slug AND user_id = :uid",
+            ['slug' => $series_slug, 'uid' => $user_id]
+        );
+        if (!$hasAccess) {
+            jsonError('Esta serie está en periodo de acceso prioritario. Aún no está disponible para ti.', 403);
+        }
+    }
+
     // Iniciar transacción para atomicidad
     $pdo->beginTransaction();
     

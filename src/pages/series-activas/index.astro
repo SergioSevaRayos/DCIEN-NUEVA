@@ -1,38 +1,9 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getSEO } from '../../lib/seo';
-import { seriesData } from '../../data/series';
 
 const seo = getSEO('series-activas');
-
-type ActiveSeriesCard = {
-  id: number;
-  name: string;
-  slug: string;
-  description: string;
-  price: number;
-  images: string[] | string;
-  release_date?: string;
-  gender?: 'male' | 'female' | 'unisex';
-};
-
-const activeSeries: ActiveSeriesCard[] = seriesData
-  .filter(s => s.isActive)
-  .sort((a, b) => {
-    const dateA = new Date(a.releaseDate || '1970-01-01').getTime();
-    const dateB = new Date(b.releaseDate || '1970-01-01').getTime();
-    return dateB - dateA;
-  })
-  .map((series, index) => ({
-    id: index + 1,
-    name: series.name,
-    slug: series.slug,
-    description: series.description,
-    price: series.price,
-    images: series.images,
-    release_date: series.releaseDate,
-    gender: series.gender,
-  }));
+const apiUrl = import.meta.env.PUBLIC_API_URL;
 ---
 
 <BaseLayout seo={seo}>
@@ -42,247 +13,193 @@ const activeSeries: ActiveSeriesCard[] = seriesData
         <h1 class="font-brand text-6xl sm:text-7xl md:text-[9rem] tracking-[0.05em] md:tracking-[0.1em] leading-none text-black dark:text-white transition-colors">
           SERIES ACTIVAS
         </h1>
-        <p class="text-[10px] md:text-xs uppercase tracking-[0.3em] md:tracking-[0.4em] text-black/50 dark:text-white/40 mt-6 font-bold">
-          {activeSeries.length} {activeSeries.length === 1 ? 'LÍNEA ABIERTA' : 'LÍNEAS ABIERTAS'} · ACCESO RESTRINGIDO
+        <p class="text-[10px] md:text-xs uppercase tracking-[0.3em] md:tracking-[0.4em] text-black/50 dark:text-white/40 mt-6 font-bold" id="series-count-label">
+          CARGANDO · ACCESO RESTRINGIDO
         </p>
       </div>
 
-      {activeSeries.length === 0 ? (
-        <div class="text-center py-20 scroll-reveal scroll-delay-1 max-w-xl mx-auto border border-black/10 dark:border-white/10 p-12 bg-zinc-50 dark:bg-zinc-900">
-          <p class="text-2xl font-brand text-black dark:text-white mb-4 transition-colors tracking-widest">
-            SISTEMA CERRADO
-          </p>
-          <p class="text-xs text-black/50 dark:text-white/50 mb-8 transition-colors uppercase tracking-[0.2em] leading-relaxed">
-            Actualmente no hay ningún protocolo activo. Toda la producción técnica anterior ha sido finalizada y archivada de forma permanente.
-          </p>
-          <a href="/archivo" class="btn-secondary w-full justify-center">
-            Acceder al Archivo Histórico
-          </a>
-        </div>
-      ) : (
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 max-w-7xl mx-auto">
-          {activeSeries.map((series, index) => {
-            const images = typeof series.images === 'string'
-              ? JSON.parse(series.images)
-              : series.images;
+      <!-- Estado vacío (oculto hasta que la API confirme) -->
+      <div id="empty-state" class="hidden text-center py-20 scroll-reveal scroll-delay-1 max-w-xl mx-auto border border-black/10 dark:border-white/10 p-12 bg-zinc-50 dark:bg-zinc-900">
+        <p class="text-2xl font-brand text-black dark:text-white mb-4 transition-colors tracking-widest">
+          SISTEMA CERRADO
+        </p>
+        <p class="text-xs text-black/50 dark:text-white/50 mb-8 transition-colors uppercase tracking-[0.2em] leading-relaxed">
+          Actualmente no hay ningún protocolo activo. Toda la producción técnica anterior ha sido finalizada y archivada de forma permanente.
+        </p>
+        <a href="/archivo" class="btn-secondary w-full justify-center">
+          Acceder al Archivo Histórico
+        </a>
+      </div>
 
-            const mainImage = images?.[0] ?? '/images/placeholder.jpg';
-            const isFeatured = index === 0;
-            const delayClass = `scroll-delay-${(index % 3) + 1}`;
-
-            // FEATURED CARD (Opción A)
-            if (isFeatured) {
-              return (
-                <article
-                  class={`col-span-1 md:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-0 bg-zinc-50 dark:bg-zinc-900/50 overflow-hidden group series-card scroll-reveal ${delayClass} border border-black/5 dark:border-white/5`}
-                  data-series-slug={series.slug}
-                >
-                  <div class="relative aspect-square lg:aspect-auto lg:h-[700px] overflow-hidden bg-white dark:bg-[#0a0a0a]">
-                    <img
-                      src={mainImage}
-                      alt={series.name}
-                      class="w-full h-full object-contain p-8 md:p-16 transition-transform duration-[1.5s] ease-out group-hover:scale-105"
-                    />
-                    <!-- Overlay de acciones en hover -->
-                    <div class="absolute inset-0 bg-black/40 dark:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-12 z-20">
-                       <div class="transform translate-y-8 group-hover:translate-y-0 transition-transform duration-500 flex flex-col sm:flex-row gap-4">
-                         <a href={`/series-activas/${series.slug}`} class="btn-secondary flex-1 text-center !bg-black/50 !text-white !border-white/20 backdrop-blur-md hover:!bg-white hover:!text-black transition-colors duration-300">
-                           Ver Ficha Técnica
-                         </a>
-                         <a href="/acceso" class="btn-primary flex-1 text-center">
-                           Procesar Acceso
-                         </a>
-                       </div>
-                    </div>
-                  </div>
-
-                  <div class="p-8 md:p-16 flex flex-col justify-center relative">
-                    <div class="flex items-center gap-4 mb-8">
-                       <span class="bg-black text-white dark:bg-white dark:text-black text-[9px] font-bold tracking-[0.2em] px-3 py-1.5 uppercase">Último lanzamiento</span>
-                       <span class="text-xs opacity-50 font-sans" title={series.gender === 'male' ? 'Hombre' : series.gender === 'female' ? 'Mujer' : 'Unisex'}>
-                         {series.gender === 'male' && '♂ HOMBRE'}
-                         {series.gender === 'female' && '♀ MUJER'}
-                         {series.gender === 'unisex' && '♂/♀ UNISEX'}
-                       </span>
-                    </div>
-                    
-                    <h2 class="font-brand text-5xl md:text-7xl mb-4 text-black dark:text-white uppercase tracking-wider leading-none">
-                      {series.name}
-                    </h2>
-                    <p class="text-[11px] md:text-xs text-black/60 dark:text-white/60 uppercase tracking-[0.2em] mb-12 leading-relaxed">
-                      {series.description}
-                    </p>
-                    
-                    <div class="grid grid-cols-3 gap-6 mb-10 text-center border-t border-b border-black/5 dark:border-white/5 py-8">
-                      <div>
-                        <p class="text-3xl md:text-4xl font-brand text-black dark:text-white" data-total>—</p>
-                        <p class="text-[9px] text-black/40 dark:text-white/40 uppercase tracking-widest mt-2">Unidades</p>
-                      </div>
-                      <div>
-                        <p class="text-3xl md:text-4xl font-brand text-black dark:text-white" data-available>—</p>
-                        <p class="text-[9px] text-black/40 dark:text-white/40 uppercase tracking-widest mt-2">Libres</p>
-                      </div>
-                      <div>
-                        <p class="text-3xl md:text-4xl font-brand text-black dark:text-white" data-sold>—</p>
-                        <p class="text-[9px] text-black/40 dark:text-white/40 uppercase tracking-widest mt-2">Cerradas</p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div class="flex justify-between items-end text-[10px] font-bold text-black dark:text-white mb-3 uppercase tracking-widest">
-                        <span class="text-black/40 dark:text-white/40">Estado del Protocolo</span>
-                        <span data-percent class="text-xs">—</span>
-                      </div>
-                      <div class="w-full h-1 bg-black/10 dark:bg-white/10 overflow-hidden">
-                        <div class="h-full bg-black dark:bg-white transition-all duration-1000 ease-out" data-bar style="width: 0%" />
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              );
-            }
-
-            // STANDARD CARD (Column layout)
-            return (
-              <article
-                class={`bg-zinc-50 dark:bg-zinc-900/50 overflow-hidden group series-card scroll-reveal ${delayClass} flex flex-col border border-black/5 dark:border-white/5`}
-                data-series-slug={series.slug}
-              >
-                <div class="relative aspect-[4/5] bg-white dark:bg-[#0a0a0a] overflow-hidden">
-                  <img
-                    src={mainImage}
-                    alt={series.name}
-                    class="w-full h-full object-contain p-8 transition-transform duration-[1.5s] ease-out group-hover:scale-105"
-                  />
-                  <!-- Overlay de acciones en hover -->
-                  <div class="absolute inset-0 bg-black/30 dark:bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 z-20">
-                     <div class="transform translate-y-6 group-hover:translate-y-0 transition-transform duration-500 flex flex-col gap-3">
-                       <a href="/acceso" class="btn-primary w-full text-center">
-                         Procesar Acceso
-                       </a>
-                       <a href={`/series-activas/${series.slug}`} class="text-[9px] text-white/70 text-center tracking-[0.2em] uppercase hover:text-white transition-colors py-2">
-                         Inspeccionar Datos Técnicos
-                       </a>
-                     </div>
-                  </div>
-                </div>
-
-                <div class="p-8 md:p-10 flex-grow flex flex-col justify-between border-t border-black/5 dark:border-white/5">
-                  <div class="mb-8">
-                    <div class="flex justify-between items-start mb-2">
-                       <h2 class="font-brand text-3xl text-black dark:text-white uppercase tracking-wider leading-none">
-                         {series.name}
-                       </h2>
-                       <span class="text-xs opacity-40 font-sans mt-1" title={series.gender === 'male' ? 'Hombre' : series.gender === 'female' ? 'Mujer' : 'Unisex'}>
-                         {series.gender === 'male' && '♂'}
-                         {series.gender === 'female' && '♀'}
-                         {series.gender === 'unisex' && '♂/♀'}
-                       </span>
-                    </div>
-                    <p class="text-[9px] text-black/50 dark:text-white/40 uppercase tracking-[0.2em] leading-relaxed">
-                      {series.description}
-                    </p>
-                  </div>
-
-                  <div class="mt-auto">
-                    <div class="grid grid-cols-3 gap-2 mb-6 text-center">
-                      <div class="bg-black/5 dark:bg-white/5 py-3 rounded-sm">
-                        <p class="text-xl font-brand text-black dark:text-white" data-total>—</p>
-                        <p class="text-[8px] text-black/40 dark:text-white/40 uppercase tracking-widest mt-1">Units</p>
-                      </div>
-                      <div class="bg-black/5 dark:bg-white/5 py-3 rounded-sm">
-                        <p class="text-xl font-brand text-black dark:text-white" data-available>—</p>
-                        <p class="text-[8px] text-black/40 dark:text-white/40 uppercase tracking-widest mt-1">Libres</p>
-                      </div>
-                      <div class="bg-black/5 dark:bg-white/5 py-3 rounded-sm">
-                        <p class="text-xl font-brand text-black dark:text-white" data-sold>—</p>
-                        <p class="text-[8px] text-black/40 dark:text-white/40 uppercase tracking-widest mt-1">Out</p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div class="flex justify-between items-end text-[9px] font-bold text-black/60 dark:text-white/60 mb-2 uppercase tracking-widest">
-                        <span>Progreso</span>
-                        <span data-percent class="text-black dark:text-white">—</span>
-                      </div>
-                      <div class="w-full h-[2px] bg-black/10 dark:bg-white/10 overflow-hidden">
-                        <div class="h-full bg-black dark:bg-white transition-all duration-1000 ease-out" data-bar style="width: 0%" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      )}
+      <!-- Grid dinámico — se rellena por JS -->
+      <div id="series-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 max-w-7xl mx-auto"></div>
     </div>
   </section>
+</BaseLayout>
 
-  <!-- ──────────────────────────────────────────────────────────
-       STOCK REAL · MISMA API QUE [slug].astro · TS SAFE
-       ────────────────────────────────────────────────────────── -->
-<script>
-  const API = import.meta.env.PUBLIC_API_URL;
+<script define:vars={{ apiUrl }}>
+const API = apiUrl;
 
-  async function loadSeriesStock() {
-    const cards = document.querySelectorAll('.series-card');
+/* ──── Plantillas de tarjeta ──── */
 
-    cards.forEach(async (cardEl) => {
-      if (!(cardEl instanceof HTMLElement)) return;
+function genderIcon(g) {
+  if (g === 'male')   return '♂ HOMBRE';
+  if (g === 'female') return '♀ MUJER';
+  return '♂/♀ UNISEX';
+}
 
-      const slug = cardEl.dataset.seriesSlug;
-      if (!slug) return;
+function featuredCard(s) {
+  const img = s.images?.[0] ?? '/images/brand/og-image.jpg';
+  return `
+  <article class="col-span-1 md:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-0 bg-zinc-50 dark:bg-zinc-900/50 overflow-hidden group series-card scroll-reveal scroll-delay-1 border border-black/5 dark:border-white/5" data-series-slug="${s.slug}">
+    <div class="relative aspect-square lg:aspect-auto lg:h-[700px] overflow-hidden bg-white dark:bg-[#0a0a0a]">
+      <img src="${img}" alt="${s.name}" class="w-full h-full object-contain p-8 md:p-16 transition-transform duration-[1.5s] ease-out group-hover:scale-105" />
+      <div class="absolute inset-0 bg-black/40 dark:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-12 z-20">
+        <div class="transform translate-y-8 group-hover:translate-y-0 transition-transform duration-500 flex flex-col sm:flex-row gap-4">
+          <a href="/series-activas/${s.slug}" class="btn-secondary flex-1 text-center !bg-black/50 !text-white !border-white/20 backdrop-blur-md hover:!bg-white hover:!text-black transition-colors duration-300">Ver Ficha Técnica</a>
+          <a href="/acceso" class="btn-primary flex-1 text-center">Procesar Acceso</a>
+        </div>
+      </div>
+    </div>
+    <div class="p-8 md:p-16 flex flex-col justify-center relative">
+      <div class="flex items-center gap-4 mb-8">
+        <span class="bg-black text-white dark:bg-white dark:text-black text-[9px] font-bold tracking-[0.2em] px-3 py-1.5 uppercase">Último lanzamiento</span>
+        <span class="text-xs opacity-50 font-sans">${genderIcon(s.gender)}</span>
+        ${s._priority ? `<span class="text-[9px] font-bold tracking-[0.2em] px-3 py-1.5 uppercase border border-black/30 dark:border-white/30 text-black/60 dark:text-white/60">ACCESO VIP</span>` : ''}
+      </div>
+      <h2 class="font-brand text-5xl md:text-7xl mb-4 text-black dark:text-white uppercase tracking-wider leading-none">${s.name}</h2>
+      <p class="text-[11px] md:text-xs text-black/60 dark:text-white/60 uppercase tracking-[0.2em] mb-12 leading-relaxed">${s.description}</p>
+      <div class="grid grid-cols-3 gap-6 mb-10 text-center border-t border-b border-black/5 dark:border-white/5 py-8">
+        <div><p class="text-3xl md:text-4xl font-brand text-black dark:text-white" data-total>—</p><p class="text-[9px] text-black/40 dark:text-white/40 uppercase tracking-widest mt-2">Unidades</p></div>
+        <div><p class="text-3xl md:text-4xl font-brand text-black dark:text-white" data-available>—</p><p class="text-[9px] text-black/40 dark:text-white/40 uppercase tracking-widest mt-2">Libres</p></div>
+        <div><p class="text-3xl md:text-4xl font-brand text-black dark:text-white" data-sold>—</p><p class="text-[9px] text-black/40 dark:text-white/40 uppercase tracking-widest mt-2">Cerradas</p></div>
+      </div>
+      <div>
+        <div class="flex justify-between items-end text-[10px] font-bold text-black dark:text-white mb-3 uppercase tracking-widest">
+          <span class="text-black/40 dark:text-white/40">Estado del Protocolo</span>
+          <span data-percent class="text-xs">—</span>
+        </div>
+        <div class="w-full h-1 bg-black/10 dark:bg-white/10 overflow-hidden">
+          <div class="h-full bg-black dark:bg-white transition-all duration-1000 ease-out" data-bar style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+  </article>`;
+}
 
-      try {
-        const res = await fetch(`${API}/series/get-numbers.php?slug=${slug}`);
-        const data = await res.json();
+function standardCard(s, delay) {
+  const img = s.images?.[0] ?? '/images/brand/og-image.jpg';
+  return `
+  <article class="bg-zinc-50 dark:bg-zinc-900/50 overflow-hidden group series-card scroll-reveal scroll-delay-${delay} flex flex-col border border-black/5 dark:border-white/5" data-series-slug="${s.slug}">
+    <div class="relative aspect-[4/5] bg-white dark:bg-[#0a0a0a] overflow-hidden">
+      <img src="${img}" alt="${s.name}" class="w-full h-full object-contain p-8 transition-transform duration-[1.5s] ease-out group-hover:scale-105" />
+      <div class="absolute inset-0 bg-black/30 dark:bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 z-20">
+        <div class="transform translate-y-6 group-hover:translate-y-0 transition-transform duration-500 flex flex-col gap-3">
+          <a href="/acceso" class="btn-primary w-full text-center">Procesar Acceso</a>
+          <a href="/series-activas/${s.slug}" class="text-[9px] text-white/70 text-center tracking-[0.2em] uppercase hover:text-white transition-colors py-2">Inspeccionar Datos Técnicos</a>
+        </div>
+      </div>
+    </div>
+    <div class="p-8 md:p-10 flex-grow flex flex-col justify-between border-t border-black/5 dark:border-white/5">
+      <div class="mb-8">
+        <div class="flex justify-between items-start mb-2">
+          <h2 class="font-brand text-3xl text-black dark:text-white uppercase tracking-wider leading-none">${s.name}</h2>
+          <span class="text-xs opacity-40 font-sans mt-1">${s.gender === 'male' ? '♂' : s.gender === 'female' ? '♀' : '♂/♀'}</span>
+        </div>
+        ${s._priority ? `<div class="mt-1 text-[9px] font-bold tracking-[0.2em] px-2 py-0.5 uppercase border border-black/30 dark:border-white/30 text-black/60 dark:text-white/60 inline-block">ACCESO VIP</div>` : ''}
+        <p class="text-[9px] text-black/50 dark:text-white/40 uppercase tracking-[0.2em] leading-relaxed mt-2">${s.description}</p>
+      </div>
+      <div class="mt-auto">
+        <div class="grid grid-cols-3 gap-2 mb-6 text-center">
+          <div class="bg-black/5 dark:bg-white/5 py-3 rounded-sm"><p class="text-xl font-brand text-black dark:text-white" data-total>—</p><p class="text-[8px] text-black/40 dark:text-white/40 uppercase tracking-widest mt-1">Units</p></div>
+          <div class="bg-black/5 dark:bg-white/5 py-3 rounded-sm"><p class="text-xl font-brand text-black dark:text-white" data-available>—</p><p class="text-[8px] text-black/40 dark:text-white/40 uppercase tracking-widest mt-1">Libres</p></div>
+          <div class="bg-black/5 dark:bg-white/5 py-3 rounded-sm"><p class="text-xl font-brand text-black dark:text-white" data-sold>—</p><p class="text-[8px] text-black/40 dark:text-white/40 uppercase tracking-widest mt-1">Out</p></div>
+        </div>
+        <div>
+          <div class="flex justify-between items-end text-[9px] font-bold text-black/60 dark:text-white/60 mb-2 uppercase tracking-widest">
+            <span>Progreso</span><span data-percent class="text-black dark:text-white">—</span>
+          </div>
+          <div class="w-full h-[2px] bg-black/10 dark:bg-white/10 overflow-hidden">
+            <div class="h-full bg-black dark:bg-white transition-all duration-1000 ease-out" data-bar style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>`;
+}
 
-        if (!data || !data.success || !data.stats) return;
+/* ──── Carga de stock ──── */
 
-        const total = Number(data.stats.total);
-        const sold = Number(data.stats.sold);
-        const available = Number(data.stats.available);
+async function loadStock(cardEl) {
+  const slug = cardEl.dataset.seriesSlug;
+  if (!slug) return;
+  try {
+    const res  = await fetch(`${API}/series/get-numbers.php?slug=${slug}`);
+    const data = await res.json();
+    if (!data?.success || !data.stats) return;
+    const { total, sold, available } = data.stats;
+    if (!Number(total)) return;
+    const percent = Math.round((Number(sold) / Number(total)) * 100);
+    const q = (sel) => cardEl.querySelector(sel);
+    if (q('[data-total]'))     q('[data-total]').textContent     = String(total);
+    if (q('[data-available]')) q('[data-available]').textContent = String(available);
+    if (q('[data-sold]'))      q('[data-sold]').textContent      = String(sold);
+    if (q('[data-percent]'))   q('[data-percent]').textContent   = `${percent}% Completado`;
+    if (q('[data-bar]'))       q('[data-bar]').style.width       = `${percent}%`;
+  } catch {}
+}
 
-        if (!total || total <= 0) return;
+/* ──── Bootstrap ──── */
 
-        const percent = Math.round((sold / total) * 100);
+async function loadSeries() {
+  const grid = document.getElementById('series-grid');
+  if (!grid) return;
 
-        const elTotal = cardEl.querySelector('[data-total]');
-        const elAvailable = cardEl.querySelector('[data-available]');
-        const elSold = cardEl.querySelector('[data-sold]');
-        const elPercent = cardEl.querySelector('[data-percent]');
-        const elBar = cardEl.querySelector('[data-bar]');
-
-        if (elTotal instanceof HTMLElement) {
-          elTotal.textContent = String(total);
-        }
-
-        if (elAvailable instanceof HTMLElement) {
-          elAvailable.textContent = String(available);
-        }
-
-        if (elSold instanceof HTMLElement) {
-          elSold.textContent = String(sold);
-        }
-
-        if (elPercent instanceof HTMLElement) {
-          elPercent.textContent = `${percent}% Completado`;
-        }
-
-        if (elBar instanceof HTMLElement) {
-          elBar.style.width = `${percent}%`;
-        }
-
-      } catch (err) {
-        console.error('Stock error:', slug, err);
-      }
-    });
+  let series = [];
+  try {
+    const res  = await fetch(`${API}/series/list.php?status=active`);
+    const data = await res.json();
+    series = data.series ?? [];
+  } catch {
+    grid.innerHTML = '<p class="col-span-2 text-center text-xs text-black/40 dark:text-white/40 py-20">Error al cargar las series.</p>';
+    return;
   }
 
-  // Ejecutar inmediatamente y luego cada 10 segundos
-  loadSeriesStock();
-  setInterval(loadSeriesStock, 10000);
-</script>
+  // Comprobar acceso prioritario para cada serie
+  const priorityChecks = await Promise.allSettled(
+    series.map(s => fetch(`${API}/series/priority-status.php?slug=${s.slug}`).then(r => r.json()))
+  );
+  series.forEach((s, i) => {
+    const res = priorityChecks[i];
+    if (res.status === 'fulfilled' && res.value.in_priority_mode) {
+      s._priority = true;
+    }
+  });
 
-</BaseLayout>
+  const label = document.getElementById('series-count-label');
+  if (series.length === 0) {
+    document.getElementById('empty-state')?.classList.remove('hidden');
+    if (label) label.textContent = 'SIN PROTOCOLOS ACTIVOS';
+    return;
+  }
+
+  if (label) {
+    const n = series.length;
+    label.textContent = `${n} ${n === 1 ? 'LÍNEA ABIERTA' : 'LÍNEAS ABIERTAS'} · ACCESO RESTRINGIDO`;
+  }
+
+  grid.innerHTML = series.map((s, i) =>
+    i === 0 ? featuredCard(s) : standardCard(s, (i % 3) + 1)
+  ).join('');
+
+  // Los elementos se insertan después del DOMContentLoaded — revelarlos manualmente
+  grid.querySelectorAll('.scroll-reveal').forEach(el => el.classList.add('is-revealed'));
+
+  grid.querySelectorAll('.series-card').forEach(loadStock);
+}
+
+loadSeries();
+setInterval(() => {
+  document.querySelectorAll('#series-grid .series-card').forEach(loadStock);
+}, 10000);
+</script>

@@ -4,6 +4,7 @@
  */
 
 require_once '../modules/config.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
 $pdo = get_db_connection();
 
 $message        = '';
@@ -84,134 +85,308 @@ function get_order_items(PDO $pdo, array $pedido): array {
     ]];
 }
 
+function img_b64(string $serie_slug, string $filename, int $maxW = 320): string {
+    $base = realpath(__DIR__ . '/../../../public') . "/images/series/{$serie_slug}/";
+    $path = '';
+    foreach ([$filename, str_replace('.png', '.webp', $filename), str_replace('.png', '.jpg', $filename)] as $f) {
+        if (file_exists($base . $f)) { $path = $base . $f; break; }
+    }
+    if (!$path) return '';
+
+    $mime = mime_content_type($path);
+
+    // Redimensionar con GD para reducir peso y respetar proporciones
+    $src = null;
+    if ($mime === 'image/png')  $src = @imagecreatefrompng($path);
+    elseif ($mime === 'image/webp') $src = @imagecreatefromwebp($path);
+    elseif (in_array($mime, ['image/jpeg','image/jpg'])) $src = @imagecreatefromjpeg($path);
+
+    if ($src) {
+        $ow = imagesx($src); $oh = imagesy($src);
+        $nw = min($maxW, $ow);
+        $nh = (int)round($oh * $nw / $ow);
+        $dst = imagecreatetruecolor($nw, $nh);
+        // Mantener canal alpha (PNG con fondo transparente)
+        imagealphablending($dst, false); imagesavealpha($dst, true);
+        $trans = imagecolorallocatealpha($dst, 255, 255, 255, 127);
+        imagefilledrectangle($dst, 0, 0, $nw, $nh, $trans);
+        imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $ow, $oh);
+        ob_start(); imagepng($dst, null, 7); $data = ob_get_clean();
+        imagedestroy($src); imagedestroy($dst);
+        return 'data:image/png;base64,' . base64_encode($data);
+    }
+
+    // Fallback sin GD
+    return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($path));
+}
+
 function generar_orden_trabajo(array $pedido, PDO $pdo): array {
     $num_pedido = $pedido['order_number'] ?? $pedido['id'];
     $items    = get_order_items($pdo, $pedido);
     $shipping = json_decode($pedido['shipping_data'] ?? '{}', true) ?: [];
     $addr     = parse_shipping($shipping);
-    $dir_html = addr_html($addr);
 
     $cliente_username = e($pedido['username'] ?: 'N/A');
     $cliente_email    = e($pedido['email']    ?: 'N/A');
-    $cliente_ig       = e($pedido['instagram_username'] ?: 'N/A');
+    $cliente_ig       = e($pedido['instagram_username'] ?: '—');
 
-    // Bloque de productos
+    // Dirección de envío formateada para PDF
+    $dir_lines = array_filter([
+        strtoupper($addr['nombre'] ?? ''),
+        $addr['linea1'] ?? '',
+        $addr['linea2'] ?? '',
+        trim(($addr['cp'] ?? '') . ' ' . ($addr['ciudad'] ?? '')),
+        $addr['prov'] ?? '',
+        strtoupper($addr['pais'] ?? 'ES'),
+        !empty($addr['tel'])   ? 'Tel: ' . $addr['tel']   : '',
+        !empty($addr['email']) ? $addr['email']            : '',
+    ]);
+    $dir_html = implode('<br>', array_map('e', $dir_lines));
+
+    // ── Bloques de producto ──────────────────────────────────────────────────
     $productos_html = '';
     foreach ($items as $item) {
         $color_slug  = strtolower(trim($item['color'] ?? ''));
         $serie_slug  = $item['series_slug'];
-        $base        = "https://d-cien.es/images/series/$serie_slug/";
-        $img_front   = $color_slug === 'blanco' ? $base . 'main.png'     : $base . 'detail-2.png';
-        $img_back    = $color_slug === 'blanco' ? $base . 'detail-1.png' : $base . 'detail-3.png';
+        $es_blanco   = $color_slug === 'blanco';
+        $src_front   = img_b64($serie_slug, $es_blanco ? 'main.png'     : 'detail-2.png');
+        $src_back    = img_b64($serie_slug, $es_blanco ? 'detail-1.png' : 'detail-3.png');
+        $img_front   = $src_front ? "<img src='{$src_front}' style='width:100%;height:auto;display:block;' />" : "<div style='height:180px;background:#f5f5f5;'></div>";
+        $img_back    = $src_back  ? "<img src='{$src_back}'  style='width:100%;height:auto;display:block;' />" : "<div style='height:180px;background:#f5f5f5;'></div>";
         $serie_upper = strtoupper($item['series_name'] ?: $item['series_slug']);
         $unit_pad    = str_pad($item['unit_number'], 3, '0', STR_PAD_LEFT);
 
         $productos_html .= "
-        <div class='block-product'>
-            <div class='image-pair'>
-                <img src='$img_front' class='series-image' onerror=\"this.src='https://via.placeholder.com/150?text=FRONT'\">
-                <img src='$img_back'  class='series-image' onerror=\"this.src='https://via.placeholder.com/150?text=BACK'\">
-            </div>
-            <div class='product-details'>
-                <div class='serie'>$serie_upper</div>
-                <div class='unit'>#$unit_pad</div>
-                <div class='product-specs'>
-                    <div class='spec-box'><div class='spec-label'>Talla</div><div class='spec-value'>" . strtoupper($item['size']) . "</div></div>
-                    <div class='spec-box'><div class='spec-label'>Color</div><div class='spec-value'>" . ucfirst($item['color']) . "</div></div>
-                    <div class='spec-box'><div class='spec-label'>Corte</div><div class='spec-value'>" . ucfirst($item['type']) . "</div></div>
-                </div>
-            </div>
-        </div>";
+        <table width='100%' cellspacing='0' cellpadding='0' style='border-collapse:collapse;margin-bottom:14px;border:1px solid #000;'>
+          <tr>
+            <!-- Imágenes -->
+            <td width='45%' style='border-right:1px solid #000;background:#fff;padding:0;'>
+              <table width='100%' cellspacing='0' cellpadding='0' style='border-collapse:collapse;'>
+                <tr>
+                  <td width='50%' style='padding:14px;border-right:1px solid #eee;'>{$img_front}</td>
+                  <td width='50%' style='padding:14px;'>{$img_back}</td>
+                </tr>
+              </table>
+            </td>
+            <!-- Datos producto -->
+            <td valign='middle' style='padding:20px 28px;text-align:center;background:#fff;'>
+              <div style='font-size:11px;font-weight:bold;letter-spacing:3px;color:#888;text-transform:uppercase;margin-bottom:4px;'>{$serie_upper}</div>
+              <div style='font-size:52px;font-weight:900;font-family:Courier,monospace;letter-spacing:2px;line-height:1;margin:8px 0;color:#000;'>#{$unit_pad}</div>
+              <table width='100%' cellspacing='0' cellpadding='0' style='border-collapse:collapse;border-top:1px solid #eee;margin-top:12px;padding-top:12px;'>
+                <tr>
+                  <td style='text-align:center;padding:8px 4px;border-right:1px solid #eee;'>
+                    <div style='font-size:7px;text-transform:uppercase;letter-spacing:1px;color:#999;margin-bottom:4px;'>Talla</div>
+                    <div style='font-size:14px;font-weight:900;'>" . strtoupper($item['size']) . "</div>
+                  </td>
+                  <td style='text-align:center;padding:8px 4px;border-right:1px solid #eee;'>
+                    <div style='font-size:7px;text-transform:uppercase;letter-spacing:1px;color:#999;margin-bottom:4px;'>Color</div>
+                    <div style='font-size:14px;font-weight:900;'>" . strtoupper($item['color']) . "</div>
+                  </td>
+                  <td style='text-align:center;padding:8px 4px;'>
+                    <div style='font-size:7px;text-transform:uppercase;letter-spacing:1px;color:#999;margin-bottom:4px;'>Corte</div>
+                    <div style='font-size:14px;font-weight:900;'>" . strtoupper($item['type']) . "</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>";
     }
 
-    // Checklist
-    $checklist = '';
+    // ── Sección de autenticidad (una línea por ítem) ─────────────────────────
+    $auth_items = '';
+    foreach ($items as $item) {
+        $serie_label = strtoupper($item['series_name'] ?: $item['series_slug']);
+        $unit_label  = '#' . str_pad($item['unit_number'], 3, '0', STR_PAD_LEFT);
+        $auth_items .= "<div style='font-size:11px;font-weight:bold;letter-spacing:1px;color:#111;margin-bottom:2px;'>{$serie_label} &mdash; {$unit_label}</div>";
+    }
+
+    // ── Checklist ────────────────────────────────────────────────────────────
+    // Casilla de verificación: borde negro 13×13px (Dompdf no soporta <input>)
+    $cb = "<div style='width:13px;height:13px;border:1.5px solid #333;margin-top:1px;'></div>";
+    $row_style  = 'border-bottom:1px solid #eee;';
+    $num_style  = 'width:20px;padding:10px 6px 10px 0;font-size:10px;color:#111;vertical-align:top;';
+    $box_style  = 'width:22px;padding:10px 10px 10px 0;vertical-align:top;';
+    $text_style = 'padding:10px 0;font-size:10px;color:#111;vertical-align:top;';
+
+    $checklist_rows = '';
     $step = 1;
     foreach ($items as $item) {
-        $checklist .= "<li>&#9744; $step. Verificar stock: <strong>" . strtoupper($item['size']) . " / " . ucfirst($item['color']) . " / " . ucfirst($item['type']) . "</strong> — " . strtoupper($item['series_name'] ?: $item['series_slug']) . " #" . str_pad($item['unit_number'], 3, '0', STR_PAD_LEFT) . "</li>";
+        $label = strtoupper($item['series_name'] ?: $item['series_slug'])
+               . ' #' . str_pad($item['unit_number'], 3, '0', STR_PAD_LEFT)
+               . ' &mdash; ' . strtoupper($item['size'])
+               . ' / ' . strtoupper($item['color'])
+               . ' / ' . strtoupper($item['type']);
+        $checklist_rows .= "<tr style='{$row_style}'>
+          <td style='{$num_style}'>{$step}.</td>
+          <td style='{$box_style}'>{$cb}</td>
+          <td style='{$text_style}'>Verificar stock y preparar unidad: <strong>{$label}</strong></td>
+        </tr>";
         $step++;
     }
-    $checklist .= "<li>&#9744; $step. Control de calidad final</li>";
-    $step++;
-    $checklist .= "<li>&#9744; $step. Empaquetar con tarjeta(s) de autenticidad DCIEN</li>";
-    $step++;
-    $checklist .= "<li>&#9744; $step. Imprimir etiqueta y preparar envío a <strong>" . e($addr['nombre']) . "</strong></li>";
+    $checklist_rows .= "<tr style='{$row_style}'>
+      <td style='{$num_style}'>{$step}.</td>
+      <td style='{$box_style}'>{$cb}</td>
+      <td style='{$text_style}'>Control de calidad final: revisar costuras, estampado y etiqueta numerada</td>
+    </tr>"; $step++;
+    $checklist_rows .= "<tr style='{$row_style}'>
+      <td style='{$num_style}'>{$step}.</td>
+      <td style='{$box_style}'>{$cb}</td>
+      <td style='{$text_style}'>Firmar autenticidad y numerar la unidad</td>
+    </tr>"; $step++;
+    $checklist_rows .= "<tr style='{$row_style}'>
+      <td style='{$num_style}'>{$step}.</td>
+      <td style='{$box_style}'>{$cb}</td>
+      <td style='{$text_style}'>Empaquetar y precintar</td>
+    </tr>"; $step++;
+    $checklist_rows .= "<tr>
+      <td style='{$num_style}'>{$step}.</td>
+      <td style='{$box_style}'>{$cb}</td>
+      <td style='{$text_style}'>Imprimir etiqueta de envio y preparar bulto a nombre de <strong>" . e(strtoupper($addr['nombre'] ?? '')) . "</strong></td>
+    </tr>";
 
+    // ── HTML del documento ───────────────────────────────────────────────────
+    $fecha = date('d/m/Y H:i');
     $html = "<!DOCTYPE html><html lang='es'>
 <head>
-    <meta charset='UTF-8'>
-    <title>Orden #{$num_pedido} - DCIEN</title>
-    <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family: Arial, sans-serif; font-size:10px; line-height:1.3; padding:10mm; }
-        .header { text-align:center; border-bottom:3px solid #000; padding-bottom:6px; margin-bottom:10px; }
-        .header h1 { font-size:24px; font-weight:900; letter-spacing:4px; }
-        .header p { font-size:9px; text-transform:uppercase; letter-spacing:2px; margin-top:3px; }
-        .block-product { display:grid; grid-template-columns:320px 1fr; gap:10px; margin-bottom:12px; page-break-inside:avoid; }
-        .image-pair { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
-        .series-image { width:100%; height:155px; object-fit:contain; border:1px solid #000; background:#fff; }
-        .product-details { border:2px solid #000; padding:10px; display:flex; flex-direction:column; justify-content:center; }
-        .product-details .serie { font-size:16px; font-weight:900; letter-spacing:1px; margin-bottom:8px; text-align:center; }
-        .product-details .unit { font-size:36px; font-weight:900; font-family:monospace; text-align:center; margin:8px 0; letter-spacing:2px; }
-        .product-specs { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:8px; }
-        .spec-box { text-align:center; padding:5px; background:#f0f0f0; border:1px solid #ccc; }
-        .spec-label { font-size:7px; text-transform:uppercase; letter-spacing:1px; margin-bottom:2px; color:#666; }
-        .spec-value { font-size:12px; font-weight:900; text-transform:uppercase; }
-        .block-shipping { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; page-break-inside:avoid; }
-        .info-box { border:2px solid #000; padding:8px; }
-        .info-box h3 { font-size:9px; text-transform:uppercase; letter-spacing:1px; border-bottom:2px solid #000; padding-bottom:3px; margin-bottom:6px; }
-        .info-row { display:flex; margin-bottom:3px; }
-        .info-label { font-weight:bold; width:70px; flex-shrink:0; font-size:9px; }
-        .info-value { flex:1; font-size:9px; }
-        .shipping-address { line-height:1.6; font-size:9px; }
-        .checklist { border:3px solid #000; padding:8px; page-break-inside:avoid; }
-        .checklist h3 { font-size:9px; font-weight:900; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; border-bottom:1px solid #000; padding-bottom:3px; }
-        .checklist ul { list-style:none; padding:0; }
-        .checklist li { padding:4px 0; font-size:9px; border-bottom:1px dashed #ddd; }
-        .checklist li:last-child { border-bottom:none; }
-        .footer { margin-top:10px; padding-top:6px; border-top:2px solid #000; text-align:center; font-size:7px; color:#666; }
-        @media print { @page { margin:0; size:A4 portrait; } body { padding:8mm; } }
-    </style>
+<meta charset='UTF-8'>
+<title>Orden #{$num_pedido} - DCIEN</title>
+<style>
+  html, body, table, td, th, div, p { margin:0; padding:0; }
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10px;
+    line-height: 1.5;
+    color: #111;
+    background: #fff;
+    padding: 14mm 17mm;
+  }
+  a, a:link, a:visited { color:#111 !important; text-decoration:none !important; }
+  td, div, p, span { color:#111; }
+  @page { size: A4 portrait; margin: 0; }
+</style>
 </head>
 <body>
-    <div class='header'>
-        <h1>DCIEN</h1>
-        <p>Orden de Producción #{$num_pedido}</p>
-    </div>
 
-    $productos_html
+  <!-- ═══ CABECERA ══════════════════════════════════════════════════════════ -->
+  <table width='100%' cellspacing='0' cellpadding='0' style='border-collapse:collapse;background:#000;margin-bottom:16px;'>
+    <tr>
+      <td style='padding:14px 20px;'>
+        <div style='font-size:22px;font-weight:900;letter-spacing:6px;color:#fff;'>D C I E N</div>
+        <div style='font-size:8px;letter-spacing:3px;color:#999;text-transform:uppercase;margin-top:2px;'>Orden de Producción</div>
+      </td>
+      <td style='padding:14px 20px;text-align:right;'>
+        <div style='font-size:20px;font-weight:900;color:#fff;font-family:Courier,monospace;letter-spacing:2px;'>#{$num_pedido}</div>
+        <div style='font-size:8px;color:#666;margin-top:2px;'>{$fecha}</div>
+      </td>
+    </tr>
+  </table>
 
-    <div class='block-shipping'>
-        <div class='info-box'>
-            <h3>PERFIL CLIENTE</h3>
-            <div class='info-row'><div class='info-label'>Usuario:</div><div class='info-value'>$cliente_username</div></div>
-            <div class='info-row'><div class='info-label'>Email:</div><div class='info-value'>$cliente_email</div></div>
-            <div class='info-row'><div class='info-label'>Instagram:</div><div class='info-value'>@$cliente_ig</div></div>
+  <!-- ═══ PRODUCTO(S) ═══════════════════════════════════════════════════════ -->
+  {$productos_html}
+
+  <!-- ═══ CLIENTE + DIRECCIÓN ══════════════════════════════════════════════ -->
+  <table width='100%' cellspacing='0' cellpadding='0' style='border-collapse:collapse;margin-bottom:14px;border:1px solid #000;'>
+    <tr>
+      <td width='50%' valign='top' style='padding:16px 18px;border-right:1px solid #000;'>
+        <div style='font-size:8px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#999;border-bottom:1px solid #eee;padding-bottom:6px;margin-bottom:10px;'>Perfil Cliente</div>
+        <table cellspacing='0' cellpadding='3' style='border-collapse:collapse;width:100%;'>
+          <tr><td style='font-size:9px;color:#888;width:72px;'>Usuario</td><td style='font-size:9px;font-weight:bold;'>{$cliente_username}</td></tr>
+          <tr><td style='font-size:9px;color:#888;'>Email</td><td style='font-size:9px;'>{$cliente_email}</td></tr>
+          <tr><td style='font-size:9px;color:#888;'>Instagram</td><td style='font-size:9px;'>@{$cliente_ig}</td></tr>
+        </table>
+      </td>
+      <td width='50%' valign='top' style='padding:16px 18px;'>
+        <div style='font-size:8px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#999;border-bottom:1px solid #eee;padding-bottom:6px;margin-bottom:10px;'>Dirección de Envío</div>
+        <div style='font-size:9px;line-height:1.7;'>{$dir_html}</div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- ═══ CHECKLIST ════════════════════════════════════════════════════════ -->
+  <table width='100%' cellspacing='0' cellpadding='0' style='border-collapse:collapse;border:1px solid #000;'>
+    <tr>
+      <td colspan='3' style='background:#000;padding:10px 18px;'>
+        <div style='font-size:8px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#fff;'>Checklist de Produccion</div>
+      </td>
+    </tr>
+    <tr>
+      <td colspan='3' style='padding:4px 18px 10px;'>
+        <table width='100%' cellspacing='0' cellpadding='0' style='border-collapse:collapse;'>
+          {$checklist_rows}
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- ═══ AUTENTICIDAD ════════════════════════════════════════════════════ -->
+  <table width='100%' cellspacing='0' cellpadding='0' style='border-collapse:collapse;margin-top:14px;'>
+    <tr>
+      <!-- Columna izquierda vacía -->
+      <td width='50%'></td>
+      <!-- Columna derecha: bloque de firma y sello -->
+      <td width='50%' valign='top' style='border:1px solid #000;'>
+        <div style='background:#000;padding:8px 14px;'>
+          <div style='font-size:8px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#fff;'>Certificado de Autenticidad</div>
         </div>
-        <div class='info-box'>
-            <h3>DIRECCIÓN DE ENVÍO</h3>
-            <div class='shipping-address'>$dir_html</div>
+        <div style='padding:12px 14px;'>
+          {$auth_items}
+          <div style='font-size:8px;color:#888;letter-spacing:1px;text-transform:uppercase;margin-top:6px;margin-bottom:28px;'>Responsable de produccion</div>
+          <!-- Línea de firma -->
+          <div style='border-top:1px solid #333;margin-bottom:4px;'></div>
+          <div style='font-size:8px;color:#aaa;letter-spacing:1px;'>Firma</div>
+          <!-- Espacio para sello físico -->
+          <table width='100%' cellspacing='0' cellpadding='0' style='border-collapse:collapse;margin-top:14px;'>
+            <tr>
+              <td width='55%'>
+                <div style='font-size:8px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;'>Sello</div>
+                <div style='border:1.5px dashed #ccc;height:52px;width:80px;'></div>
+              </td>
+              <td width='45%' valign='bottom'>
+                <div style='font-size:7px;color:#bbb;text-align:right;'>DCIEN &mdash; {$fecha}</div>
+              </td>
+            </tr>
+          </table>
         </div>
-    </div>
+      </td>
+    </tr>
+  </table>
 
-    <div class='checklist'>
-        <h3>CHECKLIST DE PRODUCCIÓN</h3>
-        <ul>$checklist</ul>
-    </div>
+  <!-- ═══ PIE ══════════════════════════════════════════════════════════════ -->
+  <table width='100%' cellspacing='0' cellpadding='0' style='border-collapse:collapse;margin-top:12px;'>
+    <tr>
+      <td style='font-size:7px;color:#bbb;text-align:center;letter-spacing:1px;'>
+        DCIEN &mdash; Documento de uso interno &mdash; Generado el {$fecha}
+      </td>
+    </tr>
+  </table>
 
-    <div class='footer'>
-        DCIEN · Orden generada el " . date('d/m/Y H:i:s') . "
-    </div>
 </body></html>";
 
-    // Eliminar versiones anteriores del mismo pedido antes de crear la nueva
-    foreach (glob(__DIR__ . "/orden_{$pedido['id']}_*.html") ?: [] as $old) {
+    // Usar order_number como clave de fichero para evitar colisiones si se reutiliza el id
+    $file_key = preg_replace('/[^a-zA-Z0-9_-]/', '_', (string)($pedido['order_number'] ?? $pedido['id']));
+
+    // Eliminar versiones anteriores (PDF y HTML legacy)
+    foreach (array_merge(
+        glob(__DIR__ . "/orden_{$file_key}_*.pdf")  ?: [],
+        glob(__DIR__ . "/orden_{$file_key}_*.html") ?: [],
+        glob(__DIR__ . "/orden_{$pedido['id']}_*.html") ?: []
+    ) as $old) {
         @unlink($old);
     }
 
-    $filename = "orden_{$pedido['id']}_" . date('Ymd_His') . ".html";
+    $filename = "orden_{$file_key}_" . date('Ymd_His') . ".pdf";
     $filepath = __DIR__ . "/$filename";
-    file_put_contents($filepath, $html);
+
+    // Renderizar PDF con Dompdf
+    $options = new \Dompdf\Options();
+    $options->setIsRemoteEnabled(true);
+    $options->setDefaultFont('Arial');
+    $dompdf = new \Dompdf\Dompdf($options);
+    $dompdf->loadHtml($html, 'UTF-8');
+    $dompdf->setPaper('A4', 'portrait');
+    $dompdf->render();
+    file_put_contents($filepath, $dompdf->output());
 
     return [
         'success'  => true,
@@ -769,7 +944,12 @@ $suma_total      = array_sum(array_column($pedidos, 'price'));
                     $cart_items = $st2->fetchAll();
                 }
 
-                $archivos   = glob(__DIR__ . "/orden_{$p['id']}_*.html") ?: [];
+                $file_key_p = preg_replace('/[^a-zA-Z0-9_-]/', '_', (string)($p['order_number'] ?? $p['id']));
+                $archivos   = array_unique(array_merge(
+                    glob(__DIR__ . "/orden_{$file_key_p}_*.pdf")  ?: [],
+                    glob(__DIR__ . "/orden_{$file_key_p}_*.html") ?: [],
+                    glob(__DIR__ . "/orden_{$p['id']}_*.html")    ?: []
+                ));
                 $stmt_docs  = $pdo->prepare("SELECT id, filename, original_name FROM order_documents WHERE order_id = ? ORDER BY uploaded_at ASC");
                 $stmt_docs->execute([$p['id']]);
                 $docs_subidos = $stmt_docs->fetchAll();
@@ -816,8 +996,10 @@ $suma_total      = array_sum(array_column($pedidos, 'price'));
                     <td class="col-docs">
                         <div class="doc-list">
                             <?php foreach ($archivos as $f): ?>
-                                <a href="<?= basename($f) ?>" target="_blank" class="doc-chip doc-chip-orden" title="Orden de trabajo HTML">
-                                    📄 Orden HTML
+                                <?php $is_pdf = str_ends_with($f, '.pdf'); ?>
+                                <a href="<?= basename($f) ?>" target="_blank" class="doc-chip doc-chip-orden"
+                                   title="<?= $is_pdf ? 'Orden de producción PDF' : 'Orden de trabajo HTML (legacy)' ?>">
+                                    <?= $is_pdf ? '📋 Orden PDF' : '📄 Orden HTML' ?>
                                 </a>
                             <?php endforeach; ?>
                             <?php foreach ($docs_subidos as $doc): ?>

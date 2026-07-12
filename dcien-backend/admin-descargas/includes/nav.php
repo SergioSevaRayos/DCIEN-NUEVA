@@ -43,6 +43,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
             </a>
         </li>
         <li>
+            <a href="/admin-descargas/modules/prioridad.php" class="<?php echo $current_page == 'prioridad.php' ? 'active' : ''; ?>">
+                <span class="icon">🔐</span> Acceso VIP
+            </a>
+        </li>
+        <li>
             <a href="/admin-descargas/modules/marketing.php" class="<?php echo $current_page == 'marketing.php' ? 'active' : ''; ?>">
                 <span class="icon">🎁</span> Marketing
             </a>

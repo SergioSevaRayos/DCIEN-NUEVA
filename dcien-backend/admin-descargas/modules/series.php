@@ -58,7 +58,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // 2. ACCIÓN: EDITAR SERIE EXISTENTE
+    // 2. ACCIÓN: TOGGLE RÁPIDO is_active
+    if ($action === 'toggle_active' && isset($_POST['id'])) {
+        $id = (int)$_POST['id'];
+        $pdo->prepare("UPDATE series SET is_active = NOT is_active, updated_at = NOW() WHERE id = ?")->execute([$id]);
+        $s = $pdo->prepare("SELECT name, is_active FROM series WHERE id = ?");
+        $s->execute([$id]);
+        $row = $s->fetch();
+        $estado = $row['is_active'] ? 'activada (visible en web)' : 'archivada (oculta del frontend)';
+        $message = show_message('success', "Serie <strong>" . htmlspecialchars($row['name']) . "</strong> $estado.");
+    }
+
+    // 3. ACCIÓN: EDITAR SERIE EXISTENTE
     if ($action === 'editar_serie') {
         $id = (int)$_POST['id'];
         
@@ -67,6 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $description = trim($_POST['description']);
         $price = (float)$_POST['price'];
         $is_active = isset($_POST['is_active']) ? 1 : 0;
+        $gender = in_array($_POST['gender'] ?? '', ['male','female','unisex']) ? $_POST['gender'] : 'unisex';
 
         $release_date = !empty($_POST['release_date']) ? str_replace('T', ' ', $_POST['release_date']) . ':00' : null;
         $end_date = !empty($_POST['end_date']) ? str_replace('T', ' ', $_POST['end_date']) . ':00' : null;
@@ -89,11 +101,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         try {
             $stmt = $pdo->prepare("
-                UPDATE series 
-                SET name = ?, slug = ?, description = ?, price = ?, is_active = ?, release_date = ?, end_date = ?, images = ?, colors = ?, types = ?, sizes = ?, seo_title = ?, seo_description = ?, seo_keywords = ?, updated_at = NOW() 
+                UPDATE series
+                SET name = ?, slug = ?, description = ?, price = ?, is_active = ?, gender = ?, release_date = ?, end_date = ?, images = ?, colors = ?, types = ?, sizes = ?, seo_title = ?, seo_description = ?, seo_keywords = ?, updated_at = NOW()
                 WHERE id = ?
             ");
-            $stmt->execute([$name, $slug, $description, $price, $is_active, $release_date, $end_date, $images_json, $colors_json, $types_json, $sizes_json, $seo_title, $seo_description, $seo_keywords, $id]);
+            $stmt->execute([$name, $slug, $description, $price, $is_active, $gender, $release_date, $end_date, $images_json, $colors_json, $types_json, $sizes_json, $seo_title, $seo_description, $seo_keywords, $id]);
             
             $message = show_message('success', "✅ Serie '{$name}' actualizada correctamente en BD.");
         } catch (Exception $e) {
@@ -242,12 +254,20 @@ function format_date_for_input($datetime) {
                                     <label>Precio (€)</label>
                                     <input type="number" name="price" step="0.01" value="<?php echo htmlspecialchars($serie_editar['price']); ?>" required>
                                 </div>
-                                <div class="form-group" style="padding-top: 22px;">
-                                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                                        <input type="checkbox" name="is_active" value="1" <?php echo $serie_editar['is_active'] ? 'checked' : ''; ?> style="width: 18px; height: 18px; flex-shrink: 0;">
-                                        <span style="font-size: 13px; color: #fff;">Visible en web (is_active)</span>
-                                    </label>
+                                <div class="form-group">
+                                    <label>Género</label>
+                                    <select name="gender">
+                                        <option value="unisex" <?php echo ($serie_editar['gender'] ?? 'unisex') === 'unisex' ? 'selected' : ''; ?>>Unisex</option>
+                                        <option value="male"   <?php echo ($serie_editar['gender'] ?? '') === 'male'   ? 'selected' : ''; ?>>Hombre</option>
+                                        <option value="female" <?php echo ($serie_editar['gender'] ?? '') === 'female' ? 'selected' : ''; ?>>Mujer</option>
+                                    </select>
                                 </div>
+                            </div>
+                            <div class="form-group" style="padding-top: 4px;">
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                    <input type="checkbox" name="is_active" value="1" <?php echo $serie_editar['is_active'] ? 'checked' : ''; ?> style="width: 18px; height: 18px; flex-shrink: 0;">
+                                    <span style="font-size: 13px; color: var(--text);">Visible en web (activa)</span>
+                                </label>
                             </div>
 
                             <div class="form-group">
@@ -356,7 +376,16 @@ function format_date_for_input($datetime) {
                                             <?php endif; ?>
                                         </td>
                                         <td>
-                                            <a href="series.php?edit=<?php echo $s['id']; ?>" class="btn btn-small">✏️ Ed.</a>
+                                            <div style="display:flex;gap:6px;flex-wrap:wrap">
+                                                <a href="series.php?edit=<?php echo $s['id']; ?>" class="btn btn-small">✏️ Ed.</a>
+                                                <form method="POST" style="display:inline">
+                                                    <input type="hidden" name="action" value="toggle_active">
+                                                    <input type="hidden" name="id" value="<?php echo $s['id']; ?>">
+                                                    <button type="submit" class="btn btn-small" title="<?php echo $s['is_active'] ? 'Archivar' : 'Activar'; ?>">
+                                                        <?php echo $s['is_active'] ? '🙈 Off' : '👁️ On'; ?>
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
