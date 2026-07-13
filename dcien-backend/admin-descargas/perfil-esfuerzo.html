@@ -296,6 +296,29 @@
     border: 1px solid var(--w10);
   }
   .empty-state strong{ color: var(--fg); font-weight: 700; }
+
+  .recording-overlay{
+    display:none;
+    position:absolute;
+    inset:0;
+    background:rgba(26,26,26,0.92);
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    gap:16px;
+    border: 1px solid rgba(255,255,255,0.10);
+  }
+  .recording-overlay.active{ display:flex; }
+  .rec-dot{
+    width:10px; height:10px; border-radius:50%;
+    background:#EF4444;
+    animation: blink 1s ease-in-out infinite;
+  }
+  @keyframes blink{ 0%,100%{opacity:1} 50%{opacity:0.2} }
+  .rec-label{
+    font-size:10px; letter-spacing:0.4em;
+    text-transform:uppercase; color:rgba(255,255,255,0.6);
+  }
 </style>
 </head>
 <body>
@@ -312,7 +335,7 @@
     </div>
 
     <span class="section-label">Estructura</span>
-    <div class="mode-toggle">
+    <div class="mode-toggle" id="structureToggle">
       <div class="mode-btn active" data-mode="simple">Lista simple</div>
       <div class="mode-btn" data-mode="rounds">Rondas</div>
     </div>
@@ -341,8 +364,9 @@
     <span class="section-label">Reproducción</span>
     <div class="controls-row">
       <button class="btn-secondary" id="playBtn" disabled>Play</button>
-      <button class="btn-secondary" id="resetBtn" disabled>Reiniciar</button>
+      <button class="btn-secondary" id="resetBtn" disabled>↺ Reiniciar</button>
     </div>
+    <button class="btn-secondary" id="clearBtn" style="width:100%;margin-bottom:32px;border-color:rgba(255,255,255,0.12);color:rgba(255,255,255,0.4);font-size:9px;letter-spacing:0.3em;">✕ Nuevo entrenamiento</button>
     <span class="section-label">Velocidad</span>
     <div class="speed-group">
       <div class="speed-btn active" data-speed="1">1×</div>
@@ -377,7 +401,11 @@
 
   <!-- ============ MAIN: VISUALIZER (single canvas, title/timer/ticker drawn IN it) ============ -->
   <div class="main">
-    <div class="stage" id="stage">
+    <div class="stage" id="stage" style="position:relative;">
+      <div class="recording-overlay" id="recordingOverlay">
+        <div class="rec-dot"></div>
+        <div class="rec-label">Grabando — espera a que finalice</div>
+      </div>
       <div class="empty-state" id="emptyState">
         Añade tus ejercicios en el panel izquierdo y pulsa<br><br>
         <strong>Generar perfil de esfuerzo</strong><br><br>
@@ -533,9 +561,9 @@ function renderExerciseList(){
 /* ============================================================
    MODE TOGGLE
    ============================================================ */
-document.querySelectorAll('.mode-btn').forEach(btn => {
+document.querySelectorAll('#structureToggle .mode-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#structureToggle .mode-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     mode = btn.dataset.mode;
     document.getElementById('roundsFields').style.display = (mode === 'rounds') ? 'block' : 'none';
@@ -544,9 +572,7 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
 
 document.getElementById('addExerciseBtn').addEventListener('click', () => addExercise());
 
-addExercise({name:'BURPEES', type:'reps', value:15, duration:45, effort:8});
-addExercise({name:'PLANCHA', type:'time', value:30, duration:30, effort:4});
-addExercise({name:'SENTADILLAS CON SALTO', type:'reps', value:20, duration:40, effort:7});
+addExercise();
 
 /* ============================================================
    TIMELINE BUILDING
@@ -578,6 +604,7 @@ function buildTimeline(){
    SAMPLING + SMOOTHING
    ============================================================ */
 const DT = 0.2;
+const windowSize = Math.max(2, Math.round(1.4 / DT)); // 7 muestras → radio 1.4s
 
 function sampleSmoothProfile(timeline){
   const total = timeline.total;
@@ -590,8 +617,6 @@ function sampleSmoothProfile(timeline){
                  timeline.items[timeline.items.length-1];
     raw[i] = item ? item.effort : 1;
   }
-
-  const windowSize = Math.max(2, Math.round(1.4 / DT));
   let smooth = raw.slice();
   for(let pass=0; pass<3; pass++){
     const out = new Array(n);
@@ -871,6 +896,75 @@ function drawChart(w, h, revealFraction){
   }
 }
 
+function drawExerciseLabels(w, h, revealFraction){
+  if(!timeline || !profile) return;
+  const region = chartRegion(w, h);
+  const labelSize = Math.max(14, Math.round(h * 0.024));
+  ctx.font = `600 ${labelSize}px 'Inter'`;
+
+  // El suavizado crea una transición de ±windowSize*DT segundos alrededor de item.start
+  // El chip aparece donde la curva EMPIEZA a cambiar (inicio de la rampa)
+  const SMOOTH_RADIUS = windowSize * DT;
+
+  timeline.items.forEach((item, idx) => {
+    if(!item.name || item.name === 'DESCANSO') return;
+
+    const labelT = idx === 0 ? 0 : Math.max(0, item.start - SMOOTH_RADIUS);
+    const tFrac  = labelT / timeline.total;
+    if(tFrac > revealFraction) return;
+
+    const x = region.left + tFrac * region.w;
+    // Usar el valor real de la curva suavizada en ese instante (no el nivel destino)
+    const profIdx = Math.min(profile.n - 1, Math.round(labelT / DT));
+    const curveEffort = profile.values[profIdx];
+    const cy = region.top + region.h - (curveEffort / 10) * region.h;
+    const col = effortToColor(item.effort);
+
+    // chip de texto
+    const label = item.name.toUpperCase();
+    const tw = ctx.measureText(label).width;
+    const padX = h * 0.010, padY = h * 0.006;
+    const boxW = tw + padX * 2, boxH = labelSize + padY * 2;
+
+    // clampar para no salir del área
+    let lx = x - boxW / 2;
+    lx = Math.max(region.left, Math.min(region.right - boxW, lx));
+    const ly = Math.max(region.top + 2, cy - boxH - h * 0.025);
+
+    // línea de conexión punteada
+    ctx.save();
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([2, 4]);
+    ctx.globalAlpha = 0.6;
+    ctx.beginPath();
+    ctx.moveTo(x, cy - 4);
+    ctx.lineTo(x, ly + boxH);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+
+    // fondo semitransparente + borde coloreado
+    ctx.fillStyle = 'rgba(20,20,20,0.80)';
+    ctx.fillRect(lx, ly, boxW, boxH);
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(lx, ly, boxW, boxH);
+
+    // texto
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    ctx.textAlign = 'left';
+    ctx.fillText(label, lx + padX, ly + padY + labelSize * 0.85);
+
+    // punto en la curva
+    ctx.beginPath();
+    ctx.arc(x, cy, Math.max(3, h * 0.005), 0, Math.PI * 2);
+    ctx.fillStyle = col;
+    ctx.fill();
+  });
+}
+
 function drawTicker(w, h, currentT){
   const item = currentItemAt(currentT);
   const top = h * (1 - LAYOUT.tickerFrac);
@@ -929,6 +1023,7 @@ function renderScene(revealFraction, currentT){
   ctx.translate(0, contentTop);
   drawHeader(w, contentH);
   drawChart(w, contentH, revealFraction);
+  drawExerciseLabels(w, contentH, revealFraction);
   drawTicker(w, contentH, currentT);
   ctx.restore();
 }
@@ -986,6 +1081,28 @@ document.getElementById('playBtn').addEventListener('click', () => {
   if(playing) pause(); else play();
 });
 document.getElementById('resetBtn').addEventListener('click', resetPlayback);
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if(!confirm('¿Borrar todo y empezar un nuevo entrenamiento?')) return;
+  playing = false;
+  elapsed = 0;
+  if(rafId) cancelAnimationFrame(rafId);
+  exercises = [];
+  idCounter = 0;
+  timeline = null;
+  profile = null;
+  renderExerciseList();
+  canvas.style.display = 'none';
+  document.getElementById('emptyState').style.display = '';
+  document.getElementById('playBtn').disabled = true;
+  document.getElementById('resetBtn').disabled = true;
+  document.getElementById('recordBtn').disabled = true;
+  document.getElementById('pngBtn').disabled = true;
+  document.getElementById('statusMsg').textContent = '';
+  document.getElementById('playBtn').textContent = 'Play';
+  document.getElementById('wodName').value = 'WOD DEL DÍA';
+  addExercise();
+});
 
 document.querySelectorAll('.speed-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1107,6 +1224,7 @@ document.getElementById('recordBtn').addEventListener('click', () => {
       } else {
         statusEl.textContent = `Descargado en WebM (${f.w}×${f.h}, 30fps). Instagram no acepta WebM: conviértelo a MP4 (p. ej. con VLC, HandBrake o un conversor online) antes de subirlo. Probablemente esto ocurra porque tu navegador no soporta grabación MP4 nativa — prueba Safari si quieres MP4 directo.`;
       }
+      document.getElementById('recordingOverlay').classList.remove('active');
       document.getElementById('recordBtn').disabled = false;
       document.getElementById('recordBtn').textContent = 'Grabar vídeo (Instagram HD)';
       recording = false;
@@ -1117,6 +1235,7 @@ document.getElementById('recordBtn').addEventListener('click', () => {
     };
 
     recording = true;
+    document.getElementById('recordingOverlay').classList.add('active');
     document.getElementById('recordBtn').disabled = true;
     document.getElementById('recordBtn').textContent = 'Grabando...';
     statusEl.textContent = `Grabando en ${f.w}×${f.h} a 30fps — espera a que termine el entrenamiento...`;
