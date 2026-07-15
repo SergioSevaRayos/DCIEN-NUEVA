@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
-import { getBlogPostSEO, getBlogPostingSchema, getBreadcrumbSchema } from '../../lib/seo';
+import { getBlogPostSEO, getBlogPostingSchema, getBreadcrumbSchema, BLOG_DEFAULT_AUTHOR } from '../../lib/seo';
 import { getSeriesBySlug } from '../../data/series';
 
 export async function getStaticPaths() {
@@ -11,8 +11,20 @@ export async function getStaticPaths() {
 
 const { post } = Astro.props;
 const { Content } = await post.render();
+const apiUrl = import.meta.env.PUBLIC_API_URL;
+const authorName = post.data.author ?? BLOG_DEFAULT_AUTHOR;
+const wordCount = post.body?.trim().split(/\s+/).filter(Boolean).length;
 
-const seo = getBlogPostSEO(post.data.title, post.data.description, post.slug, post.data.keywords, post.data.coverImage);
+const seo = getBlogPostSEO(
+  post.data.title,
+  post.data.description,
+  post.slug,
+  post.data.keywords,
+  post.data.coverImage,
+  post.data.publishDate,
+  post.data.updatedDate,
+  authorName
+);
 
 const articleSchema = getBlogPostingSchema(
   post.data.title,
@@ -20,7 +32,10 @@ const articleSchema = getBlogPostingSchema(
   post.slug,
   post.data.publishDate,
   post.data.updatedDate,
-  post.data.coverImage
+  post.data.coverImage,
+  post.data.keywords,
+  wordCount,
+  authorName
 );
 
 const breadcrumbSchema = getBreadcrumbSchema([
@@ -41,41 +56,119 @@ const relatedSeries = (post.data.relatedSeries ?? [])
   </Fragment>
 
   <article class="pt-32 pb-24 transition-colors duration-500">
-    <div class="container-custom max-w-3xl mx-auto">
-      <a href="/blog" class="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold text-black/40 hover:text-black dark:text-white/40 dark:hover:text-white transition-colors mb-10">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        Volver al Blog
-      </a>
+    <div class="container-custom max-w-6xl mx-auto">
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-12 lg:gap-16 items-start">
 
-      <p class="text-[10px] uppercase tracking-[0.3em] text-black/40 dark:text-white/40 mb-4">
-        {post.data.publishDate.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}
-      </p>
-      <h1 class="font-brand text-4xl md:text-6xl text-black dark:text-white uppercase tracking-wider leading-none mb-10">
-        {post.data.title}
-      </h1>
+        <!-- Columna principal: artículo -->
+        <div class="max-w-3xl">
+          <a href="/blog" class="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold text-black/40 hover:text-black dark:text-white/40 dark:hover:text-white transition-colors mb-10">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Volver al Blog
+          </a>
 
-      {post.data.coverImage && (
-        <div class="w-full bg-zinc-100 dark:bg-zinc-900 mb-12">
-          <img src={post.data.coverImage} alt={post.data.title} class="w-full h-auto object-cover max-h-[480px]" />
+          <div class="flex items-center justify-between flex-wrap gap-4 mb-4">
+            <p class="text-[10px] uppercase tracking-[0.3em] text-black/40 dark:text-white/40">
+              <time datetime={post.data.publishDate.toISOString()}>
+                {post.data.publishDate.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}
+              </time>
+              {post.data.updatedDate && (
+                <>
+                  {' · Actualizado el '}
+                  <time datetime={post.data.updatedDate.toISOString()}>
+                    {post.data.updatedDate.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}
+                  </time>
+                </>
+              )}
+              {' · Por '}{authorName}
+            </p>
+            <button
+              id="share-button"
+              type="button"
+              class="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold text-black/40 hover:text-black dark:text-white/40 dark:hover:text-white transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
+              Compartir
+            </button>
+          </div>
+          <h1 class="font-brand text-4xl md:text-6xl text-black dark:text-white uppercase tracking-wider leading-none mb-10">
+            {post.data.title}
+          </h1>
+
+          {post.data.coverImage && (
+            <div class="w-full bg-zinc-100 dark:bg-zinc-900 mb-12">
+              <img src={post.data.coverImage} alt={post.data.title} class="w-full h-auto object-cover max-h-[480px]" />
+            </div>
+          )}
+
+          {post.data.healthDisclaimer && (
+            <div class="mb-10 border border-black/10 dark:border-white/10 bg-zinc-50 dark:bg-zinc-900 p-6 text-xs text-black/60 dark:text-white/50 leading-relaxed uppercase tracking-[0.05em]">
+              ⚠️ Este contenido es informativo y no sustituye el consejo de un profesional sanitario, fisioterapeuta o entrenador cualificado. Consulta a un especialista antes de aplicar cualquier recomendación si tienes dudas o condiciones previas.
+            </div>
+          )}
+
+          <div class="prose-dcien text-black/80 dark:text-white/70">
+            <Content />
+          </div>
+
+          {relatedSeries.length > 0 && (
+            <div class="mt-20 border-t border-black/10 dark:border-white/10 pt-10">
+              <h2 class="text-xs uppercase tracking-[0.4em] text-black/40 dark:text-white/40 mb-6">Series relacionadas</h2>
+              <div class="flex flex-wrap gap-4">
+                {relatedSeries.map((s) => (
+                  <a href={`/series-activas/${s.slug}`} class="btn-secondary">
+                    {s.name}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      )}
 
-      <div class="prose-dcien text-black/80 dark:text-white/70">
-        <Content />
-      </div>
+        <!-- Columna lateral (desktop) / debajo del artículo (móvil): comentarios -->
+        <div
+          id="comments-section"
+          class="mt-20 lg:mt-0 border-t lg:border-t-0 lg:border-l border-black/10 dark:border-white/10 pt-10 lg:pt-0 lg:pl-10 lg:sticky lg:top-32"
+        >
+          <h2 class="text-xs uppercase tracking-[0.4em] text-black/40 dark:text-white/40 mb-6">Comentarios</h2>
 
-      {relatedSeries.length > 0 && (
-        <div class="mt-20 border-t border-black/10 dark:border-white/10 pt-10">
-          <h2 class="text-xs uppercase tracking-[0.4em] text-black/40 dark:text-white/40 mb-6">Series relacionadas</h2>
-          <div class="flex flex-wrap gap-4">
-            {relatedSeries.map((s) => (
-              <a href={`/series-activas/${s.slug}`} class="btn-secondary">
-                {s.name}
-              </a>
-            ))}
+          <div id="comments-list" class="space-y-6 mb-10 lg:max-h-[50vh] lg:overflow-y-auto lg:pr-2">
+            <p class="text-sm text-black/40 dark:text-white/40">Cargando comentarios...</p>
+          </div>
+
+          <div id="comments-empty" class="hidden text-sm text-black/40 dark:text-white/40 mb-10">
+            Todavía no hay comentarios. Sé el primero en opinar.
+          </div>
+
+          <!-- Formulario: solo visible para usuarios autenticados -->
+          <form id="comment-form" class="hidden space-y-4">
+            <textarea
+              id="comment-content"
+              required
+              minlength="3"
+              maxlength="1000"
+              rows="4"
+              placeholder="Escribe tu opinión..."
+              class="w-full bg-transparent border border-black/20 dark:border-white/20 p-4 text-sm text-black dark:text-white focus:outline-none focus:border-black dark:focus:border-white placeholder-black/30 dark:placeholder-white/30 resize-none"
+            ></textarea>
+            <button type="submit" class="btn-primary w-full">Publicar comentario</button>
+            <p id="comment-status" class="text-xs text-black/50 dark:text-white/50"></p>
+          </form>
+
+          <!-- CTA: solo visible para usuarios sin sesión -->
+          <div id="comment-guest" class="hidden border border-black/10 dark:border-white/10 p-8 bg-zinc-50 dark:bg-zinc-900">
+            <p class="text-sm text-black/70 dark:text-white/60 mb-6 leading-relaxed">
+              Solo los atletas dados de alta pueden opinar en el blog. Para conseguir acceso:
+            </p>
+            <ol class="text-xs text-black/60 dark:text-white/50 uppercase tracking-[0.1em] space-y-3 mb-8 list-decimal list-inside leading-relaxed">
+              <li>Sigue a <a href="https://www.instagram.com/dcien.esp/" target="_blank" class="underline hover:text-black dark:hover:text-white">@dcien.esp</a> en Instagram y solicita acceso por DM.</li>
+              <li>Recibirás unas credenciales provisionales para activar tu cuenta.</li>
+              <li>Actívalas y completa tu registro (usuario, email y contraseña).</li>
+            </ol>
+            <a href={`/acceso?redirect=${encodeURIComponent(`/blog/${post.slug}`)}`} class="btn-primary w-full text-center">Ir a Acceso</a>
           </div>
         </div>
-      )}
+
+      </div>
     </div>
   </article>
 </BaseLayout>
@@ -111,3 +204,133 @@ const relatedSeries = (post.data.relatedSeries ?? [])
     font-weight: 700;
   }
 </style>
+
+<script define:vars={{ apiUrl, postSlug: post.slug, postTitle: post.data.title, postDescription: post.data.description }}>
+const API = apiUrl;
+const SLUG = postSlug;
+
+const shareButton = document.getElementById('share-button');
+if (shareButton) {
+  shareButton.addEventListener('click', async () => {
+    const shareData = {
+      title: postTitle,
+      text: postDescription,
+      url: window.location.href,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch {
+        // el usuario cerró el panel de compartir sin elegir nada — no hacer nada
+      }
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      window.Toast?.fire({ icon: 'success', title: 'Enlace copiado' });
+    } catch {
+      window.Toast?.fire({ icon: 'error', title: 'No se pudo copiar el enlace' });
+    }
+  });
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function renderComments(comments) {
+  const list = document.getElementById('comments-list');
+  const empty = document.getElementById('comments-empty');
+  if (!list || !empty) return;
+
+  if (!comments.length) {
+    list.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+
+  empty.classList.add('hidden');
+  list.innerHTML = comments.map((c) => `
+    <div class="border-b border-black/5 dark:border-white/5 pb-6">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-bold uppercase tracking-[0.1em] text-black dark:text-white">${escapeHtml(c.username)}</span>
+        <span class="text-[10px] text-black/40 dark:text-white/40">${new Date(c.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+      </div>
+      <p class="text-sm text-black/70 dark:text-white/60 leading-relaxed">${escapeHtml(c.content)}</p>
+    </div>
+  `).join('');
+}
+
+async function loadComments() {
+  try {
+    const res = await fetch(`${API}/blog/get-comments.php?slug=${encodeURIComponent(SLUG)}`);
+    const data = await res.json();
+    renderComments(data.comments ?? []);
+  } catch {
+    renderComments([]);
+  }
+}
+
+async function setupForm() {
+  try {
+    const res = await fetch(`${API}/auth/check.php`, { credentials: 'include' });
+    const data = await res.json();
+
+    if (data.authenticated) {
+      document.getElementById('comment-form')?.classList.remove('hidden');
+    } else {
+      document.getElementById('comment-guest')?.classList.remove('hidden');
+    }
+  } catch {
+    document.getElementById('comment-guest')?.classList.remove('hidden');
+  }
+}
+
+const form = document.getElementById('comment-form');
+if (form) {
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const textarea = document.getElementById('comment-content');
+    const status = document.getElementById('comment-status');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const content = textarea.value.trim();
+    if (content.length < 3 || !status || !submitBtn) return;
+
+    submitBtn.disabled = true;
+    status.textContent = '';
+
+    try {
+      const res = await fetch(`${API}/blog/submit-comment.php`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: SLUG, content }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        textarea.value = '';
+        if (data.status === 'flagged') {
+          status.textContent = 'Tu comentario está en revisión antes de publicarse.';
+        } else {
+          status.textContent = '¡Comentario publicado!';
+          loadComments();
+        }
+      } else {
+        status.textContent = data.message || 'No se pudo publicar el comentario.';
+      }
+    } catch {
+      status.textContent = 'Error al publicar el comentario.';
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+}
+
+loadComments();
+setupForm();
+</script>

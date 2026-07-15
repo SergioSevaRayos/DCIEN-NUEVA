@@ -5,6 +5,7 @@ keywords: "qué comer antes de crossfit, nutrición crossfit, comida pre entreno
 publishDate: 2026-08-13
 coverImage: "/images/brand/nutrición.png"
 relatedSeries: ["serie-0", "serie-08"]
+healthDisclaimer: true
 ---
 
 Un WOD exigente no perdona una mala decisión de última hora en la cocina. Comer demasiado tarde, demasiado pesado o lo que no toca puede convertir una sesión que tenías controlada en una lucha contra tu propio estómago. La buena noticia es que la nutrición pre y post WOD no es complicada — es cuestión de timing y de un puñado de alimentos que ya conoces.

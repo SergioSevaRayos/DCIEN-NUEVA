@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { getSEO } from '../../lib/seo';
+import { getSEO, getBlogSchema } from '../../lib/seo';
 import { getCollection } from 'astro:content';
 
 const seo = getSEO('blog');
@@ -8,9 +8,22 @@ const seo = getSEO('blog');
 const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
   (a, b) => b.data.publishDate.valueOf() - a.data.publishDate.valueOf()
 );
+
+const blogSchema = getBlogSchema(
+  posts.map((p) => ({
+    title: p.data.title,
+    description: p.data.description,
+    slug: p.slug,
+    publishDate: p.data.publishDate,
+  }))
+);
 ---
 
 <BaseLayout seo={seo}>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(blogSchema)} />
+  </Fragment>
+
   <section class="pt-32 pb-24 transition-colors duration-500">
     <div class="container-custom">
       <div class="text-center mb-24 scroll-reveal">

@@ -241,6 +241,38 @@ Al crear una sesión de Stripe, la `cancel_url` apunta a `cancel-checkout.php` q
 
 **No usar `STRIPE_CANCEL_URL` del .env como cancel_url directa** — el pedido quedaría huérfano en BD con la unidad bloqueada en estado `checkout`.
 
+## Blog (`src/content/blog/`)
+
+Colección de contenido de Astro (`type: 'content'`, definida en `src/content/config.ts`). Cada artículo es un `.md` en `src/content/blog/` con este frontmatter:
+
+```yaml
+---
+title: "Título del artículo"
+description: "Meta description — también se usa como description del JSON-LD"
+keywords: "keyword 1, keyword 2, keyword 3"
+publishDate: 2026-08-20
+updatedDate: 2026-09-01       # opcional, solo si se edita tras publicar
+coverImage: "/images/brand/xxx.webp"   # reutilizar imágenes de public/images/brand/, no hace falta generar nuevas
+relatedSeries: ["serie-09", "serie-10"]   # slugs de src/data/series.ts — enlace interno real, no adorno
+author: "Equipo DCIEN"        # opcional — si se omite, usa BLOG_DEFAULT_AUTHOR (src/lib/seo.ts)
+healthDisclaimer: true         # true si el artículo da consejo de salud/entrenamiento/nutrición
+---
+```
+
+**Reglas de contenido:**
+- **Validar el tema con demanda real antes de escribir** — no intuir. Ver metodología usada para los 4 artículos existentes: se descartó "qué ropa llevar después de entrenar" por no tener ningún rastro de búsqueda real, y se sustituyó por temas confirmados (guías de HYROX, lesiones, protección física, nutrición) comprobando qué contenido ya sostienen clínicas/marcas especializadas de forma sostenida.
+- 700-1000 palabras, tono directo de la marca ("protocolo", "registro", sin relleno de marketing vacío).
+- Cierre honesto con enlace interno a `/marca` y/o series concretas de `/series-activas` — sin forzar la conexión si el tema no encaja de verdad con el producto (streetwear, no equipo técnico de entrenamiento).
+- `healthDisclaimer: true` en cualquier artículo con consejo de salud, lesiones, nutrición o entrenamiento — el aviso se renderiza solo, no hay que escribirlo a mano en el markdown.
+- Nunca copiar contenido de otras webs — investigar para validar el tema/estructura, pero redactar siempre en prosa 100% original.
+
+**Lo que ya se genera solo (no tocar nada más al añadir un artículo):**
+- Página de detalle (`/blog/{slug}`) y su entrada en el listado (`/blog`).
+- SEO completo: `<title>`, meta description, canonical, Open Graph tipo `article` con `article:published_time/modified_time/author`, Twitter Card.
+- JSON-LD `BlogPosting` (con `author`, `keywords`, `wordCount` calculado automáticamente) + `BreadcrumbList`.
+- Entrada en el sitemap (`astro.config.mjs` ya permite `/blog/*` por defecto).
+- Entrada en el feed RSS (`/blog/rss.xml`) y en `/llms.txt` — ambos se regeneran en cada build, no son ficheros estáticos a mantener a mano.
+
 ## Deploy (producción — Hostinger)
 
 Ver [DEPLOY.md](DEPLOY.md). En resumen:

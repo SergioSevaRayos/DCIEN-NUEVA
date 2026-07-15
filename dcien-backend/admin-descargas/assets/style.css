@@ -62,8 +62,12 @@ body {
     position: sticky;
     top: 0;
     height: 100vh;
+    height: 100dvh; /* viewport real en móvil: 100vh no descuenta la barra del navegador */
+    max-height: 100dvh;
     border-right: 1px solid #222;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     transition: transform 0.3s ease;
     z-index: 999;
 }
@@ -613,6 +617,15 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* ─── RESPONSIVE ─────────────────────────────────────── */
+
+/* Bloqueo de scroll de fondo mientras el menú móvil está abierto (ver toggleMobileNav en nav.php) */
+body.nav-locked {
+    overflow: hidden;
+    position: fixed;
+    left: 0;
+    right: 0;
+    width: 100%;
+}
 
 @media (max-width: 768px) {
     .sidebar {

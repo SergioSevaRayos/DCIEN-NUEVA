@@ -33,7 +33,14 @@ export interface SEOConfig {
   canonical?: string;
   noindex?: boolean;
   nofollow?: boolean;
+  /** 'article' activa og:type=article + article:published_time/modified_time/author (Open Graph) */
+  ogType?: 'website' | 'article';
+  publishDate?: string; // ISO 8601 — solo relevante si ogType es 'article'
+  modifiedDate?: string; // ISO 8601
+  authorName?: string;
 }
+
+export const BLOG_DEFAULT_AUTHOR = 'Equipo DCIEN';
 
 // ============================================
 // PÁGINAS SEO PREDEFINIDAS
@@ -166,7 +173,10 @@ export function getBlogPostSEO(
   description: string,
   slug: string,
   keywords: string,
-  coverImage?: string
+  coverImage?: string,
+  publishDate?: Date,
+  updatedDate?: Date,
+  authorName: string = BLOG_DEFAULT_AUTHOR
 ): SEOConfig {
   const ogImage = coverImage
     ? (coverImage.startsWith('http') ? coverImage : `${SITE_CONFIG.url}${coverImage}`)
@@ -178,6 +188,10 @@ export function getBlogPostSEO(
     keywords,
     ogImage,
     canonical: `${SITE_CONFIG.url}/blog/${slug}`,
+    ogType: 'article',
+    publishDate: publishDate?.toISOString(),
+    modifiedDate: (updatedDate ?? publishDate)?.toISOString(),
+    authorName,
   };
 }
 
@@ -292,7 +306,10 @@ export function getBlogPostingSchema(
   slug: string,
   publishDate: Date,
   updatedDate?: Date,
-  coverImage?: string
+  coverImage?: string,
+  keywords?: string,
+  wordCount?: number,
+  authorName: string = BLOG_DEFAULT_AUTHOR
 ) {
   const image = coverImage
     ? (coverImage.startsWith('http') ? coverImage : `${SITE_CONFIG.url}${coverImage}`)
@@ -307,13 +324,44 @@ export function getBlogPostingSchema(
     datePublished: publishDate.toISOString(),
     dateModified: (updatedDate ?? publishDate).toISOString(),
     url: `${SITE_CONFIG.url}/blog/${slug}`,
+    // Autoría distinta del publisher (Organization DCIEN) — señal de autoría real para E-E-A-T
     author: {
-      '@id': `${SITE_CONFIG.url}/#organization`,
+      '@type': 'Organization',
+      name: authorName,
     },
     publisher: {
       '@id': `${SITE_CONFIG.url}/#organization`,
     },
     mainEntityOfPage: `${SITE_CONFIG.url}/blog/${slug}`,
+    ...(keywords ? { keywords } : {}),
+    ...(wordCount ? { wordCount } : {}),
+    inLanguage: 'es-ES',
+  };
+}
+
+/**
+ * Schema Blog + lista de BlogPosting resumidos, para la página de listado /blog.
+ */
+export function getBlogSchema(
+  posts: Array<{ title: string; description: string; slug: string; publishDate: Date }>
+) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    '@id': `${SITE_CONFIG.url}/blog/#blog`,
+    url: `${SITE_CONFIG.url}/blog`,
+    name: 'Blog | DCIEN',
+    publisher: {
+      '@id': `${SITE_CONFIG.url}/#organization`,
+    },
+    inLanguage: 'es-ES',
+    blogPost: posts.map((p) => ({
+      '@type': 'BlogPosting',
+      headline: p.title,
+      description: p.description,
+      url: `${SITE_CONFIG.url}/blog/${p.slug}`,
+      datePublished: p.publishDate.toISOString(),
+    })),
   };
 }
 

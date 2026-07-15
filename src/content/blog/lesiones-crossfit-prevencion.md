@@ -5,6 +5,7 @@ keywords: "lesiones crossfit, prevención lesiones crossfit, dolor muñeca cross
 publishDate: 2026-07-23
 coverImage: "/images/brand/lesiones.png"
 relatedSeries: ["serie-09", "serie-10"]
+healthDisclaimer: true
 ---
 
 El CrossFit exige movimientos técnicos a alta intensidad y con carga — y eso tiene un coste si el cuerpo no está preparado. Las zonas que más se resienten son siempre las mismas: muñeca, rodilla, hombro y zona lumbar. Ninguna de ellas se lesiona por "mala suerte": casi siempre hay una causa identificable y, por tanto, una forma de prevenirla.

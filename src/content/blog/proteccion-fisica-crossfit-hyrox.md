@@ -5,6 +5,7 @@ keywords: "espinilleras crossfit, calleras crossfit, protección rope climb, que
 publishDate: 2026-08-06
 coverImage: "/images/brand/rope.png"
 relatedSeries: ["serie-09", "serie-10"]
+healthDisclaimer: true
 ---
 
 El rope climb tiene fama merecida: incluso con buena técnica, la cuerda produce roce, y ese roce se convierte en quemadura en manos y piernas. No es un problema de nivel — le pasa igual a quien lleva un año entrenando que a quien lleva diez. La diferencia la marca el equipo de protección que uses, no la técnica por sí sola.

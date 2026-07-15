@@ -53,6 +53,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
             </a>
         </li>
         <li>
+            <a href="/admin-descargas/modules/comentarios.php" class="<?php echo $current_page == 'comentarios.php' ? 'active' : ''; ?>">
+                <span class="icon">💬</span> Comentarios
+            </a>
+        </li>
+        <li>
             <a href="/admin-descargas/modules/logs.php" class="<?php echo $current_page == 'logs.php' ? 'active' : ''; ?>">
                 <span class="icon">📋</span> Logs Sistema
             </a>
@@ -79,8 +84,26 @@ $current_page = basename($_SERVER['PHP_SELF']);
 </button>
 
 <script>
+// Bloquea el scroll de la página de fondo mientras el menú móvil está abierto,
+// para que un gesto de scroll dentro del sidebar no mueva también la ventana trasera.
+let dcienNavScrollY = 0;
+
 function toggleMobileNav() {
-    document.getElementById('sidebar').classList.toggle('open');
-    document.getElementById('sidebar-overlay').classList.toggle('open');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    const isOpening = !sidebar.classList.contains('open');
+
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('open');
+
+    if (isOpening) {
+        dcienNavScrollY = window.scrollY;
+        document.body.classList.add('nav-locked');
+        document.body.style.top = `-${dcienNavScrollY}px`;
+    } else {
+        document.body.classList.remove('nav-locked');
+        document.body.style.top = '';
+        window.scrollTo(0, dcienNavScrollY);
+    }
 }
 </script>

@@ -221,6 +221,17 @@ const seo = getSEO('acceso');
     };
   };
 
+  // Si venimos de una página concreta (ej. un artículo del blog), volvemos ahí tras el login
+  // en vez de al catálogo por defecto. Solo se acepta una ruta interna (empieza por "/",
+  // nunca "//") para evitar que el parámetro se use para redirigir a un dominio externo.
+  function getSafeRedirect(fallback = '/series-activas') {
+    const redirect = new URLSearchParams(window.location.search).get('redirect');
+    if (redirect && redirect.startsWith('/') && !redirect.startsWith('//')) {
+      return redirect;
+    }
+    return fallback;
+  }
+
   // Verificar si usuario ya está logueado
   async function checkIfLoggedIn() {
     try {
@@ -231,7 +242,7 @@ const seo = getSEO('acceso');
       if (response.ok) {
         const data = await response.json();
         if (data.authenticated) {
-          window.location.href = '/series-activas';
+          window.location.href = getSafeRedirect();
         }
       }
     } catch (error) {
@@ -298,7 +309,7 @@ const seo = getSEO('acceso');
           timer: 2000,
           timerProgressBar: true,
         }).then(() => {
-          window.location.href = '/series-activas';
+          window.location.href = getSafeRedirect();
         });
       }
       else {
