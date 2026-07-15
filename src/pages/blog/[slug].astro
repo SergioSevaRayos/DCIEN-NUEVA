@@ -1,0 +1,113 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import { getBlogPostSEO, getBlogPostingSchema, getBreadcrumbSchema } from '../../lib/seo';
+import { getSeriesBySlug } from '../../data/series';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog', ({ data }) => !data.draft);
+  return posts.map((post) => ({ params: { slug: post.slug }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await post.render();
+
+const seo = getBlogPostSEO(post.data.title, post.data.description, post.slug, post.data.keywords, post.data.coverImage);
+
+const articleSchema = getBlogPostingSchema(
+  post.data.title,
+  post.data.description,
+  post.slug,
+  post.data.publishDate,
+  post.data.updatedDate,
+  post.data.coverImage
+);
+
+const breadcrumbSchema = getBreadcrumbSchema([
+  { name: 'Inicio', url: '/' },
+  { name: 'Blog', url: '/blog' },
+  { name: post.data.title, url: `/blog/${post.slug}` },
+]);
+
+const relatedSeries = (post.data.relatedSeries ?? [])
+  .map((slug) => getSeriesBySlug(slug))
+  .filter((s): s is NonNullable<typeof s> => Boolean(s));
+---
+
+<BaseLayout seo={seo}>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
+    <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
+  </Fragment>
+
+  <article class="pt-32 pb-24 transition-colors duration-500">
+    <div class="container-custom max-w-3xl mx-auto">
+      <a href="/blog" class="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold text-black/40 hover:text-black dark:text-white/40 dark:hover:text-white transition-colors mb-10">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Volver al Blog
+      </a>
+
+      <p class="text-[10px] uppercase tracking-[0.3em] text-black/40 dark:text-white/40 mb-4">
+        {post.data.publishDate.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}
+      </p>
+      <h1 class="font-brand text-4xl md:text-6xl text-black dark:text-white uppercase tracking-wider leading-none mb-10">
+        {post.data.title}
+      </h1>
+
+      {post.data.coverImage && (
+        <div class="w-full bg-zinc-100 dark:bg-zinc-900 mb-12">
+          <img src={post.data.coverImage} alt={post.data.title} class="w-full h-auto object-cover max-h-[480px]" />
+        </div>
+      )}
+
+      <div class="prose-dcien text-black/80 dark:text-white/70">
+        <Content />
+      </div>
+
+      {relatedSeries.length > 0 && (
+        <div class="mt-20 border-t border-black/10 dark:border-white/10 pt-10">
+          <h2 class="text-xs uppercase tracking-[0.4em] text-black/40 dark:text-white/40 mb-6">Series relacionadas</h2>
+          <div class="flex flex-wrap gap-4">
+            {relatedSeries.map((s) => (
+              <a href={`/series-activas/${s.slug}`} class="btn-secondary">
+                {s.name}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  </article>
+</BaseLayout>
+
+<style is:global>
+  .prose-dcien h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 1.75rem;
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+  }
+  .prose-dcien p {
+    line-height: 1.8;
+    margin-bottom: 1.5rem;
+    font-size: 1.05rem;
+  }
+  .prose-dcien ul,
+  .prose-dcien ol {
+    margin: 1.5rem 0;
+    padding-left: 1.5rem;
+  }
+  .prose-dcien li {
+    margin-bottom: 0.5rem;
+    line-height: 1.7;
+  }
+  .prose-dcien a {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .prose-dcien strong {
+    font-weight: 700;
+  }
+</style>

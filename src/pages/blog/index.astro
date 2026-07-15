@@ -1,0 +1,64 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getSEO } from '../../lib/seo';
+import { getCollection } from 'astro:content';
+
+const seo = getSEO('blog');
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.publishDate.valueOf() - a.data.publishDate.valueOf()
+);
+---
+
+<BaseLayout seo={seo}>
+  <section class="pt-32 pb-24 transition-colors duration-500">
+    <div class="container-custom">
+      <div class="text-center mb-24 scroll-reveal">
+        <h1 class="font-brand text-6xl sm:text-7xl md:text-[9rem] tracking-[0.05em] md:tracking-[0.1em] leading-none text-black dark:text-white transition-colors">
+          BLOG
+        </h1>
+        <p class="text-[10px] md:text-xs uppercase tracking-[0.3em] md:tracking-[0.4em] text-black/50 dark:text-white/40 mt-6 font-bold">
+          CULTURA HÍBRIDA · CROSSFIT · HYROX
+        </p>
+      </div>
+
+      {posts.length === 0 ? (
+        <div class="text-center py-20 scroll-reveal max-w-xl mx-auto border border-black/10 dark:border-white/10 p-12 bg-zinc-50 dark:bg-zinc-900">
+          <p class="text-2xl font-brand text-black dark:text-white mb-4 transition-colors tracking-widest">
+            PRÓXIMAMENTE
+          </p>
+          <p class="text-xs text-black/50 dark:text-white/50 uppercase tracking-[0.2em] leading-relaxed">
+            Estamos preparando el primer contenido del registro.
+          </p>
+        </div>
+      ) : (
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 max-w-7xl mx-auto">
+          {posts.map((post, i) => (
+            <article class={`scroll-reveal scroll-delay-${(i % 3) + 1} bg-zinc-50 dark:bg-zinc-900/50 overflow-hidden group flex flex-col border border-black/5 dark:border-white/5`}>
+              <a href={`/blog/${post.slug}`} class="flex flex-col h-full">
+                <div class="relative aspect-[16/9] bg-white dark:bg-[#0a0a0a] overflow-hidden">
+                  <img
+                    src={post.data.coverImage ?? '/images/brand/og-image.jpg'}
+                    alt={post.data.title}
+                    class="w-full h-full object-cover grayscale-[30%] group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                  />
+                </div>
+                <div class="p-8 md:p-10 flex-grow flex flex-col">
+                  <p class="text-[9px] uppercase tracking-[0.3em] text-black/40 dark:text-white/40 mb-4">
+                    {post.data.publishDate.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}
+                  </p>
+                  <h2 class="font-brand text-2xl md:text-3xl text-black dark:text-white uppercase tracking-wider leading-tight mb-4">
+                    {post.data.title}
+                  </h2>
+                  <p class="text-sm text-black/60 dark:text-white/60 leading-relaxed">
+                    {post.data.description}
+                  </p>
+                </div>
+              </a>
+            </article>
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+</BaseLayout>

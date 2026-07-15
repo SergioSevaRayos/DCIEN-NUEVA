@@ -121,6 +121,14 @@ export function getSEO(page: string): SEOConfig {
       canonical: `${SITE_CONFIG.url}/devoluciones`,
       noindex: true,
     },
+
+    blog: {
+      title: 'Blog | DCIEN',
+      description: 'Cultura híbrida, CrossFit, Hyrox y streetwear premium de edición limitada. El blog de DCIEN.',
+      keywords: 'blog dcien, crossfit, hyrox, streetwear premium, cultura híbrida, atletas híbridos',
+      ogImage: SITE_CONFIG.ogImage,
+      canonical: `${SITE_CONFIG.url}/blog`,
+    },
   };
 
   return pages[page] || pages.home;
@@ -146,6 +154,30 @@ export function getSeriesSEO(
     keywords: `${name.toLowerCase()}, premium streetwear, dcien, moda urbana exclusiva, serie limitada, cultura híbrida, ropa lifestyle`,
     ogImage: mainImage,
     canonical: `${SITE_CONFIG.url}/series-activas/${slug}`,
+  };
+}
+
+// ============================================
+// SEO PARA POSTS DE BLOG
+// ============================================
+
+export function getBlogPostSEO(
+  title: string,
+  description: string,
+  slug: string,
+  keywords: string,
+  coverImage?: string
+): SEOConfig {
+  const ogImage = coverImage
+    ? (coverImage.startsWith('http') ? coverImage : `${SITE_CONFIG.url}${coverImage}`)
+    : SITE_CONFIG.ogImage;
+
+  return {
+    title: `${title} | Blog DCIEN`,
+    description,
+    keywords,
+    ogImage,
+    canonical: `${SITE_CONFIG.url}/blog/${slug}`,
   };
 }
 
@@ -251,6 +283,37 @@ export function getProductSchema(
         "value": "Numeración física única 001-100"
       }
     ]
+  };
+}
+
+export function getBlogPostingSchema(
+  title: string,
+  description: string,
+  slug: string,
+  publishDate: Date,
+  updatedDate?: Date,
+  coverImage?: string
+) {
+  const image = coverImage
+    ? (coverImage.startsWith('http') ? coverImage : `${SITE_CONFIG.url}${coverImage}`)
+    : SITE_CONFIG.ogImage;
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: title,
+    description,
+    image,
+    datePublished: publishDate.toISOString(),
+    dateModified: (updatedDate ?? publishDate).toISOString(),
+    url: `${SITE_CONFIG.url}/blog/${slug}`,
+    author: {
+      '@id': `${SITE_CONFIG.url}/#organization`,
+    },
+    publisher: {
+      '@id': `${SITE_CONFIG.url}/#organization`,
+    },
+    mainEntityOfPage: `${SITE_CONFIG.url}/blog/${slug}`,
   };
 }
 
