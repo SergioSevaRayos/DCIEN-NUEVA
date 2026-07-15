@@ -1,8 +1,12 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { getSEO } from '../../lib/seo';
 
-const seo = getSEO('home');
+const seo = {
+  title: 'Compra Cancelada | DCIEN',
+  description: 'Proceso de compra cancelado en DCIEN.',
+  keywords: 'compra cancelada, dcien',
+  noindex: true
+};
 ---
 
 <BaseLayout seo={seo}>

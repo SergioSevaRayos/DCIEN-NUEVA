@@ -6,8 +6,15 @@ import partytown from '@astrojs/partytown';
 export default defineConfig({
   site: 'https://d-cien.es',
   integrations: [
-    tailwind(), 
-    sitemap(),
+    tailwind(),
+    sitemap({
+      // Excluye rutas noindex/transaccionales que no deben aparecer en el sitemap
+      // (deben coincidir con las páginas marcadas noindex: true en src/lib/seo.ts)
+      filter: (page) => {
+        const url = new URL(page);
+        return !/^\/(acceso|checkout|registro|bono|aviso-legal|privacidad|cookies|condiciones|devoluciones)(\/|$)/.test(url.pathname);
+      },
+    }),
     partytown({
       config: {
         forward: ['dataLayer.push'],
