@@ -36,9 +36,19 @@ const seo = getArsenalToolSEO(tool.name, tool.description, tool.slug, tool.keywo
         Volver al Arsenal
       </a>
 
-      <h1 class="font-brand text-4xl md:text-6xl text-black dark:text-white uppercase tracking-wider leading-none mb-4">
-        {tool.name}
-      </h1>
+      <div class="flex items-start justify-between gap-4 flex-wrap mb-4">
+        <h1 class="font-brand text-4xl md:text-6xl text-black dark:text-white uppercase tracking-wider leading-none">
+          {tool.name}
+        </h1>
+        <button
+          id="share-button"
+          type="button"
+          class="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold text-black/40 hover:text-black dark:text-white/40 dark:hover:text-white transition-colors shrink-0 mt-2"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
+          Compartir
+        </button>
+      </div>
       <p class="text-sm text-black/60 dark:text-white/60 leading-relaxed mb-12 max-w-2xl">
         {tool.description}
       </p>
@@ -49,3 +59,32 @@ const seo = getArsenalToolSEO(tool.name, tool.description, tool.slug, tool.keywo
     </div>
   </section>
 </BaseLayout>
+
+<script define:vars={{ toolTitle: tool.name, toolDescription: tool.description }}>
+  const shareButton = document.getElementById('share-button');
+  if (shareButton) {
+    shareButton.addEventListener('click', async () => {
+      const shareData = {
+        title: toolTitle,
+        text: toolDescription,
+        url: window.location.href,
+      };
+
+      if (navigator.share) {
+        try {
+          await navigator.share(shareData);
+        } catch {
+          // el usuario cerró el panel de compartir sin elegir nada — no hacer nada
+        }
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        window.Toast?.fire({ icon: 'success', title: 'Enlace copiado' });
+      } catch {
+        window.Toast?.fire({ icon: 'error', title: 'No se pudo copiar el enlace' });
+      }
+    });
+  }
+</script>

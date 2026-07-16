@@ -152,6 +152,11 @@
 </div>
 
 <script>
+// Astro hoista el script de cada herramienta importada en [slug].astro a
+// TODAS las páginas de /arsenal, aunque solo una esté realmente renderizada
+// — sin este guard, este script lanzaría un error al buscar elementos
+// #pacing-* que no existen en la página de otra herramienta.
+if (document.getElementById('pacing-form')) {
   const machineSelect = document.getElementById('pacing-machine') as HTMLSelectElement;
   const unitSelect = document.getElementById('pacing-unit') as HTMLSelectElement;
   const volumeInput = document.getElementById('pacing-volume') as HTMLInputElement;
@@ -368,4 +373,5 @@
   }
 
   saveButton.addEventListener('click', downloadPacingImage);
+}
 </script>

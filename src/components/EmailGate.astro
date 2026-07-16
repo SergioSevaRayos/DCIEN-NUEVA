@@ -1,8 +1,10 @@
 ---
 /**
  * Envuelve el contenido de una herramienta de ARSENAL y lo oculta hasta que
- * el visitante "paga" con su email. El desbloqueo se recuerda en localStorage
- * por navegador (arsenal_unlocked_tools), sin necesidad de cuenta.
+ * el visitante "paga" con su email. El email se recuerda en localStorage por
+ * navegador (arsenal_email) — una vez conocido, desbloquea CUALQUIER
+ * herramienta (la actual y las futuras) sin volver a pedirlo ni volver a
+ * registrar el lead en la BD.
  */
 interface Props {
   toolSlug: string;
@@ -42,24 +44,19 @@ const apiUrl = import.meta.env.PUBLIC_API_URL;
 </div>
 
 <script define:vars={{ apiUrl, toolSlug }}>
-  const STORAGE_KEY = 'arsenal_unlocked_tools';
+  const STORAGE_KEY = 'arsenal_email';
 
-  function getUnlockedTools() {
+  function getStoredEmail() {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
+      return localStorage.getItem(STORAGE_KEY);
     } catch {
-      return [];
+      return null;
     }
   }
 
-  function addUnlockedTool(slug) {
+  function storeEmail(email) {
     try {
-      const unlocked = getUnlockedTools();
-      if (!unlocked.includes(slug)) {
-        unlocked.push(slug);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(unlocked));
-      }
+      localStorage.setItem(STORAGE_KEY, email);
     } catch {
       // localStorage no disponible (modo privado, cuota) — el gate simplemente
       // volverá a pedir el email en la siguiente visita, no es crítico.
@@ -71,7 +68,10 @@ const apiUrl = import.meta.env.PUBLIC_API_URL;
     document.getElementById('email-gate-content')?.classList.remove('hidden');
   }
 
-  if (getUnlockedTools().includes(toolSlug)) {
+  const knownEmail = getStoredEmail();
+  if (knownEmail) {
+    // Ya nos dio el email en otra herramienta — se desbloquea sin volver a
+    // pedirlo y sin volver a registrar el lead en la BD.
     reveal();
   }
 
@@ -95,7 +95,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL;
         const data = await res.json();
 
         if (data.success) {
-          addUnlockedTool(toolSlug);
+          storeEmail(email);
           reveal();
           window.dispatchEvent(new CustomEvent('arsenal:unlocked', { detail: { toolSlug } }));
         } else {

@@ -22,7 +22,7 @@ export const arsenalTools: ArsenalTool[] = [
   {
     slug: 'motor-de-protocolos',
     name: 'Motor de Protocolos',
-    description: 'Filtra por enfoque físico y dominio de tiempo y el sistema devuelve un protocolo de entrenamiento del registro. Nada de aleatorio sin criterio.',
+    description: 'Filtra por enfoque físico y dominio de tiempo: el sistema busca en el registro y te devuelve un protocolo diseñado para ese cruce — nada de WOD aleatorio sin criterio.',
     keywords: 'generador wod, protocolo entrenamiento crossfit, wod hyrox, generador entrenamientos híbridos, workout generator',
     image: '/images/brand/motor-de-protocolos.webp',
   },

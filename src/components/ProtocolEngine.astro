@@ -78,9 +78,9 @@
 
     <!-- Pantalla de terminal -->
     <div class="mt-10 bg-white dark:bg-black border border-black/10 dark:border-white/10 font-mono">
-      <div class="flex items-center justify-between gap-4 px-4 py-2.5 border-b border-black/10 dark:border-white/10">
+      <div class="flex items-center justify-between flex-wrap gap-x-4 gap-y-2 px-4 py-2.5 border-b border-black/10 dark:border-white/10">
         <span class="text-[10px] uppercase tracking-[0.2em] text-black/40 dark:text-white/40">protocol://system</span>
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3">
           <button
             id="protocol-regenerate"
             type="button"
@@ -99,7 +99,7 @@
           </button>
         </div>
       </div>
-      <pre id="protocol-output" class="p-6 md:p-8 min-h-[180px] text-[13px] md:text-sm leading-relaxed whitespace-pre-wrap text-black/90 dark:text-white/90 m-0">ESPERANDO PARÁMETROS...</pre>
+      <pre id="protocol-output" class="p-6 md:p-8 min-h-[180px] text-[13px] md:text-sm leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] text-black/90 dark:text-white/90 m-0">ESPERANDO PARÁMETROS...</pre>
     </div>
 
     <div id="protocol-glossary" class="hidden mt-6 pt-6 border-t border-black/5 dark:border-white/5">
@@ -110,6 +110,11 @@
 </div>
 
 <script>
+// Astro hoista el script de cada herramienta importada en [slug].astro a
+// TODAS las páginas de /arsenal, aunque solo una esté realmente renderizada
+// — sin este guard, este script lanzaría un error al buscar elementos
+// #protocol-* que no existen en la página de otra herramienta.
+if (document.getElementById('protocol-form')) {
   type Focus = 'Fuerza' | 'Stamina' | 'Motor' | 'Híbrido';
   type Domain = 'Sprint' | 'Medio' | 'Largo';
 
@@ -487,4 +492,5 @@
   }
 
   saveButton.addEventListener('click', downloadProtocolImage);
+}
 </script>

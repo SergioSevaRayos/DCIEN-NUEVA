@@ -133,7 +133,7 @@ export function getSEO(page: string): SEOConfig {
       title: 'Blog | DCIEN',
       description: 'Cultura híbrida, CrossFit, Hyrox y streetwear premium de edición limitada. El blog de DCIEN.',
       keywords: 'blog dcien, crossfit, hyrox, streetwear premium, cultura híbrida, atletas híbridos',
-      ogImage: SITE_CONFIG.ogImage,
+      ogImage: '/images/brand/blog-og.webp',
       canonical: `${SITE_CONFIG.url}/blog`,
     },
 
@@ -141,7 +141,7 @@ export function getSEO(page: string): SEOConfig {
       title: 'Arsenal | Herramientas para Atletas Híbridos | DCIEN',
       description: 'El arsenal de herramientas DCIEN para atletas de CrossFit y Hyrox. Calculadoras, planificadores y recursos que se irán desbloqueando progresivamente.',
       keywords: 'arsenal dcien, herramientas crossfit, herramientas hyrox, calculadoras atletas híbridos, recursos entrenamiento',
-      ogImage: SITE_CONFIG.ogImage,
+      ogImage: '/images/brand/arsenal-og.webp',
       canonical: `${SITE_CONFIG.url}/arsenal`,
     },
   };
