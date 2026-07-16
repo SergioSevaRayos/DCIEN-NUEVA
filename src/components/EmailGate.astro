@@ -1,0 +1,111 @@
+---
+/**
+ * Envuelve el contenido de una herramienta de ARSENAL y lo oculta hasta que
+ * el visitante "paga" con su email. El desbloqueo se recuerda en localStorage
+ * por navegador (arsenal_unlocked_tools), sin necesidad de cuenta.
+ */
+interface Props {
+  toolSlug: string;
+  toolName: string;
+}
+
+const { toolSlug, toolName } = Astro.props;
+const apiUrl = import.meta.env.PUBLIC_API_URL;
+---
+
+<div class="relative">
+  <div id="email-gate-form" class="text-center py-16 border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.03] p-12">
+    <p class="text-2xl font-brand text-black dark:text-white mb-4 tracking-widest">
+      DESBLOQUEA {toolName.toUpperCase()}
+    </p>
+    <p class="text-xs text-black/50 dark:text-white/50 uppercase tracking-[0.2em] leading-relaxed mb-10">
+      El coste de esta herramienta es tu email. Sin cuenta, sin spam.
+    </p>
+
+    <form id="email-gate-submit" class="flex flex-col sm:flex-row gap-3 max-w-sm mx-auto">
+      <input
+        id="email-gate-input"
+        type="email"
+        required
+        placeholder="tu@email.com"
+        class="flex-1 bg-transparent border border-black/20 dark:border-white/20 px-4 py-3 text-sm text-black dark:text-white focus:outline-none focus:border-black dark:focus:border-white placeholder-black/30 dark:placeholder-white/30"
+      />
+      <button type="submit" class="btn-primary shrink-0">
+        Desbloquear
+      </button>
+    </form>
+  </div>
+
+  <div id="email-gate-content" class="hidden">
+    <slot />
+  </div>
+</div>
+
+<script define:vars={{ apiUrl, toolSlug }}>
+  const STORAGE_KEY = 'arsenal_unlocked_tools';
+
+  function getUnlockedTools() {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function addUnlockedTool(slug) {
+    try {
+      const unlocked = getUnlockedTools();
+      if (!unlocked.includes(slug)) {
+        unlocked.push(slug);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(unlocked));
+      }
+    } catch {
+      // localStorage no disponible (modo privado, cuota) — el gate simplemente
+      // volverá a pedir el email en la siguiente visita, no es crítico.
+    }
+  }
+
+  function reveal() {
+    document.getElementById('email-gate-form')?.classList.add('hidden');
+    document.getElementById('email-gate-content')?.classList.remove('hidden');
+  }
+
+  if (getUnlockedTools().includes(toolSlug)) {
+    reveal();
+  }
+
+  const form = document.getElementById('email-gate-submit');
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const emailInput = document.getElementById('email-gate-input');
+      const email = emailInput.value.trim();
+      if (!email) return;
+
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+
+      try {
+        const res = await fetch(`${apiUrl}/arsenal/subscribe-lead.php`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, tool_slug: toolSlug }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          addUnlockedTool(toolSlug);
+          reveal();
+          window.dispatchEvent(new CustomEvent('arsenal:unlocked', { detail: { toolSlug } }));
+        } else {
+          window.Toast?.fire({ icon: 'error', title: data.message || 'No se pudo procesar tu email' });
+        }
+      } catch {
+        window.Toast?.fire({ icon: 'error', title: 'Error al procesar tu email' });
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  }
+</script>

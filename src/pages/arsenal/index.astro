@@ -1,0 +1,111 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getSEO } from '../../lib/seo';
+import { arsenalTools } from '../../data/arsenal';
+
+const seo = getSEO('arsenal');
+const apiUrl = import.meta.env.PUBLIC_API_URL;
+---
+
+<BaseLayout seo={seo}>
+  <section class="pt-32 pb-24 transition-colors duration-500">
+    <div class="container-custom">
+      <div class="text-center mb-24 scroll-reveal">
+        <h1 class="font-brand text-6xl sm:text-7xl md:text-[9rem] tracking-[0.05em] md:tracking-[0.1em] leading-none text-black dark:text-white transition-colors">
+          ARSENAL
+        </h1>
+        <p class="text-[10px] md:text-xs uppercase tracking-[0.3em] md:tracking-[0.4em] text-black/50 dark:text-white/40 mt-6 font-bold">
+          HERRAMIENTAS PARA ATLETAS HÍBRIDOS
+        </p>
+      </div>
+
+      {arsenalTools.length === 0 ? (
+        <div class="text-center py-20 scroll-reveal max-w-xl mx-auto border border-black/10 dark:border-white/10 p-12 bg-black/[0.03] dark:bg-white/[0.03]">
+          <p class="text-2xl font-brand text-black dark:text-white mb-4 transition-colors tracking-widest">
+            PRÓXIMAMENTE
+          </p>
+          <p class="text-xs text-black/50 dark:text-white/50 uppercase tracking-[0.2em] leading-relaxed mb-10">
+            Estamos forjando la primera herramienta del arsenal.
+          </p>
+
+          <form id="arsenal-notify-form" class="flex flex-col sm:flex-row gap-3 max-w-sm mx-auto">
+            <input
+              id="arsenal-notify-email"
+              type="email"
+              required
+              placeholder="tu@email.com"
+              class="flex-1 bg-transparent border border-black/20 dark:border-white/20 px-4 py-3 text-sm text-black dark:text-white focus:outline-none focus:border-black dark:focus:border-white placeholder-black/30 dark:placeholder-white/30"
+            />
+            <button type="submit" class="btn-primary shrink-0">
+              Avísame
+            </button>
+          </form>
+          <p class="text-[9px] text-black/30 dark:text-white/30 uppercase tracking-[0.15em] mt-4">
+            Te escribimos una vez, cuando lancemos la primera herramienta.
+          </p>
+        </div>
+      ) : (
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10 max-w-7xl mx-auto">
+          {arsenalTools.map((tool) => (
+            <article class="scroll-reveal bg-black/[0.03] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 overflow-hidden group flex flex-col">
+              <a href={`/arsenal/${tool.slug}`} class="flex flex-col h-full">
+                {tool.image && (
+                  <div class="relative aspect-[16/9] bg-white dark:bg-[#0a0a0a] overflow-hidden">
+                    <img
+                      src={tool.image}
+                      alt={tool.name}
+                      class="w-full h-full object-cover grayscale-[30%] group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                    />
+                  </div>
+                )}
+                <div class="p-8 md:p-10 flex-grow flex flex-col">
+                  <h2 class="font-brand text-2xl text-black dark:text-white uppercase tracking-wider leading-tight mb-4">
+                    {tool.name}
+                  </h2>
+                  <p class="text-sm text-black/60 dark:text-white/60 leading-relaxed">
+                    {tool.description}
+                  </p>
+                </div>
+              </a>
+            </article>
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+</BaseLayout>
+
+<script define:vars={{ apiUrl }}>
+  const form = document.getElementById('arsenal-notify-form');
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const emailInput = document.getElementById('arsenal-notify-email');
+      const email = emailInput.value.trim();
+      if (!email) return;
+
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+
+      try {
+        const res = await fetch(`${apiUrl}/arsenal/subscribe-lead.php`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, tool_slug: 'general' }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          window.Toast?.fire({ icon: 'success', title: 'Te avisaremos en cuanto lancemos la primera herramienta' });
+          emailInput.value = '';
+        } else {
+          window.Toast?.fire({ icon: 'error', title: data.message || 'No se pudo procesar tu email' });
+        }
+      } catch {
+        window.Toast?.fire({ icon: 'error', title: 'Error al procesar tu email' });
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  }
+</script>

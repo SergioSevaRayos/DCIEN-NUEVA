@@ -184,6 +184,17 @@ CREATE TABLE series_priority_users (
   UNIQUE KEY (series_slug, user_id)
 );
 
+-- Leads de ARSENAL (captura de email sin cuenta, desbloqueo de herramientas vía localStorage)
+-- tool_slug NUNCA debe ser NULL: MySQL no compara NULL=NULL en UNIQUE KEY, así que
+-- dedupar por (email, tool_slug) requiere el default 'general' en vez de nullable.
+CREATE TABLE arsenal_leads (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  email VARCHAR(255) NOT NULL,
+  tool_slug VARCHAR(100) NOT NULL DEFAULT 'general',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY (email, tool_slug)
+);
+
 -- Columna gender en series (necesaria para list.php)
 ALTER TABLE series ADD COLUMN gender ENUM('male','female','unisex') DEFAULT 'unisex';
 ```
@@ -265,6 +276,8 @@ healthDisclaimer: true         # true si el artículo da consejo de salud/entren
 - Cierre honesto con enlace interno a `/marca` y/o series concretas de `/series-activas` — sin forzar la conexión si el tema no encaja de verdad con el producto (streetwear, no equipo técnico de entrenamiento).
 - `healthDisclaimer: true` en cualquier artículo con consejo de salud, lesiones, nutrición o entrenamiento — el aviso se renderiza solo, no hay que escribirlo a mano en el markdown.
 - Nunca copiar contenido de otras webs — investigar para validar el tema/estructura, pero redactar siempre en prosa 100% original.
+
+**Estructura de URLs — sin silos por ahora:** las URLs se quedan planas en `/blog/{slug}`, sin subcarpetas por categoría (`/blog/hyrox/...`, `/blog/nutricion/...`). Decisión deliberada: la estructura de silos solo aporta señal SEO real cuando hay volumen suficiente por temática (referencia habitual: 15+ artículos por silo); con pocos artículos es arquitectura prematura, y cambiar la URL de un post ya publicado obliga a redirección 301 y arriesga el posicionamiento que ya tenga sin beneficio real a cambio. En su lugar: reforzar el enlazado interno entre artículos de la misma temática (ver `pacing-crossfit-hyrox.md` enlazando a `hyrox-principiantes-espana.md` como ejemplo) — aporta la mayoría del beneficio de un silo sin tocar URLs. Revisar esta decisión cuando haya masa crítica de contenido por tema.
 
 **Lo que ya se genera solo (no tocar nada más al añadir un artículo):**
 - Página de detalle (`/blog/{slug}`) y su entrada en el listado (`/blog`).

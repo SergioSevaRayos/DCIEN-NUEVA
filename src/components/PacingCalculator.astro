@@ -1,0 +1,371 @@
+---
+/**
+ * Calculadora de pacing: dado un volumen total (distancia o calorías) y un
+ * tiempo objetivo, devuelve los splits acumulados necesarios para sostener
+ * el ritmo. Cálculo 100% cliente, sin llamadas a backend.
+ */
+---
+
+<div>
+  <!-- Explicación: qué es y cómo se usa -->
+  <div class="border border-black/5 dark:border-white/5 bg-black/[0.03] dark:bg-white/[0.03] p-8 md:p-10 mb-8">
+    <p class="text-[10px] uppercase tracking-[0.3em] text-black/40 dark:text-white/40 font-bold mb-4">Cómo funciona</p>
+    <p class="text-sm text-black/70 dark:text-white/60 leading-relaxed mb-6">
+      Salir demasiado rápido te pasa factura antes del final; salir demasiado suave te deja tiempo sobre la mesa.
+      Esta calculadora reparte tu objetivo en tramos iguales para que sepas, reloj en mano, si vas dentro de ritmo.
+    </p>
+    <ol class="space-y-3 text-xs text-black/60 dark:text-white/50">
+      <li class="flex gap-3">
+        <span class="font-mono text-black/30 dark:text-white/30 shrink-0">01</span>
+        <span>Elige la máquina y si vas a medir por <strong class="text-black dark:text-white">distancia</strong> o por <strong class="text-black dark:text-white">calorías</strong>.</span>
+      </li>
+      <li class="flex gap-3">
+        <span class="font-mono text-black/30 dark:text-white/30 shrink-0">02</span>
+        <span>Indica el volumen total del WOD y el tiempo en el que quieres completarlo.</span>
+      </li>
+      <li class="flex gap-3">
+        <span class="font-mono text-black/30 dark:text-white/30 shrink-0">03</span>
+        <span>Pulsa <strong class="text-black dark:text-white">Calcular</strong>: obtienes una tabla con el crono que debe marcar cada tramo. Si vas más lento que esa cifra, aprieta; si vas más rápido, ya sabes que hay margen.</span>
+      </li>
+    </ol>
+  </div>
+
+  <div class="bg-black/[0.03] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 p-8 md:p-12">
+    <form id="pacing-form" class="space-y-8">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div>
+          <label for="pacing-machine" class="block text-[10px] uppercase tracking-[0.2em] font-bold text-black/50 dark:text-white/50 mb-1">
+            Modalidad
+          </label>
+          <p class="text-[11px] text-black/40 dark:text-white/40 mb-2">¿En qué máquina vas a hacer el WOD?</p>
+          <select
+            id="pacing-machine"
+            class="w-full bg-white dark:bg-zinc-900 [color-scheme:light] dark:[color-scheme:dark] border border-black/20 dark:border-white/20 px-4 py-3 text-sm text-black dark:text-white focus:outline-none focus:border-black dark:focus:border-white"
+          >
+            <option value="run">Carrera</option>
+            <option value="row">Remo</option>
+            <option value="ski">SkiErg</option>
+            <option value="bike">Echo Bike</option>
+          </select>
+        </div>
+        <div>
+          <label for="pacing-unit" class="block text-[10px] uppercase tracking-[0.2em] font-bold text-black/50 dark:text-white/50 mb-1">
+            Unidad de volumen
+          </label>
+          <p class="text-[11px] text-black/40 dark:text-white/40 mb-2">¿Cómo mide tu WOD el trabajo?</p>
+          <select
+            id="pacing-unit"
+            class="w-full bg-white dark:bg-zinc-900 [color-scheme:light] dark:[color-scheme:dark] border border-black/20 dark:border-white/20 px-4 py-3 text-sm text-black dark:text-white focus:outline-none focus:border-black dark:focus:border-white disabled:opacity-40"
+          >
+            <option value="distance">Distancia (m)</option>
+            <option value="calories">Calorías</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div>
+          <label id="pacing-volume-label" for="pacing-volume" class="block text-[10px] uppercase tracking-[0.2em] font-bold text-black/50 dark:text-white/50 mb-1">
+            Distancia total (m)
+          </label>
+          <p id="pacing-volume-hint" class="text-[11px] text-black/40 dark:text-white/40 mb-2">El volumen total que marca el WOD, ej. 2000m.</p>
+          <input
+            id="pacing-volume"
+            type="number"
+            min="1"
+            step="1"
+            required
+            placeholder="2000"
+            class="w-full bg-transparent border border-black/20 dark:border-white/20 px-4 py-3 text-sm font-mono text-black dark:text-white focus:outline-none focus:border-black dark:focus:border-white placeholder-black/30 dark:placeholder-white/30"
+          />
+        </div>
+        <div>
+          <label class="block text-[10px] uppercase tracking-[0.2em] font-bold text-black/50 dark:text-white/50 mb-1">
+            Tiempo objetivo
+          </label>
+          <p class="text-[11px] text-black/40 dark:text-white/40 mb-2">¿En cuánto quieres completarlo? (minutos y segundos)</p>
+          <div class="flex gap-3">
+            <input
+              id="pacing-min"
+              type="number"
+              min="0"
+              step="1"
+              required
+              placeholder="MM"
+              aria-label="Minutos"
+              class="w-full bg-transparent border border-black/20 dark:border-white/20 px-4 py-3 text-sm font-mono text-black dark:text-white focus:outline-none focus:border-black dark:focus:border-white placeholder-black/30 dark:placeholder-white/30"
+            />
+            <input
+              id="pacing-sec"
+              type="number"
+              min="0"
+              max="59"
+              step="1"
+              required
+              placeholder="SS"
+              aria-label="Segundos"
+              class="w-full bg-transparent border border-black/20 dark:border-white/20 px-4 py-3 text-sm font-mono text-black dark:text-white focus:outline-none focus:border-black dark:focus:border-white placeholder-black/30 dark:placeholder-white/30"
+            />
+          </div>
+        </div>
+      </div>
+
+      <p id="pacing-error" class="hidden text-[10px] text-red-500 uppercase tracking-widest"></p>
+
+      <button type="submit" class="btn-primary w-full">
+        Calcular mis splits
+      </button>
+    </form>
+
+    <div id="pacing-results" class="hidden mt-12 pt-10 border-t border-black/10 dark:border-white/10">
+      <div class="flex items-start justify-between gap-4 mb-1">
+        <p class="text-[10px] uppercase tracking-[0.3em] text-black/40 dark:text-white/40">Ritmo objetivo</p>
+        <button
+          id="pacing-save"
+          type="button"
+          class="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold text-black/40 hover:text-black dark:text-white/40 dark:hover:text-white transition-colors shrink-0"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M12 15V3M7 10l5 5 5-5"/></svg>
+          Guardar
+        </button>
+      </div>
+      <p id="pacing-summary" class="font-mono text-2xl font-bold text-black dark:text-white mb-2"></p>
+      <p class="text-xs text-black/50 dark:text-white/50 leading-relaxed mb-8">
+        Ese es el ritmo a mantener por tramo. Abajo tienes el desglose completo: a qué hora del crono debe llegar cada tramo.
+      </p>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-black/10 dark:border-white/10">
+              <th class="py-3 pr-4 text-[9px] uppercase tracking-[0.2em] text-black/40 dark:text-white/40 font-bold">Tramo</th>
+              <th class="py-3 pr-4 text-[9px] uppercase tracking-[0.2em] text-black/40 dark:text-white/40 font-bold">Acumulado</th>
+              <th class="py-3 pr-4 text-[9px] uppercase tracking-[0.2em] text-black/40 dark:text-white/40 font-bold">Crono al llegar</th>
+              <th class="py-3 text-[9px] uppercase tracking-[0.2em] text-black/40 dark:text-white/40 font-bold">Dura este tramo</th>
+            </tr>
+          </thead>
+          <tbody id="pacing-splits-body" class="font-mono text-sm text-black/80 dark:text-white/80"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const machineSelect = document.getElementById('pacing-machine') as HTMLSelectElement;
+  const unitSelect = document.getElementById('pacing-unit') as HTMLSelectElement;
+  const volumeInput = document.getElementById('pacing-volume') as HTMLInputElement;
+  const volumeLabel = document.getElementById('pacing-volume-label') as HTMLLabelElement;
+  const volumeHint = document.getElementById('pacing-volume-hint') as HTMLParagraphElement;
+  const minInput = document.getElementById('pacing-min') as HTMLInputElement;
+  const secInput = document.getElementById('pacing-sec') as HTMLInputElement;
+  const form = document.getElementById('pacing-form') as HTMLFormElement;
+  const errorEl = document.getElementById('pacing-error') as HTMLParagraphElement;
+  const resultsEl = document.getElementById('pacing-results') as HTMLDivElement;
+  const summaryEl = document.getElementById('pacing-summary') as HTMLParagraphElement;
+  const splitsBody = document.getElementById('pacing-splits-body') as HTMLTableSectionElement;
+  const saveButton = document.getElementById('pacing-save') as HTMLButtonElement;
+
+  const MACHINE_LABELS: Record<string, string> = {
+    run: 'Carrera',
+    row: 'Remo',
+    ski: 'SkiErg',
+    bike: 'Echo Bike',
+  };
+
+  type SplitRow = { tramo: number; acc: number; accTime: number; splitTime: number };
+  let lastResult: { machine: string; unitLabel: string; volume: number; targetSeconds: number; summary: string; rows: SplitRow[] } | null = null;
+
+  function updateVolumeLabel() {
+    const isCalories = unitSelect.value === 'calories';
+    volumeLabel.textContent = isCalories ? 'Calorías totales' : 'Distancia total (m)';
+    volumeHint.textContent = isCalories
+      ? 'Las calorías totales que marca el WOD, ej. 50cal.'
+      : 'El volumen total que marca el WOD, ej. 2000m.';
+    volumeInput.placeholder = isCalories ? '50' : '2000';
+  }
+
+  function syncUnitAvailability() {
+    if (machineSelect.value === 'run') {
+      unitSelect.value = 'distance';
+      unitSelect.disabled = true;
+    } else {
+      unitSelect.disabled = false;
+    }
+    updateVolumeLabel();
+  }
+
+  machineSelect.addEventListener('change', syncUnitAvailability);
+  unitSelect.addEventListener('change', updateVolumeLabel);
+  syncUnitAvailability();
+
+  function formatTime(totalSeconds: number): string {
+    const m = Math.floor(totalSeconds / 60);
+    const s = Math.round(totalSeconds - m * 60);
+    return `${m}:${String(s).padStart(2, '0')}`;
+  }
+
+  function getSplitSize(machine: string, unit: string): number {
+    if (unit === 'calories') return 10;
+    return machine === 'run' ? 400 : 500;
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    errorEl.classList.add('hidden');
+
+    const machine = machineSelect.value;
+    const unit = unitSelect.value;
+    const volume = parseFloat(volumeInput.value);
+    const min = parseInt(minInput.value || '0', 10);
+    const sec = parseInt(secInput.value || '0', 10);
+    const targetSeconds = min * 60 + sec;
+
+    if (!volume || volume <= 0 || targetSeconds <= 0) {
+      errorEl.textContent = 'Introduce un volumen y un tiempo objetivo válidos.';
+      errorEl.classList.remove('hidden');
+      resultsEl.classList.add('hidden');
+      return;
+    }
+
+    const splitSize = getSplitSize(machine, unit);
+    const timePerUnit = targetSeconds / volume;
+    const numSplits = Math.ceil(volume / splitSize);
+
+    let prevTime = 0;
+    const rows: { tramo: number; acc: number; accTime: number; splitTime: number }[] = [];
+    for (let i = 1; i <= numSplits; i++) {
+      const acc = Math.min(i * splitSize, volume);
+      const accTime = acc * timePerUnit;
+      rows.push({ tramo: i, acc, accTime, splitTime: accTime - prevTime });
+      prevTime = accTime;
+    }
+
+    const unitLabel = unit === 'calories' ? 'cal' : 'm';
+    splitsBody.innerHTML = rows
+      .map(
+        (r) => `
+      <tr class="border-b border-black/5 dark:border-white/5">
+        <td class="py-3 pr-4">${r.tramo}</td>
+        <td class="py-3 pr-4">${r.acc}${unitLabel}</td>
+        <td class="py-3 pr-4">${formatTime(r.accTime)}</td>
+        <td class="py-3">${formatTime(r.splitTime)}</td>
+      </tr>
+    `
+      )
+      .join('');
+
+    const summary = `${formatTime(splitSize * timePerUnit)} / ${splitSize}${unitLabel}`;
+    summaryEl.textContent = summary;
+    resultsEl.classList.remove('hidden');
+
+    lastResult = { machine, unitLabel, volume, targetSeconds, summary, rows };
+  });
+
+  function loadImage(src: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+
+  async function downloadPacingImage() {
+    if (!lastResult) return;
+    saveButton.disabled = true;
+
+    try {
+      await document.fonts.ready;
+      const logo = await loadImage('/images/brand/logo.png').catch(() => null);
+
+      // Formato retrato, ancho de pantalla móvil — pensado para guardar/compartir desde el teléfono.
+      const width = 750;
+      const margin = 40;
+      const rowHeight = 44;
+      const tableTop = 300;
+      const height = tableTop + 50 + lastResult.rows.length * rowHeight + 160;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Fondo negro DCIEN
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(0, 0, width, height);
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.strokeRect(20.5, 20.5, width - 41, height - 41);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = '700 12px monospace';
+      ctx.fillText('ARSENAL · DCIEN', margin, 60);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '44px "Bebas Neue"';
+      ctx.fillText('CALCULADORA DE PACING', margin, 118);
+
+      const machineLabel = MACHINE_LABELS[lastResult.machine] ?? lastResult.machine;
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.font = '15px sans-serif';
+      ctx.fillText(
+        `${machineLabel} · ${lastResult.volume}${lastResult.unitLabel} en ${formatTime(lastResult.targetSeconds)}`,
+        margin,
+        146
+      );
+
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = '700 12px sans-serif';
+      ctx.fillText('RITMO OBJETIVO', margin, 204);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '700 42px monospace';
+      ctx.fillText(lastResult.summary, margin, 250);
+
+      // Tabla
+      const cols = [margin, margin + 130, margin + 290, margin + 480];
+      let y = tableTop;
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = '700 11px sans-serif';
+      ['TRAMO', 'ACUM.', 'CRONO', 'SPLIT'].forEach((h, i) => ctx.fillText(h, cols[i], y));
+
+      y += 16;
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+      ctx.beginPath();
+      ctx.moveTo(margin, y);
+      ctx.lineTo(width - margin, y);
+      ctx.stroke();
+
+      y += 36;
+      ctx.font = '17px monospace';
+      lastResult.rows.forEach((r) => {
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.fillText(String(r.tramo), cols[0], y);
+        ctx.fillText(`${r.acc}${lastResult!.unitLabel}`, cols[1], y);
+        ctx.fillText(formatTime(r.accTime), cols[2], y);
+        ctx.fillText(formatTime(r.splitTime), cols[3], y);
+        y += rowHeight;
+      });
+
+      // Logotipo en la esquina inferior derecha
+      if (logo) {
+        const logoW = 110;
+        const logoH = logoW * (logo.height / logo.width);
+        ctx.drawImage(logo, width - logoW - margin, height - logoH - margin, logoW, logoH);
+      }
+
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.font = '12px sans-serif';
+      ctx.fillText('d-cien.es/arsenal', margin, height - margin);
+
+      const link = document.createElement('a');
+      link.download = `dcien-pacing-${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } finally {
+      saveButton.disabled = false;
+    }
+  }
+
+  saveButton.addEventListener('click', downloadPacingImage);
+</script>

@@ -136,6 +136,14 @@ export function getSEO(page: string): SEOConfig {
       ogImage: SITE_CONFIG.ogImage,
       canonical: `${SITE_CONFIG.url}/blog`,
     },
+
+    arsenal: {
+      title: 'Arsenal | Herramientas para Atletas Híbridos | DCIEN',
+      description: 'El arsenal de herramientas DCIEN para atletas de CrossFit y Hyrox. Calculadoras, planificadores y recursos que se irán desbloqueando progresivamente.',
+      keywords: 'arsenal dcien, herramientas crossfit, herramientas hyrox, calculadoras atletas híbridos, recursos entrenamiento',
+      ogImage: SITE_CONFIG.ogImage,
+      canonical: `${SITE_CONFIG.url}/arsenal`,
+    },
   };
 
   return pages[page] || pages.home;
@@ -192,6 +200,30 @@ export function getBlogPostSEO(
     publishDate: publishDate?.toISOString(),
     modifiedDate: (updatedDate ?? publishDate)?.toISOString(),
     authorName,
+  };
+}
+
+// ============================================
+// SEO PARA HERRAMIENTAS DE ARSENAL
+// ============================================
+
+export function getArsenalToolSEO(
+  name: string,
+  description: string,
+  slug: string,
+  keywords: string,
+  image?: string
+): SEOConfig {
+  const ogImage = image
+    ? (image.startsWith('http') ? image : `${SITE_CONFIG.url}${image}`)
+    : SITE_CONFIG.ogImage;
+
+  return {
+    title: `${name} | Arsenal DCIEN`,
+    description,
+    keywords,
+    ogImage,
+    canonical: `${SITE_CONFIG.url}/arsenal/${slug}`,
   };
 }
 

@@ -1,0 +1,490 @@
+---
+/**
+ * Motor de Protocolos: filtra un registro local de WODs por enfoque físico
+ * y dominio de tiempo, y devuelve una coincidencia (aleatoria si hay varias).
+ * Cálculo 100% cliente, sin llamadas a backend.
+ */
+---
+
+<div>
+  <!-- Explicación: qué es y cómo se usa -->
+  <div class="border border-black/5 dark:border-white/5 bg-black/[0.03] dark:bg-white/[0.03] p-8 md:p-10 mb-8">
+    <p class="text-[10px] uppercase tracking-[0.3em] text-black/40 dark:text-white/40 font-bold mb-4">Cómo funciona</p>
+    <p class="text-sm text-black/70 dark:text-white/60 leading-relaxed mb-6">
+      Nada de generador aleatorio sin criterio. Cada protocolo de este motor está registrado para un enfoque físico
+      y un dominio de tiempo concretos — filtra, inicializa, ejecuta.
+    </p>
+    <ol class="space-y-3 text-xs text-black/60 dark:text-white/50">
+      <li class="flex gap-3">
+        <span class="font-mono text-black/30 dark:text-white/30 shrink-0">01</span>
+        <span>Elige tu <strong class="text-black dark:text-white">enfoque físico</strong>: Fuerza, Stamina, Motor o Híbrido.</span>
+      </li>
+      <li class="flex gap-3">
+        <span class="font-mono text-black/30 dark:text-white/30 shrink-0">02</span>
+        <span>Elige el <strong class="text-black dark:text-white">dominio de tiempo</strong>: Sprint, Medio o Largo.</span>
+      </li>
+      <li class="flex gap-3">
+        <span class="font-mono text-black/30 dark:text-white/30 shrink-0">03</span>
+        <span>Pulsa <strong class="text-black dark:text-white">Inicializar Protocolo</strong>: el sistema busca en el registro y devuelve una coincidencia — o te avisa si ese cruce todavía no tiene protocolo asignado.</span>
+      </li>
+    </ol>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 mt-8 pt-6 border-t border-black/5 dark:border-white/5 text-xs text-black/50 dark:text-white/40 leading-relaxed">
+      <p><strong class="text-black dark:text-white">Fuerza</strong> — cargas pesadas, pocas repeticiones. Barra pura, sin cardio.</p>
+      <p><strong class="text-black dark:text-white">Stamina</strong> — resistencia sostenida. Cardio a ritmo constante, sin cortes.</p>
+      <p><strong class="text-black dark:text-white">Motor</strong> — capacidad de trabajo a intervalos. Máquinas a alta intensidad, descansos cortos.</p>
+      <p><strong class="text-black dark:text-white">Híbrido</strong> — fuerza y cardio en el mismo bloque. El terreno de Hyrox.</p>
+    </div>
+  </div>
+
+  <div class="bg-black/[0.03] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 p-8 md:p-12">
+    <form id="protocol-form" class="space-y-8">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div>
+          <label for="protocol-focus" class="block text-[10px] uppercase tracking-[0.2em] font-bold text-black/50 dark:text-white/50 mb-1">
+            Enfoque
+          </label>
+          <p class="text-[11px] text-black/40 dark:text-white/40 mb-2">¿Qué capacidad física quieres atacar?</p>
+          <select
+            id="protocol-focus"
+            class="w-full bg-white dark:bg-zinc-900 [color-scheme:light] dark:[color-scheme:dark] border border-black/20 dark:border-white/20 px-4 py-3 text-sm text-black dark:text-white focus:outline-none focus:border-black dark:focus:border-white"
+          >
+            <option value="Fuerza">Fuerza</option>
+            <option value="Stamina">Stamina</option>
+            <option value="Motor">Motor</option>
+            <option value="Híbrido">Híbrido</option>
+          </select>
+        </div>
+        <div>
+          <label for="protocol-domain" class="block text-[10px] uppercase tracking-[0.2em] font-bold text-black/50 dark:text-white/50 mb-1">
+            Dominio de tiempo
+          </label>
+          <p class="text-[11px] text-black/40 dark:text-white/40 mb-2">¿Cuánto quieres que dure el protocolo?</p>
+          <select
+            id="protocol-domain"
+            class="w-full bg-white dark:bg-zinc-900 [color-scheme:light] dark:[color-scheme:dark] border border-black/20 dark:border-white/20 px-4 py-3 text-sm text-black dark:text-white focus:outline-none focus:border-black dark:focus:border-white"
+          >
+            <option value="Sprint">Sprint (&lt;10min)</option>
+            <option value="Medio">Medio (10-20min)</option>
+            <option value="Largo">Largo (20min+)</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-primary w-full">
+        Inicializar Protocolo
+      </button>
+    </form>
+
+    <!-- Pantalla de terminal -->
+    <div class="mt-10 bg-white dark:bg-black border border-black/10 dark:border-white/10 font-mono">
+      <div class="flex items-center justify-between gap-4 px-4 py-2.5 border-b border-black/10 dark:border-white/10">
+        <span class="text-[10px] uppercase tracking-[0.2em] text-black/40 dark:text-white/40">protocol://system</span>
+        <div class="flex items-center gap-4">
+          <button
+            id="protocol-regenerate"
+            type="button"
+            class="hidden items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold text-black/40 hover:text-black dark:text-white/40 dark:hover:text-white transition-colors shrink-0"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M4 4v6h6M20 20v-6h-6M4.5 15a8 8 0 0014.5 3.5M19.5 9a8 8 0 00-14.5-3.5"/></svg>
+            Regenerar
+          </button>
+          <button
+            id="protocol-save"
+            type="button"
+            class="hidden items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold text-black/40 hover:text-black dark:text-white/40 dark:hover:text-white transition-colors shrink-0"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M12 15V3M7 10l5 5 5-5"/></svg>
+            Guardar
+          </button>
+        </div>
+      </div>
+      <pre id="protocol-output" class="p-6 md:p-8 min-h-[180px] text-[13px] md:text-sm leading-relaxed whitespace-pre-wrap text-black/90 dark:text-white/90 m-0">ESPERANDO PARÁMETROS...</pre>
+    </div>
+
+    <div id="protocol-glossary" class="hidden mt-6 pt-6 border-t border-black/5 dark:border-white/5">
+      <p class="text-[10px] uppercase tracking-[0.3em] text-black/40 dark:text-white/40 font-bold mb-4">Qué es cada movimiento</p>
+      <div id="protocol-glossary-list" class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-xs text-black/50 dark:text-white/40 leading-relaxed"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  type Focus = 'Fuerza' | 'Stamina' | 'Motor' | 'Híbrido';
+  type Domain = 'Sprint' | 'Medio' | 'Largo';
+
+  interface Workout {
+    id: number;
+    title: string;
+    focus: Focus;
+    time_domain: Domain;
+    workout_text: string;
+    moves: string[];
+  }
+
+  interface Move {
+    name: string;
+    line: (seed: number) => string;
+  }
+  type FormatGen = (lines: string[], seed: number) => string;
+
+  function cycle<T>(pool: T[], seed: number): T {
+    return pool[((seed % pool.length) + pool.length) % pool.length];
+  }
+
+  // ── Glosario: qué es cada movimiento, independiente del enfoque en el que aparezca ──
+  const GLOSSARY: Record<string, string> = {
+    'Sentadilla trasera': 'Sentadilla con la barra apoyada en la espalda alta (back squat). El movimiento base de fuerza en tren inferior.',
+    'Peso muerto': 'Levantar la barra del suelo hasta la cadera con la espalda neutra (deadlift). Fuerza de cadena posterior.',
+    'Press militar estricto': 'Empujar la barra desde los hombros hasta la extensión completa de brazos, de pie y sin impulso de piernas.',
+    'Cargada de fuerza': 'Levantar la barra del suelo hasta los hombros en un solo movimiento explosivo (power clean), recibiéndola en cuarto de sentadilla.',
+    'Push press': 'Press con un pequeño impulso de piernas para ayudar a subir la barra por encima de la cabeza.',
+    'Fondos en paralelas': 'Flexión de brazos en paralelas: bajar el cuerpo entre dos barras y empujar hasta la extensión completa.',
+    'Dominadas estrictas': 'Tracción vertical desde la barra hasta que la barbilla la supera, sin impulso de piernas ni balanceo.',
+    'Sentadilla frontal': 'Sentadilla con la barra apoyada en la parte frontal de los hombros (front squat). Exige más movilidad de muñeca y torso erguido.',
+    'Carrera': 'Desplazamiento corriendo a ritmo controlado — la base de todo dominio de resistencia.',
+    'Remo': 'Máquina de remo (rower): tracción de piernas, cadera y brazos en cada palada.',
+    'SkiErg': 'Máquina de esquí de fondo vertical: tracción de todo el tren superior y core, con apenas trabajo de piernas.',
+    'Burpees': 'Tumbarte con el pecho al suelo, ponerte de pie y saltar. El movimiento de acondicionamiento más exigente.',
+    'Kettlebell swings': 'Balanceo de la kettlebell desde entre las piernas hasta la altura del pecho, con impulso de cadera, no de brazos.',
+    'Echo Bike': 'Bicicleta de aire: la resistencia sube con la velocidad — cuanto más fuerte pedaleas, más cuesta.',
+    'Double unders': 'Saltos de comba en los que la cuerda pasa dos veces bajo los pies en cada salto.',
+    'Box jump overs': 'Saltar sobre un cajón y bajar por el otro lado, en vez de volver a bajar por donde subiste.',
+    'Wall balls': 'Lanzar un balón medicinal contra una diana en la pared, acompañando el lanzamiento con una sentadilla completa.',
+    'Thrusters': 'Sentadilla frontal seguida de push press en un único movimiento continuo, con barra o mancuernas.',
+    'Sentadilla con barra': 'Sentadilla con la barra cargada, con o sin desplazamiento posterior — el tren inferior soporta el peso combinado.',
+    'Burpees sobre la barra': 'Burpee seguido de un salto lateral por encima de la barra apoyada en el suelo.',
+  };
+
+  // ── Movimientos por enfoque: cada línea ya trae su rango de reps/carga plausible ──
+  const MOVE_POOLS: Record<Focus, Move[]> = {
+    Fuerza: [
+      { name: 'Sentadilla trasera', line: (s) => `${cycle([3, 3, 5, 5, 2], s)} Sentadilla trasera (${cycle(['85%', '80%', '75%'], s)} 1RM)` },
+      { name: 'Peso muerto', line: (s) => `${cycle([5, 5, 3, 3, 1], s)} Peso muerto (${cycle(['85%', '80%', '75%'], s)} 1RM)` },
+      { name: 'Press militar estricto', line: (s) => `${cycle([5, 8, 6, 10, 4], s)} Press militar estricto` },
+      { name: 'Cargada de fuerza', line: (s) => `${cycle([3, 3, 2, 5, 4], s)} Cargada de fuerza (${cycle(['80%', '75%', '70%'], s)} 1RM)` },
+      { name: 'Push press', line: (s) => `${cycle([3, 5, 4, 6, 2], s)} Push press (${cycle(['75%', '70%', '65%'], s)} 1RM)` },
+      { name: 'Fondos en paralelas', line: (s) => `${cycle([5, 8, 6, 4, 10], s)} Fondos en paralelas` },
+      { name: 'Dominadas estrictas', line: (s) => `${cycle([8, 10, 6, 12, 5], s)} Dominadas estrictas` },
+      { name: 'Sentadilla frontal', line: (s) => `${cycle([4, 5, 3, 6, 2], s)} Sentadilla frontal (${cycle(['80%', '75%', '70%'], s)} 1RM)` },
+    ],
+    Stamina: [
+      { name: 'Carrera', line: (s) => `${cycle([400, 500, 600, 800, 300], s)}m Carrera` },
+      { name: 'Remo', line: (s) => `${cycle([500, 400, 600, 750, 300], s)}m Remo` },
+      { name: 'SkiErg', line: (s) => `${cycle([500, 400, 600, 300, 750], s)}m SkiErg` },
+      { name: 'Burpees', line: (s) => `${cycle([15, 12, 18, 10, 20], s)} Burpees` },
+      { name: 'Kettlebell swings', line: (s) => `${cycle([15, 20, 12, 18, 10], s)} Kettlebell swings (${cycle(['24/16kg', '20/14kg'], s)})` },
+    ],
+    Motor: [
+      { name: 'Echo Bike', line: (s) => `${cycle([12, 15, 10, 18, 9], s)}/${cycle([10, 12, 8, 15, 7], s)} Cal Echo Bike` },
+      { name: 'Remo', line: (s) => `${cycle([12, 15, 10, 18, 9], s)}/${cycle([10, 12, 8, 15, 7], s)} Cal Remo` },
+      { name: 'SkiErg', line: (s) => `${cycle([12, 15, 10, 18, 9], s)}/${cycle([10, 12, 8, 15, 7], s)} Cal SkiErg` },
+      { name: 'Burpees', line: (s) => `${cycle([10, 12, 15, 8, 20], s)} Burpees` },
+      { name: 'Double unders', line: (s) => `${cycle([20, 25, 30, 15, 40], s)} Double unders` },
+      { name: 'Box jump overs', line: (s) => `${cycle([8, 10, 12, 6, 15], s)} Box jump overs (${cycle(['60cm', '50cm'], s)})` },
+      { name: 'Wall balls', line: (s) => `${cycle([10, 12, 15, 8, 20], s)} Wall balls (${cycle(['9/6kg', '7/5kg'], s)})` },
+    ],
+    Híbrido: [
+      { name: 'Thrusters', line: (s) => `${cycle([10, 8, 12, 6, 15], s)} Thrusters (${cycle(['40/30kg', '35/25kg'], s)})` },
+      { name: 'Wall balls', line: (s) => `${cycle([15, 12, 20, 10, 18], s)} Wall balls (${cycle(['9/6kg', '7/5kg'], s)})` },
+      { name: 'Kettlebell swings', line: (s) => `${cycle([15, 20, 12, 18, 10], s)} Kettlebell swings (${cycle(['24/16kg', '20/14kg'], s)})` },
+      { name: 'Push press', line: (s) => `${cycle([6, 8, 5, 10, 4], s)} Push press (${cycle(['40/30kg', '35/25kg'], s)})` },
+      { name: 'Sentadilla con barra', line: (s) => `${cycle([8, 10, 6, 12, 5], s)} Sentadilla con barra (${cycle(['40/30kg', '35/25kg'], s)})` },
+      { name: 'Peso muerto', line: (s) => `${cycle([5, 6, 4, 8, 3], s)} Peso muerto (${cycle(['60/40kg', '50/35kg'], s)})` },
+      { name: 'Burpees sobre la barra', line: (s) => `${cycle([8, 10, 6, 12, 5], s)} Burpees sobre la barra` },
+      { name: 'Carrera', line: (s) => `${cycle([200, 250, 150, 300, 100], s)}m Carrera` },
+    ],
+  };
+
+  // ── Estructura por dominio de tiempo ──
+  const FORMAT_POOLS: Record<Domain, FormatGen[]> = {
+    Sprint: [
+      (lines, s) => `${cycle([3, 4, 5], s)} RONDAS POR TIEMPO:\n${lines.join('\n')}`,
+      (lines, s) => `AMRAP ${cycle([6, 7, 8, 9], s)}':\n${lines.join('\n')}`,
+      (lines, s) => `EMOM ${cycle([6, 8, 9], s)}':\n${lines.map((l, i) => `MIN ${i + 1} — ${l}`).join('\n')}`,
+    ],
+    Medio: [
+      (lines, s) => `AMRAP ${cycle([12, 14, 16, 18], s)}':\n${lines.join('\n')}`,
+      (lines, s) => `${cycle([5, 6, 7], s)} RONDAS POR TIEMPO:\n${lines.join('\n')}`,
+      (lines, s) => `EMOM ${cycle([12, 15, 16, 18], s)}':\n${lines.map((l, i) => `MIN ${(i % lines.length) + 1} — ${l}`).join('\n')}`,
+    ],
+    Largo: [
+      (lines, s) => `POR TIEMPO (cap ${cycle([25, 28, 30], s)}'):\n${lines.join('\n')}`,
+      (lines, s) => `AMRAP ${cycle([20, 22, 25], s)}':\n${lines.join('\n')}`,
+      (lines, s) => `${cycle([6, 7, 8], s)} RONDAS POR TIEMPO:\n${lines.join('\n')}`,
+    ],
+  };
+
+  const VARIANTS_PER_COMBO = 50;
+
+  function buildVariant(focus: Focus, domain: Domain, i: number): { text: string; moves: string[] } {
+    const movePool = MOVE_POOLS[focus];
+    const formatPool = FORMAT_POOLS[domain];
+    const format = formatPool[i % formatPool.length];
+    const numLines = 3 + (i % 2);
+    const offset = (i * 3) % movePool.length;
+    const lines: string[] = [];
+    const moves: string[] = [];
+    for (let k = 0; k < numLines; k++) {
+      const move = movePool[(offset + k) % movePool.length];
+      lines.push(move.line(i + k * 7));
+      if (!moves.includes(move.name)) moves.push(move.name);
+    }
+    return { text: format(lines, i), moves };
+  }
+
+  function buildRegistry(): Workout[] {
+    const foci: Focus[] = ['Fuerza', 'Stamina', 'Motor', 'Híbrido'];
+    const domains: Domain[] = ['Sprint', 'Medio', 'Largo'];
+    const registry: Workout[] = [];
+    let id = 1;
+    for (const focus of foci) {
+      for (const domain of domains) {
+        for (let i = 0; i < VARIANTS_PER_COMBO; i++) {
+          const { text, moves } = buildVariant(focus, domain, i);
+          registry.push({
+            id,
+            title: `Protocolo ${String(id).padStart(3, '0')}`,
+            focus,
+            time_domain: domain,
+            workout_text: text,
+            moves,
+          });
+          id++;
+        }
+      }
+    }
+    return registry;
+  }
+
+  const WORKOUTS: Workout[] = buildRegistry();
+
+  const focusSelect = document.getElementById('protocol-focus') as HTMLSelectElement;
+  const domainSelect = document.getElementById('protocol-domain') as HTMLSelectElement;
+  const form = document.getElementById('protocol-form') as HTMLFormElement;
+  const output = document.getElementById('protocol-output') as HTMLPreElement;
+  const saveButton = document.getElementById('protocol-save') as HTMLButtonElement;
+  const regenerateButton = document.getElementById('protocol-regenerate') as HTMLButtonElement;
+  const glossaryBox = document.getElementById('protocol-glossary') as HTMLDivElement;
+  const glossaryList = document.getElementById('protocol-glossary-list') as HTMLDivElement;
+
+  let lastMatch: Workout | null = null;
+  let lastCandidates: Workout[] = [];
+
+  function renderMatch(focus: string, domain: string, match: Workout | null) {
+    const header = `> INICIALIZANDO PROTOCOLO...\n> ENFOQUE: ${focus.toUpperCase()} · DOMINIO: ${domain.toUpperCase()}\n`;
+
+    if (!match) {
+      lastMatch = null;
+      saveButton.classList.add('hidden');
+      saveButton.classList.remove('flex');
+      regenerateButton.classList.add('hidden');
+      regenerateButton.classList.remove('flex');
+      glossaryBox.classList.add('hidden');
+      output.textContent =
+        header +
+        '> SIN COINCIDENCIAS EN EL REGISTRO\n' +
+        '─'.repeat(28) +
+        '\nTodavía no hay protocolo asignado a este cruce.\nPrueba otra combinación de enfoque y dominio.';
+      return;
+    }
+
+    lastMatch = match;
+    saveButton.classList.remove('hidden');
+    saveButton.classList.add('flex');
+    regenerateButton.classList.toggle('hidden', lastCandidates.length <= 1);
+    regenerateButton.classList.toggle('flex', lastCandidates.length > 1);
+    output.textContent =
+      header +
+      `> [${match.title.toUpperCase()}] LOCALIZADO\n` +
+      '─'.repeat(28) +
+      '\n' +
+      match.workout_text;
+
+    glossaryList.innerHTML = match.moves
+      .map(
+        (name) => `
+        <p><strong class="text-black dark:text-white">${name}</strong> — ${GLOSSARY[name] ?? ''}</p>
+      `
+      )
+      .join('');
+    glossaryBox.classList.remove('hidden');
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const focus = focusSelect.value;
+    const domain = domainSelect.value;
+    lastCandidates = WORKOUTS.filter((w) => w.focus === focus && w.time_domain === domain);
+
+    if (lastCandidates.length === 0) {
+      renderMatch(focus, domain, null);
+      return;
+    }
+
+    const match = lastCandidates[Math.floor(Math.random() * lastCandidates.length)];
+    renderMatch(focus, domain, match);
+  });
+
+  regenerateButton.addEventListener('click', () => {
+    if (lastCandidates.length === 0) return;
+
+    let next = lastMatch;
+    if (lastCandidates.length > 1) {
+      do {
+        next = lastCandidates[Math.floor(Math.random() * lastCandidates.length)];
+      } while (next.id === lastMatch?.id);
+    }
+    renderMatch(focusSelect.value, domainSelect.value, next);
+  });
+
+  function loadImage(src: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+
+  async function downloadProtocolImage() {
+    if (!lastMatch) return;
+    saveButton.disabled = true;
+
+    try {
+      await document.fonts.ready;
+      const logo = await loadImage('/images/brand/logo.png').catch(() => null);
+
+      const width = 750;
+      const margin = 40;
+      const maxTextWidth = width - margin * 2;
+      const lines = lastMatch.workout_text.split('\n');
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      function wrapText(text: string, font: string): string[] {
+        ctx!.font = font;
+        const words = text.split(' ');
+        const wrapped: string[] = [];
+        let current = '';
+        for (const word of words) {
+          const test = current ? `${current} ${word}` : word;
+          if (ctx!.measureText(test).width > maxTextWidth && current) {
+            wrapped.push(current);
+            current = word;
+          } else {
+            current = test;
+          }
+        }
+        if (current) wrapped.push(current);
+        return wrapped;
+      }
+
+      const glossaryEntries = lastMatch.moves.map((name) => ({
+        name,
+        defLines: wrapText(GLOSSARY[name] ?? '', '13px sans-serif'),
+      }));
+
+      const lineHeight = 28;
+      const workoutBlockHeight = lines.length * lineHeight;
+      const defLineHeight = 19;
+      const glossaryEntryGap = 14;
+      const glossaryBlockHeight = glossaryEntries.reduce(
+        (sum, entry) => sum + 22 + entry.defLines.length * defLineHeight + glossaryEntryGap,
+        40 // título de sección "QUÉ ES CADA MOVIMIENTO"
+      );
+      const height = 300 + workoutBlockHeight + 40 + glossaryBlockHeight + 160;
+
+      canvas.width = width;
+      canvas.height = height;
+
+      // Fondo negro DCIEN
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(0, 0, width, height);
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.strokeRect(20.5, 20.5, width - 41, height - 41);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = '700 12px monospace';
+      ctx.fillText('ARSENAL · DCIEN', margin, 60);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '44px "Bebas Neue"';
+      ctx.fillText('MOTOR DE PROTOCOLOS', margin, 118);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.font = '15px sans-serif';
+      ctx.fillText(`${lastMatch.focus} · ${lastMatch.time_domain}`, margin, 146);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = '700 12px sans-serif';
+      ctx.fillText(lastMatch.title.toUpperCase(), margin, 204);
+
+      let y = 204 + 40;
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+      ctx.beginPath();
+      ctx.moveTo(margin, y);
+      ctx.lineTo(width - margin, y);
+      ctx.stroke();
+
+      y += 40;
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.font = '17px monospace';
+      lines.forEach((line) => {
+        ctx.fillText(line, margin, y);
+        y += lineHeight;
+      });
+
+      // Glosario: qué es cada movimiento que aparece en este protocolo
+      y += 20;
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+      ctx.beginPath();
+      ctx.moveTo(margin, y);
+      ctx.lineTo(width - margin, y);
+      ctx.stroke();
+
+      y += 34;
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = '700 11px sans-serif';
+      ctx.fillText('QUÉ ES CADA MOVIMIENTO', margin, y);
+      y += 28;
+
+      glossaryEntries.forEach((entry) => {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '700 14px sans-serif';
+        ctx.fillText(entry.name, margin, y);
+        y += 22;
+
+        ctx.fillStyle = 'rgba(255,255,255,0.55)';
+        ctx.font = '13px sans-serif';
+        entry.defLines.forEach((line) => {
+          ctx.fillText(line, margin, y);
+          y += defLineHeight;
+        });
+        y += glossaryEntryGap;
+      });
+
+      if (logo) {
+        const logoW = 110;
+        const logoH = logoW * (logo.height / logo.width);
+        ctx.drawImage(logo, width - logoW - margin, height - logoH - margin, logoW, logoH);
+      }
+
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.font = '12px sans-serif';
+      ctx.fillText('d-cien.es/arsenal', margin, height - margin);
+
+      const link = document.createElement('a');
+      link.download = `dcien-protocolo-${lastMatch.id}-${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } finally {
+      saveButton.disabled = false;
+    }
+  }
+
+  saveButton.addEventListener('click', downloadProtocolImage);
+</script>

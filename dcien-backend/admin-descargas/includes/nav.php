@@ -58,6 +58,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
             </a>
         </li>
         <li>
+            <a href="/admin-descargas/modules/arsenal-leads.php" class="<?php echo $current_page == 'arsenal-leads.php' ? 'active' : ''; ?>">
+                <span class="icon">🎯</span> Arsenal Leads
+            </a>
+        </li>
+        <li>
             <a href="/admin-descargas/modules/logs.php" class="<?php echo $current_page == 'logs.php' ? 'active' : ''; ?>">
                 <span class="icon">📋</span> Logs Sistema
             </a>
