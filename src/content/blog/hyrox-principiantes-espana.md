@@ -3,7 +3,7 @@ title: "HYROX para principiantes en España: guía completa"
 description: "Qué es HYROX, cómo es la competición, cuántas semanas necesitas de preparación y qué esperar en tu primera carrera en España."
 keywords: "hyrox principiantes, qué es hyrox, entrenamiento hyrox españa, primera carrera hyrox, hyrox para empezar"
 publishDate: 2026-07-16
-coverImage: "/images/brand/hyrox.png"
+coverImage: "/images/brand/hyrox.webp"
 relatedSeries: ["serie-12", "serie-11"]
 ---
 

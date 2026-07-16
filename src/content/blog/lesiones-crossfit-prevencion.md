@@ -3,7 +3,7 @@ title: "Lesiones más comunes en CrossFit y cómo prevenirlas"
 description: "Muñeca, rodilla, hombro y lumbar: las lesiones que más se repiten en CrossFit, por qué ocurren y qué puedes hacer para evitarlas."
 keywords: "lesiones crossfit, prevención lesiones crossfit, dolor muñeca crossfit, dolor rodilla crossfit"
 publishDate: 2026-07-23
-coverImage: "/images/brand/lesiones.png"
+coverImage: "/images/brand/lesiones.webp"
 relatedSeries: ["serie-09", "serie-10"]
 healthDisclaimer: true
 ---

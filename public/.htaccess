@@ -1,0 +1,8 @@
+# Frontend DCIEN - Apache Configuration
+
+RewriteEngine On
+
+# Forzar HTTPS y dominio sin "www" (canonical: https://d-cien.es)
+RewriteCond %{HTTP_HOST} ^www\.d-cien\.es [NC,OR]
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://d-cien.es/$1 [R=301,L]

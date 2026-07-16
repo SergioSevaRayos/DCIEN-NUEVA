@@ -3,7 +3,7 @@ title: "Qué comer antes y después de un WOD: guía práctica de nutrición"
 description: "Cuándo comer, qué alimentos eligen los atletas antes de entrenar y qué necesita tu cuerpo después de un WOD para recuperarse bien."
 keywords: "qué comer antes de crossfit, nutrición crossfit, comida pre entreno crossfit, qué comer después de entrenar wod"
 publishDate: 2026-08-13
-coverImage: "/images/brand/nutrición.png"
+coverImage: "/images/brand/nutrición.webp"
 relatedSeries: ["serie-0", "serie-08"]
 healthDisclaimer: true
 ---

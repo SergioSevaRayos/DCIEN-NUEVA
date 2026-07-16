@@ -3,7 +3,7 @@ title: "Rope climb, espinilleras y calleras: cómo proteger tu piel en CrossFit 
 description: "Qué te protege de verdad en el rope climb, el pull-up y el trabajo de barra: espinilleras, calleras y calcetines técnicos, y cuándo usar cada uno."
 keywords: "espinilleras crossfit, calleras crossfit, protección rope climb, quemaduras rope climb, calcetines crossfit"
 publishDate: 2026-08-06
-coverImage: "/images/brand/rope.png"
+coverImage: "/images/brand/rope.webp"
 relatedSeries: ["serie-09", "serie-10"]
 healthDisclaimer: true
 ---
