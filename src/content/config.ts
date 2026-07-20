@@ -15,6 +15,9 @@ const blog = defineCollection({
     // true en artículos con consejo de salud/entrenamiento (lesiones, nutrición, protección física):
     // añade un aviso de "no sustituye a un profesional" automático en la página.
     healthDisclaimer: z.boolean().optional().default(false),
+    // true en artículos con enlaces de afiliado de Amazon Associates: añade el aviso legal
+    // obligatorio ("Como Afiliado de Amazon, obtengo ingresos...") automáticamente en la página.
+    amazonAffiliate: z.boolean().optional().default(false),
   }),
 });
 

@@ -101,14 +101,20 @@ const relatedSeries = (post.data.relatedSeries ?? [])
           )}
 
           {post.data.healthDisclaimer && (
-            <div class="mb-10 border border-black/10 dark:border-white/10 bg-zinc-50 dark:bg-zinc-900 p-6 text-xs text-black/60 dark:text-white/50 leading-relaxed uppercase tracking-[0.05em]">
+            <p class="mb-10 text-[10px] text-black/30 dark:text-white/30 leading-relaxed">
               ⚠️ Este contenido es informativo y no sustituye el consejo de un profesional sanitario, fisioterapeuta o entrenador cualificado. Consulta a un especialista antes de aplicar cualquier recomendación si tienes dudas o condiciones previas.
-            </div>
+            </p>
           )}
 
           <div class="prose-dcien text-black/80 dark:text-white/70">
             <Content />
           </div>
+
+          {post.data.amazonAffiliate && (
+            <p class="mt-8 text-[10px] text-black/30 dark:text-white/30 leading-relaxed">
+              🛒 Como Afiliado de Amazon, obtengo ingresos por las compras que cumplen los requisitos aplicables. Esto no supone coste adicional para ti.
+            </p>
+          )}
 
           {relatedSeries.length > 0 && (
             <div class="mt-20 border-t border-black/10 dark:border-white/10 pt-10">
@@ -202,6 +208,17 @@ const relatedSeries = (post.data.relatedSeries ?? [])
   }
   .prose-dcien strong {
     font-weight: 700;
+  }
+
+  /* Cajas de producto de Amazon pegadas dentro del markdown: anulan la cascada de .prose-dcien
+     para que no hereden el subrayado de enlaces ni el tamaño/interlineado de párrafo del cuerpo. */
+  .prose-dcien .product-box p {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+  .prose-dcien .product-box a {
+    text-decoration: none;
   }
 </style>
 
