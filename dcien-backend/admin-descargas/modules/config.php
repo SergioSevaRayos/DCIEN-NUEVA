@@ -42,9 +42,68 @@ function get_db_connection() {
     return $pdo;
 }
 
-function sendAdminMail(string $to, string $subject, string $html): bool {
-    $autoload = __DIR__ . '/../../vendor/autoload.php';
-    if (!file_exists($autoload)) return false;
+function logMailError(string $message): void {
+    $logDir = __DIR__ . '/../logs';
+    if (!is_dir($logDir)) {
+        @mkdir($logDir, 0755, true);
+    }
+    @file_put_contents(
+        $logDir . '/mail-errors.log',
+        date('[Y-m-d H:i:s] ') . $message . PHP_EOL,
+        FILE_APPEND
+    );
+}
+
+/**
+ * Registra en admin_email_log cada intento de envío (éxito o fallo) hecho vía
+ * sendAdminMail(). Centralizado aquí en vez de en cada punto de llamada para
+ * que ninguna vía de envío futura se quede sin auditar.
+ */
+function logAdminEmail(
+    string $to,
+    ?string $username,
+    string $subject,
+    string $html,
+    string $type,
+    ?int $userId,
+    string $status,
+    ?string $error = null
+): void {
+    try {
+        $pdo = get_db_connection();
+        $pdo->prepare(
+            "INSERT INTO admin_email_log
+                (user_id, recipient_email, recipient_username, email_type, subject, body_html, status, error_message)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        )->execute([$userId, $to, $username, $type, $subject, $html, $status, $error ? substr($error, 0, 500) : null]);
+    } catch (Exception $e) {
+        // Si el propio registro falla (tabla no creada todavía, etc.) no debe
+        // tumbar el envío de email — solo lo dejamos en el log de fallback.
+        logMailError("No se pudo registrar en admin_email_log el envío a $to: " . $e->getMessage());
+    }
+}
+
+function sendAdminMail(
+    string $to,
+    string $subject,
+    string $html,
+    string $type = 'general',
+    ?int $userId = null,
+    ?string $username = null
+): bool {
+    // Igual que ordenes/index.php: admin-descargas/ se sirve desde public_html/
+    // en producción, así que vendor/ está tres niveles arriba (dentro de
+    // dcien-backend/), no dos como en local.
+    $autoloadProd  = __DIR__ . '/../../../dcien-backend/vendor/autoload.php';
+    $autoloadLocal = __DIR__ . '/../../vendor/autoload.php';
+    $autoload = file_exists($autoloadProd) ? $autoloadProd : $autoloadLocal;
+
+    if (!file_exists($autoload)) {
+        $error = "No se encontró vendor/autoload.php (probado: $autoloadProd | $autoloadLocal)";
+        logMailError("$error al enviar a $to");
+        logAdminEmail($to, $username, $subject, $html, $type, $userId, 'failed', $error);
+        return false;
+    }
     require_once $autoload;
 
     $mail = new PHPMailer\PHPMailer\PHPMailer(true);
@@ -63,8 +122,12 @@ function sendAdminMail(string $to, string $subject, string $html): bool {
         $mail->Subject = $subject;
         $mail->Body    = $html;
         $mail->send();
+        logAdminEmail($to, $username, $subject, $html, $type, $userId, 'sent');
         return true;
     } catch (Exception $e) {
+        $error = "{$mail->ErrorInfo} | {$e->getMessage()}";
+        logMailError("Fallo enviando a $to: $error");
+        logAdminEmail($to, $username, $subject, $html, $type, $userId, 'failed', $error);
         return false;
     }
 }

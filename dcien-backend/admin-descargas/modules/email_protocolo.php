@@ -1,7 +1,7 @@
 <?php
 // FUNCIÓN DE EMAIL
 // ═══════════════════════════════════════════════════════════════
-function enviar_email_protocolo($email, $username, $code, $description, $type, $value, $series_slug) {
+function enviar_email_protocolo($email, $username, $code, $description, $type, $value, $series_slug, $userId = null) {
     $valor_texto = $type === 'percent' ? number_format($value, 0) . '%' : '€' . number_format($value, 2);
     $nombre      = strtoupper($username ?: 'Atleta');
     $year        = date('Y');
@@ -150,5 +150,5 @@ function enviar_email_protocolo($email, $username, $code, $description, $type, $
 </body>
 </html>';
 
-    return sendAdminMail($email, $subject, $message_html);
+    return sendAdminMail($email, $subject, $message_html, 'protocolo_descuento', $userId, $username);
 }

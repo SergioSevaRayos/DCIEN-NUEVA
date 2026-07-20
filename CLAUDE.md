@@ -123,7 +123,7 @@ Actualmente **€10**. Si cambia, hay que actualizarlo en **7 sitios**:
 ## Panel de administración (`dcien-backend/admin-descargas/`)
 
 - Acceso local: `http://localhost:8080/admin-descargas/` — sin autenticación (el PHP built-in server ignora `.htpasswd`)
-- En producción usa HTTP Basic Auth (`.htpasswd`): usuario `admin`
+- En producción usa HTTP Basic Auth (`dcien-backend/admin-descargas/.htpasswd`): usuario `admin`. Contraseña actual guardada en `dcien-backend/.env` (`ADMIN_PANEL_USER`/`ADMIN_PANEL_PASSWORD`) — **no aquí**, este fichero está en git. Para resetearla: `htpasswd -nbB admin '<password-nueva>'` y pegar la línea resultante en `.htpasswd`, luego `.\deploy.ps1 -extras`.
 - Pipeline de órdenes en `ordenes/index.php`: pestañas Nuevos → Producción → Enviados
 - **Eliminación de pedidos deshabilitada en la UI** — solo via SQL directo (decisión deliberada para evitar borrados accidentales). Para eliminar un pedido de prueba:
   ```sql
@@ -197,6 +197,33 @@ CREATE TABLE arsenal_leads (
 
 -- Columna gender en series (necesaria para list.php)
 ALTER TABLE series ADD COLUMN gender ENUM('male','female','unisex') DEFAULT 'unisex';
+
+-- Historial de emails enviados desde el Gestor de Atletas (admin-descargas/modules/usuarios.php).
+-- Se rellena centralizadamente desde sendAdminMail() en modules/config.php, así que cubre
+-- tanto comunicados (enviar_email_campana) como protocolos de descuento (enviar_email_protocolo)
+-- sin tener que instrumentar cada punto de llamada por separado.
+CREATE TABLE admin_email_log (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT DEFAULT NULL,
+  recipient_email VARCHAR(255) NOT NULL,
+  recipient_username VARCHAR(255) DEFAULT NULL,
+  email_type VARCHAR(50) NOT NULL DEFAULT 'general',
+  subject VARCHAR(255) NOT NULL,
+  body_html MEDIUMTEXT,
+  status ENUM('sent','failed') NOT NULL,
+  error_message VARCHAR(500) DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_user_id (user_id),
+  INDEX idx_created_at (created_at),
+  INDEX idx_status (status)
+);
+
+-- Contraseña temporal en claro para poder reenviar el mismo acceso desde el
+-- Gestor de Tokens (admin-descargas/modules/tokens.php) sin regenerarlo.
+-- temp_password_hash sigue siendo la fuente de verdad para el login (bcrypt,
+-- irreversible); temp_password_plain es solo para mostrarla en el panel admin
+-- y deja de tener valor en cuanto el token se usa (activated_with_token).
+ALTER TABLE activation_tokens ADD COLUMN temp_password_plain VARCHAR(50) DEFAULT NULL;
 ```
 
 ## Generación de PDFs (Dompdf)

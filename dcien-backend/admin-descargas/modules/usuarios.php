@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt_u->execute([$uid]);
                     $u = $stmt_u->fetch();
 
-                    if ($u && enviar_email_protocolo($u['email'], $u['username'], $discount['code'], $discount['description'], $discount['type'], $discount['value'], $discount['series_slug'])) {
+                    if ($u && enviar_email_protocolo($u['email'], $u['username'], $discount['code'], $discount['description'], $discount['type'], $discount['value'], $discount['series_slug'], $uid)) {
                         $enviados++;
                     }
                 }
@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $u = $stmt_u->fetch();
 
             if ($u) {
-                if (enviar_email_campana($u['email'], $u['username'], $subject, $titulo, $cuerpo, $cta_texto, $cta_link)) {
+                if (enviar_email_campana($u['email'], $u['username'], $subject, $titulo, $cuerpo, $cta_texto, $cta_link, $uid)) {
                     $enviados++;
                 } else {
                     $errores++;

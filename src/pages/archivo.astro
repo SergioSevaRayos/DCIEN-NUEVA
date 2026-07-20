@@ -124,7 +124,7 @@ function lifestyleHtml(src, idx) {
 
 function serieHtml(s, idx) {
   const dir = directions[idx % directions.length];
-  const img = s.images?.[0] ?? '/images/brand/og-image.jpg';
+  const img = s.images?.[0] ?? '/images/brand/og-image.webp';
   const year = s.release_date ? new Date(s.release_date).getFullYear() : new Date().getFullYear();
   return `<article class="art-item ${dir} break-inside-avoid relative group cursor-crosshair overflow-hidden bg-white dark:bg-black border border-black/5 dark:border-white/5" data-active="false" data-entered="false">
     <div class="relative overflow-hidden">

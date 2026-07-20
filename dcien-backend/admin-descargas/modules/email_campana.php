@@ -2,7 +2,7 @@
 // ═══════════════════════════════════════════════════════════════
 // FUNCIÓN DE EMAIL: COMUNICACIONES GENÉRICAS (CAMPAÑAS)
 // ═══════════════════════════════════════════════════════════════
-function enviar_email_campana($email, $username, $subject, $titulo, $cuerpo, $cta_texto = '', $cta_link = '') {
+function enviar_email_campana($email, $username, $subject, $titulo, $cuerpo, $cta_texto = '', $cta_link = '', $userId = null) {
     $nombre = strtoupper($username ?: 'Atleta');
     $year   = date('Y');
 
@@ -103,5 +103,5 @@ function enviar_email_campana($email, $username, $subject, $titulo, $cuerpo, $ct
 </body>
 </html>';
 
-    return sendAdminMail($email, $subject, $message_html);
+    return sendAdminMail($email, $subject, $message_html, 'comunicado', $userId, $username);
 }

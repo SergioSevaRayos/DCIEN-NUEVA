@@ -7,6 +7,12 @@ Disallow: /registro/
 Disallow: /bono/
 Disallow: /api/
 
+# Excepción: /registro/activar se comparte por DM (invitaciones) y necesita
+# que los rastreadores de previsualización (facebookexternalhit/WhatsApp,
+# Twitterbot, etc.) puedan generar la tarjeta OG. La regla más específica
+# gana sobre el Disallow general de /registro/.
+Allow: /registro/activar
+
 # Bloquear parámetros de búsqueda o filtrado para evitar contenido duplicado
 Disallow: /*?*
 Disallow: /*&*

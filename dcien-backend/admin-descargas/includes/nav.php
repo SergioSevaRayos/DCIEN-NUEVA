@@ -23,6 +23,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
             </a>
         </li>
         <li>
+            <a href="/admin-descargas/modules/tokens.php" class="<?php echo $current_page == 'tokens.php' ? 'active' : ''; ?>">
+                <span class="icon">📡</span> Gestor de Tokens
+            </a>
+        </li>
+        <li>
             <a href="/admin-descargas/modules/descuentos.php" class="<?php echo $current_page == 'descuentos.php' ? 'active' : ''; ?>">
                 <span class="icon">🏅</span> Validaciones
             </a>
@@ -60,6 +65,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
         <li>
             <a href="/admin-descargas/modules/arsenal-leads.php" class="<?php echo $current_page == 'arsenal-leads.php' ? 'active' : ''; ?>">
                 <span class="icon">🎯</span> Arsenal Leads
+            </a>
+        </li>
+        <li>
+            <a href="/admin-descargas/modules/email-log.php" class="<?php echo $current_page == 'email-log.php' || $current_page == 'email-log-ver.php' ? 'active' : ''; ?>">
+                <span class="icon">📧</span> Historial Emails
             </a>
         </li>
         <li>

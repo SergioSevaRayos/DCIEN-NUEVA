@@ -75,15 +75,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // 4. Insertar token con discount_id
                 $stmt = $pdo->prepare("
                     INSERT INTO activation_tokens
-                    (token, instagram_username, temp_username, temp_password_hash, expires_at, discount_id, created_at)
+                    (token, instagram_username, temp_username, temp_password_hash, temp_password_plain, expires_at, discount_id, created_at)
                     VALUES
-                    (:token, :instagram, :temp_username, :hash, :expires, :discount_id, NOW())
+                    (:token, :instagram, :temp_username, :hash, :plain, :expires, :discount_id, NOW())
                 ");
                 $stmt->execute([
                     'token'       => $token,
                     'instagram'   => $instagram,
                     'temp_username' => $temp_username,
                     'hash'        => $temp_password_hash,
+                    'plain'       => $temp_password,
                     'expires'     => $expires_at,
                     'discount_id' => $discount_id
                 ]);
@@ -122,6 +123,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div>
                         <h1>CREAR TOKEN</h1>
                         <p>Generar credencial de activación</p>
+                    </div>
+                    <div class="header-actions">
+                        <a href="/admin-descargas/modules/tokens.php">📡 Ver Gestor de Tokens</a>
                     </div>
                 </header>
 

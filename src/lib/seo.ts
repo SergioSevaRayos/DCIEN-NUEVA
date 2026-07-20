@@ -15,7 +15,7 @@ export const SITE_CONFIG = {
   locale: 'es_ES',
   twitter: '@dcien',
   logo: '/images/brand/logo.png',
-  ogImage: '/images/brand/og-image.jpg',
+  ogImage: '/images/brand/og-image.webp',
   foundingDate: '2026',
   email: 'soporte@d-cien.es',
   phone: '+34',

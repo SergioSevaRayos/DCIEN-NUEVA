@@ -53,7 +53,7 @@ const countLabel = n === 0
           {activeSeries.map((s, i) => i === 0 ? (
             <article class="col-span-1 md:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-0 bg-zinc-50 dark:bg-zinc-900/50 overflow-hidden group series-card scroll-reveal scroll-delay-1 border border-black/5 dark:border-white/5" data-series-slug={s.slug}>
               <div class="relative aspect-square lg:aspect-auto lg:h-[700px] overflow-hidden bg-white dark:bg-[#0a0a0a]">
-                <img src={s.images?.[0] ?? '/images/brand/og-image.jpg'} alt={s.name} class="w-full h-full object-contain p-8 md:p-16 transition-transform duration-[1.5s] ease-out group-hover:scale-105" />
+                <img src={s.images?.[0] ?? '/images/brand/og-image.webp'} alt={s.name} class="w-full h-full object-contain p-8 md:p-16 transition-transform duration-[1.5s] ease-out group-hover:scale-105" />
                 <div class="absolute inset-0 bg-black/40 dark:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-12 z-20">
                   <div class="transform translate-y-8 group-hover:translate-y-0 transition-transform duration-500 flex flex-col sm:flex-row gap-4">
                     <a href={`/series-activas/${s.slug}`} class="btn-secondary flex-1 text-center !bg-black/50 !text-white !border-white/20 backdrop-blur-md hover:!bg-white hover:!text-black transition-colors duration-300">Ver Ficha Técnica</a>
@@ -88,7 +88,7 @@ const countLabel = n === 0
           ) : (
             <article class={`bg-zinc-50 dark:bg-zinc-900/50 overflow-hidden group series-card scroll-reveal scroll-delay-${(i % 3) + 1} flex flex-col border border-black/5 dark:border-white/5`} data-series-slug={s.slug}>
               <div class="relative aspect-[4/5] bg-white dark:bg-[#0a0a0a] overflow-hidden">
-                <img src={s.images?.[0] ?? '/images/brand/og-image.jpg'} alt={s.name} class="w-full h-full object-contain p-8 transition-transform duration-[1.5s] ease-out group-hover:scale-105" />
+                <img src={s.images?.[0] ?? '/images/brand/og-image.webp'} alt={s.name} class="w-full h-full object-contain p-8 transition-transform duration-[1.5s] ease-out group-hover:scale-105" />
                 <div class="absolute inset-0 bg-black/30 dark:bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 z-20">
                   <div class="transform translate-y-6 group-hover:translate-y-0 transition-transform duration-500 flex flex-col gap-3">
                     <a href="/acceso" class="btn-primary w-full text-center">Procesar Acceso</a>
