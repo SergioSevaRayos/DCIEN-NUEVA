@@ -220,6 +220,18 @@ const relatedSeries = (post.data.relatedSeries ?? [])
   .prose-dcien .product-box a {
     text-decoration: none;
   }
+
+  /* Tablas de datos (timing, fases, fuentes de macros) pegadas dentro del markdown: anulan la
+     cascada de .prose-dcien (tamaño de párrafo del cuerpo, márgenes, subrayado de enlaces) para
+     que el texto compacto de las celdas no herede la tipografía del artículo. */
+  .prose-dcien .data-block p {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    margin-bottom: 0;
+  }
+  .prose-dcien .data-block h4 {
+    margin: 0;
+  }
 </style>
 
 <script define:vars={{ apiUrl, postSlug: post.slug, postTitle: post.data.title, postDescription: post.data.description }}>
