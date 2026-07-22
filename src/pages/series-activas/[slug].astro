@@ -46,7 +46,7 @@ const colors = [
 ];
 const types = [
   { label: 'Standard Fit', value: 'standard' },
-  { label: 'King Size', value: 'king-size' }
+  { label: 'Oversize', value: 'king-size' }
 ];
 
 const seriesPrice = seriesInfo.price;
@@ -267,7 +267,7 @@ const apiUrl      = import.meta.env.PUBLIC_API_URL;
           Standard
         </button>
         <button data-fit-tab="king" class="fit-tab-btn flex-1 py-2 text-[10px] uppercase tracking-widest font-bold transition-all text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white">
-          King Size
+          Oversize
         </button>
       </div>
 
@@ -436,7 +436,7 @@ const apiUrl      = import.meta.env.PUBLIC_API_URL;
   document.getElementById('close-size-guide')?.addEventListener('click', closeSizeGuide);
   sgModal?.addEventListener('click', (e) => { if(e.target === sgModal) closeSizeGuide(); });
 
-  // Pestañas internas del modal (Standard Fit vs King Size)
+  // Pestañas internas del modal (Standard Fit vs Oversize)
   const fitBtns = document.querySelectorAll('.fit-tab-btn');
   const fitContents = document.querySelectorAll('.fit-content');
 
@@ -703,7 +703,7 @@ document.addEventListener('keydown', (e) => {
           element: '#tour-step-vars',
           popover: {
             title: 'Configura tu prenda',
-            description: 'Elige tu talla, el color y el tipo de corte (Standard o King Size). Ojo: revisa la guía de tallas si tienes dudas.',
+            description: 'Elige tu talla, el color y el tipo de corte (Standard o Oversize). Ojo: revisa la guía de tallas si tienes dudas.',
             side: 'bottom',
             align: 'start'
           }

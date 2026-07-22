@@ -212,7 +212,7 @@ const seo = {
         <div>
           <span class="font-bold">${(item.series_name || item.series_slug || '').toUpperCase().replace(/-/g,' ')}</span>
           <span class="font-brand text-xl ml-2">#${String(item.unit_number).padStart(2, '0')}</span>
-          <span class="text-[10px] text-black/50 dark:text-white/50 ml-2 uppercase">${item.size} · ${item.color} · ${item.type}</span>
+          <span class="text-[10px] text-black/50 dark:text-white/50 ml-2 uppercase">${item.size} · ${item.color} · ${item.type === 'king-size' ? 'Oversize' : 'Standard'}</span>
         </div>
         <span class="font-bold shrink-0 ml-2">€${parseFloat(String(item.unit_price)).toFixed(2)}</span>
       </div>

@@ -125,7 +125,7 @@ if (isset($shipping['shipping_address'])) {
                         <div class="item-specs">
                             <span>Talla: <?= strtoupper($item['size']) ?></span>
                             <span>Color: <?= ucfirst($item['color']) ?></span>
-                            <span>Tipo: <?= ucfirst($item['type']) ?></span>
+                            <span>Tipo: <?= ucfirst($item['type'] === 'king-size' ? 'Oversize' : 'Standard') ?></span>
                         </div>
                     </div>
                     <div style="text-align:right">

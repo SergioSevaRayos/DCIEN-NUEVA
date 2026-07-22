@@ -318,7 +318,7 @@ const seo = {
         <div>
           <span class="font-bold text-black dark:text-white">${item.seriesName}</span>
           <span class="font-brand text-lg ml-2">#${String(item.number).padStart(2, '0')}</span>
-          <span class="text-[10px] text-black/50 dark:text-white/50 ml-2 uppercase">${item.size} · ${item.color} · ${item.type}</span>
+          <span class="text-[10px] text-black/50 dark:text-white/50 ml-2 uppercase">${item.size} · ${item.color} · ${item.type === 'king-size' ? 'Oversize' : 'Standard'}</span>
         </div>
         <span class="font-bold text-black dark:text-white shrink-0 ml-2">€${Number(item.price).toFixed(2)}</span>
       </div>

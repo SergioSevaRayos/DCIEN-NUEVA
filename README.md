@@ -7,7 +7,7 @@ Plataforma completa de comercio electrónico para venta de camisetas de edición
 ## 🚀 Características
 
 - ✅ Series limitadas de 100 unidades numeradas (01-100)
-- ✅ Configuración de talla, tipo (king size / standard fit), color y número
+- ✅ Configuración de talla, tipo (Oversize / standard fit), color y número
 - ✅ Navegación completa: inicio, archivo, series activas, marca, acceso
 - ✅ Autenticación vía Instagram + usuario/contraseña
 - ✅ Integración completa con Stripe para pagos

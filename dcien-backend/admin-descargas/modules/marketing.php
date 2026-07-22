@@ -521,7 +521,7 @@ if ($current_series_slug) {
                         <label>Corte / Fit</label>
                         <select name="type" required>
                             <option value="standard">Standard Fit</option>
-                            <option value="king-size">King Size</option>
+                            <option value="king-size">Oversize</option>
                         </select>
                     </div>
                 </div>

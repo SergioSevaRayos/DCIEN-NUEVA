@@ -192,7 +192,7 @@ function generar_orden_trabajo(array $pedido, PDO $pdo): array {
                   </td>
                   <td style='text-align:center;padding:8px 4px;'>
                     <div style='font-size:7px;text-transform:uppercase;letter-spacing:1px;color:#999;margin-bottom:4px;'>Corte</div>
-                    <div style='font-size:14px;font-weight:900;'>" . strtoupper($item['type']) . "</div>
+                    <div style='font-size:14px;font-weight:900;'>" . strtoupper($item['type'] === 'king-size' ? 'Oversize' : 'Standard') . "</div>
                   </td>
                 </tr>
               </table>
@@ -224,7 +224,7 @@ function generar_orden_trabajo(array $pedido, PDO $pdo): array {
                . ' #' . str_pad($item['unit_number'], 3, '0', STR_PAD_LEFT)
                . ' &mdash; ' . strtoupper($item['size'])
                . ' / ' . strtoupper($item['color'])
-               . ' / ' . strtoupper($item['type']);
+               . ' / ' . strtoupper($item['type'] === 'king-size' ? 'Oversize' : 'Standard');
         $checklist_rows .= "<tr style='{$row_style}'>
           <td style='{$num_style}'>{$step}.</td>
           <td style='{$box_style}'>{$cb}</td>
@@ -442,7 +442,7 @@ function email_enviado_cliente(array $pedido, array $items, array $addr, string 
         $items_html .= "
         <div style='background:#f9f9f9;border-left:3px solid #000;padding:12px;margin:8px 0;'>
             <strong>" . strtoupper($item['series_name'] ?: $item['series_slug']) . " #" . str_pad($item['unit_number'], 3, '0', STR_PAD_LEFT) . "</strong><br>
-            <span style='font-size:13px;color:#555;'>" . strtoupper($item['size']) . " · " . ucfirst($item['color']) . " · " . ucfirst($item['type']) . "</span>
+            <span style='font-size:13px;color:#555;'>" . strtoupper($item['size']) . " · " . ucfirst($item['color']) . " · " . ucfirst($item['type'] === 'king-size' ? 'Oversize' : 'Standard') . "</span>
         </div>";
     }
 
@@ -647,7 +647,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         foreach ($rows as $r) {
             fputcsv($out, [
                 $r['id'], $r['created_at'], $r['series_name'], $r['unit_number'],
-                $r['size'], $r['color'], $r['type'],
+                $r['size'], $r['color'], ($r['type'] === 'king-size' ? 'Oversize' : 'Standard'),
                 $r['username'] ?: 'N/A', $r['email'],
                 $r['instagram_username'] ?: 'N/A',
                 $r['price'], strtoupper($r['status']),

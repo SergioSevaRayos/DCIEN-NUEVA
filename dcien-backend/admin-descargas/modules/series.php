@@ -305,7 +305,7 @@ function format_date_for_input($datetime) {
                             </div>
                             <div class="form-group">
                                 <label>Tipos de Corte (Sep. por comas)</label>
-                                <input type="text" name="types" value="<?php echo htmlspecialchars(decode_for_form($serie_editar['types'])); ?>" placeholder="Standard, King Size">
+                                <input type="text" name="types" value="<?php echo htmlspecialchars(decode_for_form($serie_editar['types'])); ?>" placeholder="Standard, Oversize">
                             </div>
 
                             <div class="section-title">Metadatos / SEO</div>
