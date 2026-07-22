@@ -1,0 +1,613 @@
+---
+/**
+ * Calculadora de macros con objetivo dual: día de entrenamiento vs. día de
+ * descanso, en vez del número diario fijo que dan la mayoría de calculadoras.
+ * Katch-McArdle + proteína por masa libre de grasa si el usuario indica su
+ * % de grasa corporal; si no, cae a Mifflin-St Jeor y proteína por peso
+ * total. Cálculo 100% cliente, sin llamadas a backend.
+ */
+---
+
+<div>
+  <p class="mb-8 text-[10px] text-black/30 dark:text-white/30 leading-relaxed">
+    ⚠️ Este contenido es informativo y no sustituye el consejo de un profesional sanitario, fisioterapeuta o entrenador cualificado. Consulta a un especialista antes de aplicar cualquier recomendación si tienes dudas o condiciones previas.
+  </p>
+
+  <!-- Explicación: qué es y cómo se usa -->
+  <div class="border border-black/5 dark:border-white/5 bg-black/[0.03] dark:bg-white/[0.03] p-8 md:p-10 mb-8">
+    <p class="text-[10px] uppercase tracking-[0.3em] text-black/40 dark:text-white/40 font-bold mb-4">Cómo funciona</p>
+    <p class="text-sm text-black/70 dark:text-white/60 leading-relaxed mb-6">
+      La mayoría de calculadoras te dan un único número para todos los días. Tu cuerpo no funciona así: un día de
+      entreno duro necesita más carbohidratos que un día de descanso. Esta herramienta calcula los dos objetivos por
+      separado, no uno solo.
+    </p>
+    <ol class="space-y-3 text-xs text-black/60 dark:text-white/50">
+      <li class="flex gap-3">
+        <span class="font-mono text-black/30 dark:text-white/30 shrink-0">01</span>
+        <span>Rellena tus datos. Si conoces tu <strong class="text-black dark:text-white">% de grasa corporal</strong>, indícalo — el cálculo usará tu masa libre de grasa en vez de tu peso total, más preciso en atletas con más masa muscular.</span>
+      </li>
+      <li class="flex gap-3">
+        <span class="font-mono text-black/30 dark:text-white/30 shrink-0">02</span>
+        <span>Indica tu actividad diaria fuera del entreno y la duración media de tu sesión.</span>
+      </li>
+      <li class="flex gap-3">
+        <span class="font-mono text-black/30 dark:text-white/30 shrink-0">03</span>
+        <span>Pulsa <strong class="text-black dark:text-white">Calcular</strong>: obtienes proteína, carbohidratos y grasas para tu día de entrenamiento y tu día de descanso.</span>
+      </li>
+    </ol>
+  </div>
+
+  <div class="bg-black/[0.03] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 p-8 md:p-12">
+    <form id="macro-form" class="space-y-8">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div>
+          <label for="macro-sex" class="block text-[10px] uppercase tracking-[0.2em] font-bold text-black/50 dark:text-white/50 mb-1">
+            Sexo biológico
+          </label>
+          <p class="text-[11px] text-black/40 dark:text-white/40 mb-2">Determina la fórmula de gasto calórico basal.</p>
+          <select
+            id="macro-sex"
+            class="w-full bg-white dark:bg-zinc-900 [color-scheme:light] dark:[color-scheme:dark] border border-black/20 dark:border-white/20 px-4 py-3 text-sm text-black dark:text-white focus:outline-none focus:border-black dark:focus:border-white"
+          >
+            <option value="male">Hombre</option>
+            <option value="female">Mujer</option>
+          </select>
+        </div>
+        <div>
+          <label for="macro-age" class="block text-[10px] uppercase tracking-[0.2em] font-bold text-black/50 dark:text-white/50 mb-1">
+            Edad (años)
+          </label>
+          <p class="text-[11px] text-black/40 dark:text-white/40 mb-2">Entre 14 y 90 años.</p>
+          <input
+            id="macro-age"
+            type="number"
+            min="14"
+            max="90"
+            step="1"
+            required
+            placeholder="30"
+            class="w-full bg-transparent border border-black/20 dark:border-white/20 px-4 py-3 text-sm font-mono text-black dark:text-white focus:outline-none focus:border-black dark:focus:border-white placeholder-black/30 dark:placeholder-white/30"
+          />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div>
+          <label for="macro-weight" class="block text-[10px] uppercase tracking-[0.2em] font-bold text-black/50 dark:text-white/50 mb-1">
+            Peso (kg)
+          </label>
+          <p class="text-[11px] text-black/40 dark:text-white/40 mb-2">Tu peso actual.</p>
+          <input
+            id="macro-weight"
+            type="number"
+            min="30"
+            max="250"
+            step="0.1"
+            required
+            placeholder="80"
+            class="w-full bg-transparent border border-black/20 dark:border-white/20 px-4 py-3 text-sm font-mono text-black dark:text-white focus:outline-none focus:border-black dark:focus:border-white placeholder-black/30 dark:placeholder-white/30"
+          />
+        </div>
+        <div>
+          <label for="macro-height" class="block text-[10px] uppercase tracking-[0.2em] font-bold text-black/50 dark:text-white/50 mb-1">
+            Altura (cm)
+          </label>
+          <p class="text-[11px] text-black/40 dark:text-white/40 mb-2">Sin calzado.</p>
+          <input
+            id="macro-height"
+            type="number"
+            min="120"
+            max="230"
+            step="1"
+            required
+            placeholder="178"
+            class="w-full bg-transparent border border-black/20 dark:border-white/20 px-4 py-3 text-sm font-mono text-black dark:text-white focus:outline-none focus:border-black dark:focus:border-white placeholder-black/30 dark:placeholder-white/30"
+          />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div>
+          <label for="macro-bodyfat" class="block text-[10px] uppercase tracking-[0.2em] font-bold text-black/50 dark:text-white/50 mb-1">
+            % Grasa corporal <span class="normal-case font-normal text-black/30 dark:text-white/30">(opcional)</span>
+          </label>
+          <p class="text-[11px] text-black/40 dark:text-white/40 mb-2">
+            Si lo sabes, usamos masa libre de grasa para un cálculo más preciso de calorías y proteína. Si lo dejas en blanco, usamos tu peso total.
+          </p>
+          <input
+            id="macro-bodyfat"
+            type="number"
+            min="3"
+            max="60"
+            step="0.1"
+            placeholder="15"
+            class="w-full bg-transparent border border-black/20 dark:border-white/20 px-4 py-3 text-sm font-mono text-black dark:text-white focus:outline-none focus:border-black dark:focus:border-white placeholder-black/30 dark:placeholder-white/30"
+          />
+        </div>
+        <div>
+          <label for="macro-activity" class="block text-[10px] uppercase tracking-[0.2em] font-bold text-black/50 dark:text-white/50 mb-1">
+            Actividad diaria fuera del entreno
+          </label>
+          <p class="text-[11px] text-black/40 dark:text-white/40 mb-2">Trabajo, desplazamientos, vida diaria.</p>
+          <select
+            id="macro-activity"
+            class="w-full bg-white dark:bg-zinc-900 [color-scheme:light] dark:[color-scheme:dark] border border-black/20 dark:border-white/20 px-4 py-3 text-sm text-black dark:text-white focus:outline-none focus:border-black dark:focus:border-white"
+          >
+            <option value="sedentary">Sedentario</option>
+            <option value="light">Ligero</option>
+            <option value="moderate">Moderado</option>
+            <option value="active">Activo</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div>
+          <label for="macro-session" class="block text-[10px] uppercase tracking-[0.2em] font-bold text-black/50 dark:text-white/50 mb-1">
+            Duración media de sesión (min)
+          </label>
+          <p class="text-[11px] text-black/40 dark:text-white/40 mb-2">Lo que dura tu WOD un día de entreno normal.</p>
+          <input
+            id="macro-session"
+            type="number"
+            min="15"
+            max="180"
+            step="5"
+            required
+            placeholder="60"
+            class="w-full bg-transparent border border-black/20 dark:border-white/20 px-4 py-3 text-sm font-mono text-black dark:text-white focus:outline-none focus:border-black dark:focus:border-white placeholder-black/30 dark:placeholder-white/30"
+          />
+        </div>
+        <div>
+          <label for="macro-goal" class="block text-[10px] uppercase tracking-[0.2em] font-bold text-black/50 dark:text-white/50 mb-1">
+            Objetivo
+          </label>
+          <p class="text-[11px] text-black/40 dark:text-white/40 mb-2">¿Qué buscas ahora mismo?</p>
+          <select
+            id="macro-goal"
+            class="w-full bg-white dark:bg-zinc-900 [color-scheme:light] dark:[color-scheme:dark] border border-black/20 dark:border-white/20 px-4 py-3 text-sm text-black dark:text-white focus:outline-none focus:border-black dark:focus:border-white"
+          >
+            <option value="maintenance">Mantenimiento</option>
+            <option value="deficit">Déficit</option>
+            <option value="surplus">Superávit</option>
+          </select>
+        </div>
+      </div>
+
+      <p id="macro-error" class="hidden text-[10px] text-red-500 uppercase tracking-widest"></p>
+
+      <button type="submit" class="btn-primary w-full">
+        Calcular mis macros
+      </button>
+    </form>
+
+    <div id="macro-results" class="hidden mt-12 pt-10 border-t border-black/10 dark:border-white/10">
+      <div class="flex items-start justify-between gap-4 mb-6">
+        <p id="macro-protein-summary" class="text-[10px] uppercase tracking-[0.3em] text-black/40 dark:text-white/40"></p>
+        <button
+          id="macro-save"
+          type="button"
+          class="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold text-black/40 hover:text-black dark:text-white/40 dark:hover:text-white transition-colors shrink-0"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M12 15V3M7 10l5 5 5-5"/></svg>
+          Guardar
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-zinc-50 dark:bg-zinc-900 border border-black/5 dark:border-white/10 border-l-4 border-l-orange-600 dark:border-l-orange-400 p-6">
+          <span class="block text-xs uppercase tracking-widest font-bold text-orange-600 dark:text-orange-400 mb-1">Día de entrenamiento</span>
+          <p id="macro-train-total" class="font-mono text-3xl font-bold text-black dark:text-white mb-4"></p>
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-black/10 dark:border-white/10">
+                <th class="py-2 pr-4 text-[9px] uppercase tracking-[0.2em] text-black/40 dark:text-white/40 font-bold">Macro</th>
+                <th class="py-2 pr-4 text-[9px] uppercase tracking-[0.2em] text-black/40 dark:text-white/40 font-bold">Gramos</th>
+                <th class="py-2 text-[9px] uppercase tracking-[0.2em] text-black/40 dark:text-white/40 font-bold">Kcal</th>
+              </tr>
+            </thead>
+            <tbody class="font-mono text-sm text-black/80 dark:text-white/80">
+              <tr class="border-b border-black/5 dark:border-white/5">
+                <td class="py-2 pr-4">Proteína</td>
+                <td id="macro-train-protein-g" class="py-2 pr-4"></td>
+                <td id="macro-train-protein-kcal" class="py-2"></td>
+              </tr>
+              <tr class="border-b border-black/5 dark:border-white/5">
+                <td class="py-2 pr-4">Carbohidratos</td>
+                <td id="macro-train-carbs-g" class="py-2 pr-4"></td>
+                <td id="macro-train-carbs-kcal" class="py-2"></td>
+              </tr>
+              <tr>
+                <td class="py-2 pr-4">Grasas</td>
+                <td id="macro-train-fat-g" class="py-2 pr-4"></td>
+                <td id="macro-train-fat-kcal" class="py-2"></td>
+              </tr>
+            </tbody>
+          </table>
+          <p id="macro-train-note" class="hidden mt-3 text-[11px] text-black/40 dark:text-white/40 leading-relaxed"></p>
+        </div>
+
+        <div class="bg-zinc-50 dark:bg-zinc-900 border border-black/5 dark:border-white/10 border-l-4 border-l-black/20 dark:border-l-white/20 p-6">
+          <span class="block text-xs uppercase tracking-widest font-bold text-black/50 dark:text-white/50 mb-1">Día de descanso</span>
+          <p id="macro-rest-total" class="font-mono text-3xl font-bold text-black dark:text-white mb-4"></p>
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-black/10 dark:border-white/10">
+                <th class="py-2 pr-4 text-[9px] uppercase tracking-[0.2em] text-black/40 dark:text-white/40 font-bold">Macro</th>
+                <th class="py-2 pr-4 text-[9px] uppercase tracking-[0.2em] text-black/40 dark:text-white/40 font-bold">Gramos</th>
+                <th class="py-2 text-[9px] uppercase tracking-[0.2em] text-black/40 dark:text-white/40 font-bold">Kcal</th>
+              </tr>
+            </thead>
+            <tbody class="font-mono text-sm text-black/80 dark:text-white/80">
+              <tr class="border-b border-black/5 dark:border-white/5">
+                <td class="py-2 pr-4">Proteína</td>
+                <td id="macro-rest-protein-g" class="py-2 pr-4"></td>
+                <td id="macro-rest-protein-kcal" class="py-2"></td>
+              </tr>
+              <tr class="border-b border-black/5 dark:border-white/5">
+                <td class="py-2 pr-4">Carbohidratos</td>
+                <td id="macro-rest-carbs-g" class="py-2 pr-4"></td>
+                <td id="macro-rest-carbs-kcal" class="py-2"></td>
+              </tr>
+              <tr>
+                <td class="py-2 pr-4">Grasas</td>
+                <td id="macro-rest-fat-g" class="py-2 pr-4"></td>
+                <td id="macro-rest-fat-kcal" class="py-2"></td>
+              </tr>
+            </tbody>
+          </table>
+          <p id="macro-rest-note" class="hidden mt-3 text-[11px] text-black/40 dark:text-white/40 leading-relaxed"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Astro hoista el script de cada herramienta importada en [slug].astro a
+// TODAS las páginas de /arsenal, aunque solo una esté realmente renderizada
+// — sin este guard, este script lanzaría un error al buscar elementos
+// #macro-* que no existen en la página de otra herramienta.
+if (document.getElementById('macro-form')) {
+  const form = document.getElementById('macro-form') as HTMLFormElement;
+  const sexSelect = document.getElementById('macro-sex') as HTMLSelectElement;
+  const ageInput = document.getElementById('macro-age') as HTMLInputElement;
+  const weightInput = document.getElementById('macro-weight') as HTMLInputElement;
+  const heightInput = document.getElementById('macro-height') as HTMLInputElement;
+  const bodyfatInput = document.getElementById('macro-bodyfat') as HTMLInputElement;
+  const activitySelect = document.getElementById('macro-activity') as HTMLSelectElement;
+  const sessionInput = document.getElementById('macro-session') as HTMLInputElement;
+  const goalSelect = document.getElementById('macro-goal') as HTMLSelectElement;
+  const errorEl = document.getElementById('macro-error') as HTMLParagraphElement;
+  const resultsEl = document.getElementById('macro-results') as HTMLDivElement;
+  const proteinSummaryEl = document.getElementById('macro-protein-summary') as HTMLParagraphElement;
+  const saveButton = document.getElementById('macro-save') as HTMLButtonElement;
+
+  const ACTIVITY_MULTIPLIERS: Record<string, number> = {
+    sedentary: 1.2,
+    light: 1.375,
+    moderate: 1.55,
+    active: 1.725,
+  };
+  const ACTIVITY_LABELS: Record<string, string> = {
+    sedentary: 'Sedentario',
+    light: 'Ligero',
+    moderate: 'Moderado',
+    active: 'Activo',
+  };
+  const GOAL_MULTIPLIERS: Record<string, number> = {
+    deficit: 0.825,
+    maintenance: 1.0,
+    surplus: 1.125,
+  };
+  const GOAL_LABELS: Record<string, string> = {
+    deficit: 'Déficit',
+    maintenance: 'Mantenimiento',
+    surplus: 'Superávit',
+  };
+  // Estimación media de gasto para entreno funcional/CrossFit de alta intensidad
+  // (~10-12 kcal/min según literatura de referencia) — asunción declarada en la
+  // copia de la herramienta, no individualizada más allá del peso corporal.
+  const KCAL_PER_MIN_TRAINING = 11;
+  const PROTEIN_G_PER_KG = 2.0;
+  const CARBS_G_PER_KG_TRAINING = 5.0;
+  const CARBS_G_PER_KG_REST = 2.5;
+  const FAT_FLOOR_G_PER_KG = 0.55;
+
+  interface DayMacros {
+    invalid: boolean;
+    clamped: boolean;
+    proteinG: number;
+    proteinKcal: number;
+    carbsG: number;
+    carbsKcal: number;
+    fatG: number;
+    fatKcal: number;
+    totalKcal: number;
+  }
+
+  interface MacroResult {
+    sexLabel: string;
+    weightKg: number;
+    activityLabel: string;
+    goalLabel: string;
+    train: DayMacros;
+    rest: DayMacros;
+    proteinG: number;
+  }
+
+  let lastResult: MacroResult | null = null;
+
+  function computeBMR(sex: string, weightKg: number, heightCm: number, ageYears: number, bodyFatPct: number | null) {
+    if (bodyFatPct !== null) {
+      const lbm = weightKg * (1 - bodyFatPct / 100);
+      return { bmr: 370 + 21.6 * lbm, lbm };
+    }
+    const base = 10 * weightKg + 6.25 * heightCm - 5 * ageYears;
+    const bmr = sex === 'male' ? base + 5 : base - 161;
+    return { bmr, lbm: null as number | null };
+  }
+
+  function buildDayMacros(kcalTargetRaw: number, weightKg: number, proteinBasisKg: number, carbsGPerKg: number): DayMacros {
+    const proteinG = Math.round(proteinBasisKg * PROTEIN_G_PER_KG);
+    const proteinKcal = proteinG * 4;
+    const nominalCarbsG = Math.round(weightKg * carbsGPerKg);
+    const nominalCarbsKcal = nominalCarbsG * 4;
+    const minFatG = Math.round(weightKg * FAT_FLOOR_G_PER_KG);
+    const minFatKcal = minFatG * 9;
+    const remainderKcal = kcalTargetRaw - proteinKcal - nominalCarbsKcal;
+
+    let fatG: number;
+    let carbsG: number;
+    let clamped = false;
+
+    if (remainderKcal >= minFatKcal) {
+      fatG = Math.round(remainderKcal / 9);
+      carbsG = nominalCarbsG;
+    } else {
+      // El suelo de grasa se rompería al objetivo nominal de HC: se fija la
+      // grasa al mínimo seguro y los carbohidratos absorben el ajuste. La
+      // proteína no se toca nunca — es la macro de preservación de masa magra.
+      clamped = true;
+      fatG = minFatG;
+      const availableForCarbsKcal = kcalTargetRaw - proteinKcal - fatG * 9;
+      if (availableForCarbsKcal < 0) {
+        return {
+          invalid: true,
+          clamped: true,
+          proteinG,
+          proteinKcal,
+          carbsG: 0,
+          carbsKcal: 0,
+          fatG,
+          fatKcal: fatG * 9,
+          totalKcal: 0,
+        };
+      }
+      carbsG = Math.max(0, Math.round(availableForCarbsKcal / 4));
+    }
+
+    const carbsKcal = carbsG * 4;
+    const fatKcal = fatG * 9;
+    // El total mostrado es siempre la suma de los valores redondeados que se
+    // muestran (nunca el float crudo del objetivo), para que la tabla cuadre
+    // siempre con el total, sin desvíos por redondeos independientes.
+    return {
+      invalid: false,
+      clamped,
+      proteinG,
+      proteinKcal,
+      carbsG,
+      carbsKcal,
+      fatG,
+      fatKcal,
+      totalKcal: proteinKcal + carbsKcal + fatKcal,
+    };
+  }
+
+  function renderDay(prefix: string, day: DayMacros) {
+    (document.getElementById(`macro-${prefix}-total`) as HTMLParagraphElement).textContent = `${day.totalKcal} kcal`;
+    (document.getElementById(`macro-${prefix}-protein-g`) as HTMLTableCellElement).textContent = `${day.proteinG}g`;
+    (document.getElementById(`macro-${prefix}-protein-kcal`) as HTMLTableCellElement).textContent = `${day.proteinKcal}`;
+    (document.getElementById(`macro-${prefix}-carbs-g`) as HTMLTableCellElement).textContent = `${day.carbsG}g`;
+    (document.getElementById(`macro-${prefix}-carbs-kcal`) as HTMLTableCellElement).textContent = `${day.carbsKcal}`;
+    (document.getElementById(`macro-${prefix}-fat-g`) as HTMLTableCellElement).textContent = `${day.fatG}g`;
+    (document.getElementById(`macro-${prefix}-fat-kcal`) as HTMLTableCellElement).textContent = `${day.fatKcal}`;
+
+    const noteEl = document.getElementById(`macro-${prefix}-note`) as HTMLParagraphElement;
+    if (day.clamped) {
+      noteEl.textContent = 'Grasa fijada en el mínimo seguro; carbohidratos ajustados para cuadrar el objetivo calórico de este día.';
+      noteEl.classList.remove('hidden');
+    } else {
+      noteEl.classList.add('hidden');
+    }
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    errorEl.classList.add('hidden');
+
+    const sex = sexSelect.value;
+    const age = parseFloat(ageInput.value);
+    const weightKg = parseFloat(weightInput.value);
+    const heightCm = parseFloat(heightInput.value);
+    const bodyFatRaw = bodyfatInput.value.trim();
+    const bodyFatPct = bodyFatRaw === '' ? null : parseFloat(bodyFatRaw);
+    const activity = activitySelect.value;
+    const sessionMinutes = parseFloat(sessionInput.value);
+    const goal = goalSelect.value;
+
+    const validNumbers =
+      age >= 14 && age <= 90 &&
+      weightKg >= 30 && weightKg <= 250 &&
+      heightCm >= 120 && heightCm <= 230 &&
+      sessionMinutes >= 15 && sessionMinutes <= 180 &&
+      (bodyFatPct === null || (bodyFatPct >= 3 && bodyFatPct <= 60));
+
+    if (!validNumbers) {
+      errorEl.textContent = 'Introduce datos válidos en todos los campos obligatorios.';
+      errorEl.classList.remove('hidden');
+      resultsEl.classList.add('hidden');
+      return;
+    }
+
+    const { bmr, lbm } = computeBMR(sex, weightKg, heightCm, age, bodyFatPct);
+    const tdeeRest = bmr * ACTIVITY_MULTIPLIERS[activity];
+    const tdeeTrain = tdeeRest + sessionMinutes * KCAL_PER_MIN_TRAINING;
+    const goalMult = GOAL_MULTIPLIERS[goal];
+    const kcalRestRaw = tdeeRest * goalMult;
+    const kcalTrainRaw = tdeeTrain * goalMult;
+
+    const proteinBasisKg = bodyFatPct !== null && lbm !== null ? lbm : weightKg;
+    const restDay = buildDayMacros(kcalRestRaw, weightKg, proteinBasisKg, CARBS_G_PER_KG_REST);
+    const trainDay = buildDayMacros(kcalTrainRaw, weightKg, proteinBasisKg, CARBS_G_PER_KG_TRAINING);
+
+    if (restDay.invalid || trainDay.invalid) {
+      errorEl.textContent = 'Tu objetivo calórico calculado es demasiado bajo para tus datos. Revisa peso, % grasa o actividad, o consulta a un profesional.';
+      errorEl.classList.remove('hidden');
+      resultsEl.classList.add('hidden');
+      return;
+    }
+
+    renderDay('train', trainDay);
+    renderDay('rest', restDay);
+    proteinSummaryEl.textContent = `Proteína fija: ${trainDay.proteinG}g en ambos días`;
+    resultsEl.classList.remove('hidden');
+
+    lastResult = {
+      sexLabel: sex === 'male' ? 'Hombre' : 'Mujer',
+      weightKg,
+      activityLabel: ACTIVITY_LABELS[activity],
+      goalLabel: GOAL_LABELS[goal],
+      train: trainDay,
+      rest: restDay,
+      proteinG: trainDay.proteinG,
+    };
+  });
+
+  function loadImage(src: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+
+  function drawDayPanel(
+    ctx: CanvasRenderingContext2D,
+    label: string,
+    accentColor: string,
+    day: DayMacros,
+    margin: number,
+    width: number,
+    y: number
+  ): number {
+    const panelHeight = 200;
+
+    // Barra de acento a la izquierda del panel
+    ctx.fillStyle = accentColor;
+    ctx.fillRect(margin, y, 6, panelHeight - 20);
+
+    const textX = margin + 26;
+
+    ctx.fillStyle = accentColor;
+    ctx.font = '700 13px sans-serif';
+    ctx.fillText(label.toUpperCase(), textX, y + 24);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '700 34px monospace';
+    ctx.fillText(`${day.totalKcal} kcal`, textX, y + 66);
+
+    const rows: [string, string, string][] = [
+      ['PROTEÍNA', `${day.proteinG}g`, `${day.proteinKcal} kcal`],
+      ['CARBOHIDRATOS', `${day.carbsG}g`, `${day.carbsKcal} kcal`],
+      ['GRASAS', `${day.fatG}g`, `${day.fatKcal} kcal`],
+    ];
+    let rowY = y + 100;
+    rows.forEach(([name, g, kcal]) => {
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.font = '12px sans-serif';
+      ctx.fillText(name, textX, rowY);
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.font = '16px monospace';
+      ctx.fillText(g, textX + 220, rowY);
+      ctx.fillText(kcal, textX + 320, rowY);
+      rowY += 30;
+    });
+
+    return y + panelHeight;
+  }
+
+  async function downloadMacroImage() {
+    if (!lastResult) return;
+    saveButton.disabled = true;
+
+    try {
+      await document.fonts.ready;
+      const logo = await loadImage('/images/brand/logo.png').catch(() => null);
+
+      // Formato retrato, ancho de pantalla móvil — pensado para guardar/compartir desde el teléfono.
+      const width = 750;
+      const margin = 40;
+      const panelHeight = 200;
+      const panelGap = 30;
+      const tableTop = 200;
+      const height = tableTop + panelHeight * 2 + panelGap + 150;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Fondo negro DCIEN
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(0, 0, width, height);
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.strokeRect(20.5, 20.5, width - 41, height - 41);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = '700 12px monospace';
+      ctx.fillText('ARSENAL · DCIEN', margin, 60);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '44px "Bebas Neue"';
+      ctx.fillText('CALCULADORA DE MACROS', margin, 118);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.font = '15px sans-serif';
+      ctx.fillText(
+        `${lastResult.sexLabel} · ${lastResult.weightKg}kg · ${lastResult.activityLabel} · ${lastResult.goalLabel}`,
+        margin,
+        146
+      );
+
+      let y = tableTop;
+      y = drawDayPanel(ctx, 'Día de entrenamiento', '#ea580c', lastResult.train, margin, width, y);
+      y += panelGap;
+      drawDayPanel(ctx, 'Día de descanso', 'rgba(255,255,255,0.35)', lastResult.rest, margin, width, y);
+
+      // Logotipo en la esquina inferior derecha
+      if (logo) {
+        const logoW = 110;
+        const logoH = logoW * (logo.height / logo.width);
+        ctx.drawImage(logo, width - logoW - margin, height - logoH - margin, logoW, logoH);
+      }
+
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.font = '12px sans-serif';
+      ctx.fillText('d-cien.es/arsenal', margin, height - margin);
+
+      const link = document.createElement('a');
+      link.download = `dcien-macros-${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } finally {
+      saveButton.disabled = false;
+    }
+  }
+
+  saveButton.addEventListener('click', downloadMacroImage);
+}
+</script>

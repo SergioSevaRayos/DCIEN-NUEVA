@@ -111,6 +111,8 @@ El momento de la ingesta importa tanto como lo que comes. Tu cuerpo necesita el 
   </div>
 </div>
 
+La tabla anterior te da la estructura, pero los gramos exactos dependen de tu peso, tu actividad y cuánto dura tu sesión — no de una media genérica. Para eso construimos la [Calculadora de Macros](/arsenal/calculadora-macros) del Arsenal DCIEN: metes tus datos (peso, altura, actividad y tu % de grasa corporal si lo sabes) y te devuelve la proteína, los carbohidratos y las grasas exactos para tu día de entrenamiento y tu día de descanso — no un único número que ignora la diferencia.
+
 ## Casos concretos que cambian el plan
 
 - **Entrenar a primera hora de la mañana**: hacerlo en ayunas reduce el rendimiento a alta intensidad. Si no puedes digerir comida sólida, opta por carbohidratos líquidos o de absorción muy rápida — zumo, un plátano maduro o ciclodextrina — 30 minutos antes.

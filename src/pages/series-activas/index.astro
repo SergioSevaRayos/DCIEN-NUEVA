@@ -56,8 +56,8 @@ const countLabel = n === 0
                 <img src={s.images?.[0] ?? '/images/brand/og-image.webp'} alt={s.name} class="w-full h-full object-contain p-8 md:p-16 transition-transform duration-[1.5s] ease-out group-hover:scale-105" />
                 <div class="absolute inset-0 bg-black/40 dark:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-12 z-20">
                   <div class="transform translate-y-8 group-hover:translate-y-0 transition-transform duration-500 flex flex-col sm:flex-row gap-4">
-                    <a href={`/series-activas/${s.slug}`} class="btn-secondary flex-1 text-center !bg-black/50 !text-white !border-white/20 backdrop-blur-md hover:!bg-white hover:!text-black transition-colors duration-300">Ver Ficha Técnica</a>
-                    <a href="/acceso" class="btn-primary flex-1 text-center">Procesar Acceso</a>
+                    <a href={`/series-activas/${s.slug}`} data-detail-link data-promoted-class="btn-primary flex-1 text-center" class="btn-secondary flex-1 text-center !bg-black/50 !text-white !border-white/20 backdrop-blur-md hover:!bg-white hover:!text-black transition-colors duration-300">Ver Ficha Técnica</a>
+                    <a href="/acceso" data-access-link class="btn-primary flex-1 text-center">Procesar Acceso</a>
                   </div>
                 </div>
               </div>
@@ -91,8 +91,8 @@ const countLabel = n === 0
                 <img src={s.images?.[0] ?? '/images/brand/og-image.webp'} alt={s.name} class="w-full h-full object-contain p-8 transition-transform duration-[1.5s] ease-out group-hover:scale-105" />
                 <div class="absolute inset-0 bg-black/30 dark:bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 z-20">
                   <div class="transform translate-y-6 group-hover:translate-y-0 transition-transform duration-500 flex flex-col gap-3">
-                    <a href="/acceso" class="btn-primary w-full text-center">Procesar Acceso</a>
-                    <a href={`/series-activas/${s.slug}`} class="text-[9px] text-white/70 text-center tracking-[0.2em] uppercase hover:text-white transition-colors py-2">Inspeccionar Datos Técnicos</a>
+                    <a href="/acceso" data-access-link class="btn-primary w-full text-center">Procesar Acceso</a>
+                    <a href={`/series-activas/${s.slug}`} data-detail-link data-promoted-class="btn-primary w-full text-center" class="text-[9px] text-white/70 text-center tracking-[0.2em] uppercase hover:text-white transition-colors py-2">Inspeccionar Datos Técnicos</a>
                   </div>
                 </div>
               </div>
@@ -164,6 +164,22 @@ async function checkPriority(cardEl) {
     }
   } catch {}
 }
+
+/* ──── Oculta "Procesar Acceso" si ya hay sesión activa (evita el bucle
+   de vuelta a /series-activas que genera /acceso al detectar sesión) ──── */
+async function applyAuthState() {
+  try {
+    const res = await fetch(`${API}/auth/check.php`, { credentials: 'include' });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data?.authenticated) return;
+    document.querySelectorAll('[data-access-link]').forEach(el => el.remove());
+    document.querySelectorAll('[data-detail-link]').forEach(el => {
+      if (el.dataset.promotedClass) el.className = el.dataset.promotedClass;
+    });
+  } catch {}
+}
+applyAuthState();
 
 document.querySelectorAll('#series-grid .series-card').forEach(el => {
   loadStock(el);

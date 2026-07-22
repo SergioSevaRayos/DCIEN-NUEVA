@@ -26,6 +26,13 @@ export const arsenalTools: ArsenalTool[] = [
     keywords: 'generador wod, protocolo entrenamiento crossfit, wod hyrox, generador entrenamientos híbridos, workout generator',
     image: '/images/brand/motor-de-protocolos.webp',
   },
+  {
+    slug: 'calculadora-macros',
+    name: 'Calculadora de Macros',
+    description: 'Calcula tus macros de entrenamiento y de descanso a partir de tu peso, actividad y objetivo — proteína, carbohidratos y grasas para cada tipo de día.',
+    keywords: 'calculadora de macros, macros crossfit, calculadora de calorías, dieta hyrox, proteína carbohidratos grasas, nutrición entrenamiento funcional',
+    image: '/images/brand/calculadora-macros.webp',
+  },
 ];
 
 export function getArsenalToolBySlug(slug: string): ArsenalTool | undefined {

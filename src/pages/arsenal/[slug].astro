@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import EmailGate from '../../components/EmailGate.astro';
 import PacingCalculator from '../../components/PacingCalculator.astro';
 import ProtocolEngine from '../../components/ProtocolEngine.astro';
+import MacroCalculator from '../../components/MacroCalculator.astro';
 import { arsenalTools, getArsenalToolBySlug } from '../../data/arsenal';
 import { getArsenalToolSEO } from '../../lib/seo';
 
@@ -22,6 +23,7 @@ if (!tool) {
 const toolComponents: Record<string, any> = {
   'calculadora-pacing': PacingCalculator,
   'motor-de-protocolos': ProtocolEngine,
+  'calculadora-macros': MacroCalculator,
 };
 
 const ToolComponent = toolComponents[tool.slug];
